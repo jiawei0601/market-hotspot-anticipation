@@ -2,8 +2,8 @@
 
 > 兩個 agent 交接的唯一現況真相。離開前更新，接手前先讀。
 
-- 最後更新：Antigravity (Gemini 3.5 Flash) @ 2026-06-18 22:08
-- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入與 Email 排程功能)
+- 最後更新：Antigravity (Gemini 3.5 Flash) @ 2026-06-18 22:10
+- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入與 Railway 雲端部署配置)
 - 已完成：
   - [x] 實作計畫 (Implementation Plan) 經用戶審查通過
   - [x] 撰寫 PRD 規格書 (`docs/prd_market_hotspot_system.md`)
@@ -16,10 +16,11 @@
   - [x] 第一版推送至 GitHub 私有倉庫 (`market-hotspot-anticipation`)
   - [x] 依用戶要求將 LLM 核心模型改為 **Gemini 3.1 Pro**，並將環境變數切換為 **GEMINI_API_KEY**
   - [x] 實作 `send_email.py` 並在 GitHub Actions 中整合台灣週一上午 8:00 (00:00 UTC) 自動發信
+  - [x] 實作 `app.py` 與 `Procfile`，完成 Railway 雲端部署與 API 觸發機制配置
 - 進行中（做到哪一步）：
   - 專案已處於 Production-ready 狀態。
 - 下一步：
-  - 協助用戶配置 GitHub Secrets。
+  - 指引用戶在 Railway Dashboard 匯入 Repo 進行部署，並配置環境變數。
 - 關鍵決策 + 為什麼：
   - 使用 `ChatGoogleGenerativeAI` 調用 `gemini-3.1-pro` 作為線上運行主力，並將環境變數對齊為 `GEMINI_API_KEY`。
   - 當無 API Key 時，系統自動回退至 `ChatOpenAI` 來調用本地端點 (Ollama) 或執行內建本地規則模版，以防排程中斷。
@@ -29,3 +30,4 @@
   - 執行掃描：`python main_agent.py --sector CPO_Optical_Transceiver` (需要 GEMINI_API_KEY)
   - 跑測試：`python -m unittest discover tests`
   - 測試發信：在 `.env` 中設定 SMTP 資料後執行 `python send_email.py`
+  - 運行 Web 伺服器：`python app.py` (預設 port: 8080，支援 POST `/run` 手動發信與分析，並內建台灣時間週一 08:00 自動排程)
