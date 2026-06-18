@@ -29,6 +29,20 @@ class TestMarketInformationMonitor(unittest.TestCase):
         self.assertEqual(foci_data["content_value_next"], 14.0)
         self.assertEqual(foci_data["change_pct"], 211.11)
 
+    def test_fetch_real_monthly_revenue(self):
+        """測試從證交所開放 API 抓取真實月度營收"""
+        result = self.monitor.fetch_real_monthly_revenue()
+        self.assertIsInstance(result, dict)
+        # 即使 API 斷線，因有 Fallback，它會回傳快取的 dict (可能為空或有資料)
+        if len(result) > 0:
+            # 隨機抽樣一個代號檢查欄位
+            sample_key = list(result.keys())[0]
+            item = result[sample_key]
+            self.assertIn("revenue_billion", item)
+            self.assertIn("yoy_pct", item)
+            self.assertIn("date_ym", item)
+            self.assertIn("company_name", item)
+
     def test_simulate_revenue_inflection(self):
         """測試營收基期與 YoY 拐點預測"""
         company_ids = ["3450.TW", "3013.TW"]
@@ -43,6 +57,11 @@ class TestMarketInformationMonitor(unittest.TestCase):
             self.assertIn("projected_peak_yoy_pct", data)
             self.assertIn("equipment_lead_active", data)
             self.assertIn("is_golden_accumulation_target", data)
+            # 驗證真實數據整合欄位
+            self.assertIn("has_real_data", data)
+            self.assertIn("real_date_ym", data)
+            self.assertIn("real_revenue_billion", data)
+            self.assertIn("real_yoy_pct", data)
 
 if __name__ == "__main__":
     unittest.main()

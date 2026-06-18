@@ -155,10 +155,11 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"你是一個量化金融與產業營收分析專家。\n"
         f"請針對高頻報價走勢與各供應鏈廠商的成品營收 YoY、設備 Backlog 訂單 YoY 數據進行定量解析。\n"
         f"高頻價格數據：\n{pricing_data}\n"
-        f"營收與設備 Backlog 模擬數據：\n{revenue_data}\n\n"
+        f"營收與設備 Backlog 數據（包含來自台灣證券交易所開放 API 的真實營收）：\n{revenue_data}\n\n"
         f"你的分析必須專注於：\n"
-        f"1. **設備訂單 (Backlog) 的領先性**：設備 Backlog YoY 是否已率先爆發 (大於 50%)，即使此時下游成品營收依然在谷底？\n"
-        f"2. **尋找黃金潛伏標的**：根據第二層思考，判定哪些公司符合『低共識、下游營收在谷底去庫存、但上游設備 Backlog 訂單已率先暴增』的黃金積累特徵。"
+        f"1. **優先呈現真實數據**：如果數據中包含真實的公開月度營收（即 `has_real_data` 為 True 的標的），請在分析中優先指出該公司最新的實際營收金額（單位：億元）、實際 YoY 成長率，並基於這些真實基期對未來的營收與訂單拐點進行合理推演，而非僅依賴模擬數據。\n"
+        f"2. **設備訂單 (Backlog) 的領先性**：設備 Backlog YoY 是否已率先爆發 (大於 50%)，即使此時下游成品營收依然在谷底？\n"
+        f"3. **尋找黃金潛伏標的**：根據第二層思考，判定哪些公司符合『低共識、下游營收在谷底去庫存、但上游設備 Backlog 訂單已率先暴增』的黃金積累特徵。"
     )
     
     if state.get("critic_feedback"):
@@ -172,13 +173,19 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         ])
         analysis_text = response.content
     except Exception:
-        # Fallback
+        # Fallback 與真實資料動態組裝
+        foci_info = revenue_data.get("3450.TW", {})
+        if foci_info.get("has_real_data"):
+            foci_line = f"   - **FOCI (聯鈞 - 3450.TW)**：最新 {foci_info['real_date_ym']} 實際月營收達 **{foci_info['real_revenue_billion']} 億元**，真實年增率 (YoY) 達 **{foci_info['real_yoy_pct']}%**，營業收入已率先爆發，但共識度過高，須留意股價已反映風險。"
+        else:
+            foci_line = f"   - **FOCI (聯鈞 - 3450.TW)**：成品營收預計於 {revenue_data['3450.TW']['peak_month']} 達到 YoY 峰值，其目前 Backlog YoY 在高位盤整，但共識度過高，有股價透支風險。"
+            
         analysis_text = (
             f"### 設備 Backlog 領先指標與成品營收 YoY 拐點分析\n"
             f"1. **Catalyst 報價突破**：先進封裝設備材料指數近一月上漲 {pricing_data['weekly_change_pct']}%，報價率先止跌突破，資金催化劑成熟。\n"
             f"2. **設備 Backlog (領先 6 個月) 與營收 YoY 交叉驗證**：\n"
             f"   - **GrandProcess (弘塑 - 3131.TW)**：目前下游成品營收 YoY 僅為 11.20% (處於低谷)，但其設備訂單 Backlog YoY 已經飆升至 **84.50%**，確認處於極強拉貨期，此為最領先的起漲訊號。\n"
-            f"   - **FOCI (聯鈞 - 3450.TW)**：成品營收預計於 {revenue_data['3450.TW']['peak_month']} 達到 YoY 峰值，其目前 Backlog YoY 在高位盤整，但共識度過高，有股價透支風險。\n"
+            f"{foci_line}\n"
             f"   - **Auras (雙鴻 - 3324.TW)**：成品營收 YoY 目前僅 8.9%，但設備與 DTC 專案 Backlog YoY 達 **52.40%**，符合『營收在谷底、Backlog 已動』的領先特徵。\n"
             f"3. **黃金潛伏標的判定 (非共識黃金交叉)**：\n"
             f"   - **GrandProcess (3131.TW)** 完美符合『低共識度 (35.0)、成品營收在谷底、設備訂單已率先暴增』之黃金潛伏標的特徵，股價尚未反映此 Backlog 爆發。"

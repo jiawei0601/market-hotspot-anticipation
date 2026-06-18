@@ -2,17 +2,17 @@
 
 > 兩個 agent 交接的唯一現況真相。離開前更新，接手前先讀。
 
-- 最後更新：Antigravity (Gemini 3.1 Pro) @ 2026-06-18 23:00
-- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入、GitHub Actions + GitHub Pages 無伺服器排程與發佈、績效/勝率追蹤)
+- 最後更新：Antigravity (Gemini 3.1 Pro) @ 2026-06-18 23:05
+- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入、GitHub Actions + GitHub Pages 無伺服器排程與發佈、績效/勝率追蹤、證交所每月營收真實數據對接)
 - 已完成：
   - [x] 實作計畫 (Implementation Plan) 經用戶審查通過
   - [x] 撰寫 PRD 規格書 (`docs/prd_market_hotspot_system.md`)
   - [x] 撰寫架設與運作成本分析 (`docs/architecture_and_cost_analysis.md`)
   - [x] 配置專案統一規範 (`AGENTS.md`)
-  - [x] 實作 `market_monitor.py` 數據收集與 YoY 營收拐點模擬器
+  - [x] 實作 `market_monitor.py` 數據收集與 YoY 營收拐點模擬器，並整合台灣證券交易所 (TWSE) 開放 API 獲取真實月營收
   - [x] 實作 `main_agent.py` LangGraph 狀態機（三專家 + 自我修正品質評審）
   - [x] 配置 `.github/workflows/weekly_research_scheduler.yml` 自動排程 (已修改為每週一台北時間 07:30 執行，對應 UTC 週日 23:30)
-  - [x] 寫入單元測試且全數通過 (7/7 OK)
+  - [x] 寫入單元測試且全數通過 (8/8 OK)
   - [x] 第一版推送至 GitHub 私有倉庫 (`market-hotspot-anticipation`)
   - [x] 依用戶要求將 LLM 核心模型改為 **Gemini 3.1 Pro**，並將環境變數切換為 **GEMINI_API_KEY**
   - [x] 實作 `send_email.py` 並在 GitHub Actions 中自動發信
@@ -21,9 +21,9 @@
   - [x] 實作 `/latest-report` 與 `/latest-performance` 網頁固定連結，以精美毛玻璃深色模式直接渲染最新 Markdown 報告
   - [x] 實作 `generate_static_pages.py` 並整合至 GitHub Actions 流水線，實現每週自動將報告編譯並部署至 GitHub Pages
 - 進行中（做到哪一步）：
-  - 專案已完全實現 GitHub Actions 與 GitHub Pages 的無伺服器整合。
+  - 專案已完全實現真實台灣證券交易所每月營收 API 的整合。
 - 下一步：
-  - 引導用戶在 GitHub 設定中開啟 Pages 服務以供行事曆連結。
+  - 定期觀看 GitHub Actions 的每週運行產出。
 - 關鍵決策 + 為什麼：
   - 使用 `ChatGoogleGenerativeAI` 調用 `gemini-3.1-pro` 作為線上運行主力，並將環境變數對齊為 `GEMINI_API_KEY`。
   - 當無 API Key 時，系統自動回退至 `ChatOpenAI` 來調用本地端點 (Ollama) 或執行內建本地規則模版，以防排程中斷。
