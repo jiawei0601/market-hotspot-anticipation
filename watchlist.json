@@ -1,0 +1,32 @@
+[
+  {
+    "company_id": "3131.TW",
+    "name": "GrandProcess",
+    "sector": "CPO_Optical_Transceiver",
+    "entry_date": "2026-06-18",
+    "entry_price": 531.9,
+    "current_price": 531.9,
+    "max_price_since": 531.9,
+    "min_price_since": 531.9,
+    "max_return_pct": 0.0,
+    "min_return_pct": 0.0,
+    "current_return_pct": 0.0,
+    "status": "tracking",
+    "last_updated": "2026-06-18 22:46:46"
+  },
+  {
+    "company_id": "3324.TW",
+    "name": "Auras",
+    "sector": "CPO_Optical_Transceiver",
+    "entry_date": "2026-06-18",
+    "entry_price": 531.9,
+    "current_price": 531.9,
+    "max_price_since": 531.9,
+    "min_price_since": 531.9,
+    "max_return_pct": 0.0,
+    "min_return_pct": 0.0,
+    "current_return_pct": 0.0,
+    "status": "tracking",
+    "last_updated": "2026-06-18 22:46:48"
+  }
+]
