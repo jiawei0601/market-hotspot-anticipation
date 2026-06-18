@@ -9,6 +9,8 @@ on:
 jobs:
   run-research:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       # 1. 守護第一步：向 DeadMan Webhook 發送 START 心跳
