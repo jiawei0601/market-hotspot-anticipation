@@ -1,0 +1,94 @@
+name: Weekly Quantitative & Hotspot Research Scheduler
+
+on:
+  schedule:
+    # 每週一 02:30 UTC (避開整點，相對於美東夏令時 Sunday 22:30, 冬令時 Sunday 21:30)
+    - cron: '30 2 * * 1'
+  workflow_dispatch: # 支援手動觸發
+
+jobs:
+  run-research:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. 守護第一步：向 DeadMan Webhook 發送 START 心跳
+      - name: Heartbeat Watchdog - Start Signal
+        run: |
+          echo "Sending START signal to DeadManCheck watchdog..."
+          curl -FSs --retry 3 --connect-timeout 5 "https://deadmancheck.io/ping/hotspot-system-start" || echo "Deadman check start ping failed, skipping."
+
+      # 2. 拉取原始碼
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. 紐約時區夏令時 (DST) 守護步驟
+      - name: America/New_York Timezone & DST Guard
+        run: |
+          echo "==== 時區與夏令時狀態檢查 ===="
+          # 獲取美東紐約的當前時間與時區代碼
+          NY_TIME=$(TZ="America/New_York" date)
+          NY_ZONE=$(TZ="America/New_York" date +%Z)
+          echo "目前紐約時間為: $NY_TIME"
+          echo "目前紐約時區標識: $NY_ZONE"
+          
+          if [ "$NY_ZONE" = "EDT" ]; then
+            echo "💡 檢測到目前紐約正處於【夏令時 (Daylight Saving Time)】"
+            echo "本排程對應之美東時間為: 週日晚上 22:30"
+          elif [ "$NY_ZONE" = "EST" ]; then
+            echo "💡 檢測到目前紐約正處於【冬令時 (Standard Time)】"
+            echo "本排程對應之美東時間為: 週日晚上 21:30"
+          else
+            echo "⚠️ 未能明確識別紐約時區 ($NY_ZONE)，將採用常規對齊模式。"
+          fi
+          echo "==============================="
+
+      # 4. 安裝 Python 環境
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-run-version: '3.10'
+          cache: 'pip'
+
+      # 5. 安裝相依套件
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # 6. 執行市場熱點多 Agent 狀態機
+      - name: Execute Hotspot Anticipation Agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # 執行 CPO 板塊掃描，產出報告至 reports/ 目錄下
+          python main_agent.py --sector CPO_Optical_Transceiver
+
+      # 7. Inactivity Keep-Alive 守護：提交最新報告推回預設分支，使 Repo 持續活耀
+      - name: Commit and Push Report (Keep-Alive Branch Activity)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 檢查是否有新產出的報告
+          if [ -n "$(git status --porcelain reports/)" ]; then
+            echo "偵測到新產出的可行性研究報告，準備進行 commit..."
+            git add reports/
+            # 使用 [skip ci] 避免觸發另一次無意義的 CI 循環
+            git commit -m "chore(report): auto-publish weekly research report [skip ci]"
+            
+            # 使用 pull --rebase 處理可能的併發寫入，然後 push
+            git pull --rebase origin main || echo "Git pull rebase failed, continuing."
+            git push origin main || git push --force-with-lease origin main
+            echo "成功將最新報告推送回預設分支。Repo 活躍度已更新！"
+          else
+            echo "無新報告變更，跳過 Keep-Alive 提交。"
+          fi
+
+      # 8. 守護最後一步：向 DeadMan Webhook 發送 DONE 心跳
+      - name: Heartbeat Watchdog - Done Signal
+        if: success()
+        run: |
+          echo "Sending DONE signal to DeadManCheck watchdog..."
+          curl -FSs --retry 3 --connect-timeout 5 "https://deadmancheck.io/ping/hotspot-system-done" || echo "Deadman check done ping failed, skipping."
