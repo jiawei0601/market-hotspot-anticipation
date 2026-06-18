@@ -60,7 +60,7 @@ jobs:
       # 6. 執行市場熱點多 Agent 狀態機
       - name: Execute Hotspot Anticipation Agent
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           # 執行 CPO 板塊掃描，產出報告至 reports/ 目錄下
           python main_agent.py --sector CPO_Optical_Transceiver

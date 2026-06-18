@@ -54,16 +54,16 @@
    pip install -r requirements.txt
    ```
 2. **設定環境變數**：
-   系統撰寫報告與評審時預設使用 OpenAI GPT-4o。請配置您的 API Key：
+   系統撰寫報告與評審時預設使用 Google Gemini 3.1 Pro。請配置您的 API Key：
    - **Windows (PowerShell)**：
      ```powershell
-     $env:OPENAI_API_KEY="your-api-key-here"
+     $env:GEMINI_API_KEY="your-api-key-here"
      ```
    - **Linux / macOS**：
      ```bash
-     export OPENAI_API_KEY="your-api-key-here"
+     export GEMINI_API_KEY="your-api-key-here"
      ```
-   > **備註**：若未檢測到 `OPENAI_API_KEY`，系統會自動嘗試呼叫本地執行的 Ollama (localhost:11434, 運行 gemma4)；若本地無服務，將自動降級至系統內建的高精度本地規則生成模版，以防排程中斷。
+   > **備註**：若未檢測到 `GEMINI_API_KEY`，系統會自動嘗試呼叫本地執行的 Ollama (localhost:11434, 運行 gemma4)；若本地無服務，將自動降級至系統內建的高精度本地規則生成模版，以防排程中斷。
 
 ### 3.2 執行熱點分析
 執行 `main_agent.py` 並指定目標板塊（例如 `CPO_Optical_Transceiver`）：

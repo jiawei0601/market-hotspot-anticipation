@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 # LangChain & LangGraph 相關依賴
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, START, END
 
 # 匯入數據監控引擎
@@ -41,14 +42,14 @@ class CriticDecision(BaseModel):
         description="詳細的回饋意見。若 validation_status 為 FAIL，指出哪些定量數據缺失、哪些邏輯需要修正。"
     )
 
-# 初始化 LLM 模型（支援環境變數 API Key，若無則降級為本地端點或模擬模式）
+# 初始化 LLM 模型（支援環境變數 GEMINI_API_KEY，若無則降級為本地端點或模擬模式）
 def get_llm_model(structured_model=None):
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if api_key:
-        llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+        llm = ChatGoogleGenerativeAI(model="gemini-3.1-pro", temperature=0.2, google_api_key=api_key)
     else:
         # 降級至本地相容 OpenAI 格式之 Ollama 伺服器 (Gemma4 / Llama3 運作於 11434 端點)
-        # 若本地無 Ollama 服務，LangGraph 調用時會捕獲異常並回退至高精度本地生成規則。
+        # 由於本地 Ollama 通常不直接支援 google-genai 介面，使用 ChatOpenAI 呼叫本地相容端點
         llm = ChatOpenAI(
             model="gemma4", 
             api_key="fake-key", 
