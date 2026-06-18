@@ -2,8 +2,8 @@ name: Weekly Quantitative & Hotspot Research Scheduler
 
 on:
   schedule:
-    # 每週一 02:30 UTC (避開整點，相對於美東夏令時 Sunday 22:30, 冬令時 Sunday 21:30)
-    - cron: '30 2 * * 1'
+    # 每週一 00:00 UTC (相當於台灣時間週一早上 08:00)
+    - cron: '0 0 * * 1'
   workflow_dispatch: # 支援手動觸發
 
 jobs:
@@ -35,10 +35,10 @@ jobs:
           
           if [ "$NY_ZONE" = "EDT" ]; then
             echo "💡 檢測到目前紐約正處於【夏令時 (Daylight Saving Time)】"
-            echo "本排程對應之美東時間為: 週日晚上 22:30"
+            echo "本排程（台灣週一早上 8:00）對應之美東時間為: 週日晚上 20:00"
           elif [ "$NY_ZONE" = "EST" ]; then
             echo "💡 檢測到目前紐約正處於【冬令時 (Standard Time)】"
-            echo "本排程對應之美東時間為: 週日晚上 21:30"
+            echo "本排程（台灣週一早上 8:00）對應之美東時間為: 週日晚上 19:00"
           else
             echo "⚠️ 未能明確識別紐約時區 ($NY_ZONE)，將採用常規對齊模式。"
           fi
@@ -64,6 +64,17 @@ jobs:
         run: |
           # 執行 CPO 板塊掃描，產出報告至 reports/ 目錄下
           python main_agent.py --sector CPO_Optical_Transceiver
+
+      # 7. 發送 Email 報告通知
+      - name: Send Report via Email
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+        run: |
+          python send_email.py
 
       # 7. Inactivity Keep-Alive 守護：提交最新報告推回預設分支，使 Repo 持續活耀
       - name: Commit and Push Report (Keep-Alive Branch Activity)
