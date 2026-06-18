@@ -11,6 +11,15 @@ from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, START, END
 
+# 自動讀取本地 .env 檔案並寫入環境變數
+if os.path.exists(".env"):
+    with open(".env", "r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and "=" in stripped:
+                key, val = stripped.split("=", 1)
+                os.environ[key.strip()] = val.strip()
+
 # 匯入數據監控引擎
 from market_monitor import MarketInformationMonitor
 
