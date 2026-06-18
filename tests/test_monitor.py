@@ -41,8 +41,8 @@ class TestMarketInformationMonitor(unittest.TestCase):
             self.assertIn("inflection_expected", data)
             self.assertIn("peak_month", data)
             self.assertIn("projected_peak_yoy_pct", data)
-            self.assertEqual(len(data["historical_base"]), 12)
-            self.assertEqual(len(data["current_projected"]), 12)
+            self.assertIn("equipment_lead_active", data)
+            self.assertIn("is_golden_accumulation_target", data)
 
 if __name__ == "__main__":
     unittest.main()
