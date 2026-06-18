@@ -422,6 +422,43 @@ def run_hotspot_scan(sector: str):
     print(f"\n[OK] 任務成功完成！報告已儲存至: {report_filename}")
     print(f"最終狀態: {final_output['validation_status']} | 迭代次數: {final_output['iteration_count']}")
 
+    # 當審查通過時，將新出現之「非共識黃金建倉標的」加入 watchlist 並更新價格與勝率
+    if final_output["validation_status"] == "PASS":
+        try:
+            import performance_tracker
+            import yfinance as yf
+            
+            pricing_rev_analysis = final_output.get("pricing_revenue_analysis", {})
+            raw_rev = pricing_rev_analysis.get("raw_revenue", {})
+            
+            for cid, data in raw_rev.items():
+                if data.get("is_golden_accumulation_target", False):
+                    # 預設使用模擬數據的第 9 個月價格
+                    entry_price = float(data.get("current_projected", [100.0] * 12)[8])
+                    
+                    # 嘗試以 yfinance 拉取今天最新真實收盤價
+                    try:
+                        ticker = yf.Ticker(cid)
+                        hist = ticker.history(period="1d")
+                        if not hist.empty:
+                            entry_price = float(hist["Close"].iloc[-1])
+                    except Exception:
+                        pass
+                        
+                    performance_tracker.add_to_watchlist(
+                        company_id=cid,
+                        name=data.get("name", cid),
+                        entry_price=entry_price,
+                        sector=sector
+                    )
+            
+            # 更新名單中所有標的的 K 線與回報率，並生成統計報告
+            performance_tracker.update_watchlist_daily_prices()
+            performance_tracker.generate_performance_report()
+            
+        except Exception as e:
+            print(f"[⚠️ 警告] 自動更新績效追蹤名單出錯: {e}")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="市場熱點預見與多 Agent 系統")
     parser.add_argument("--sector", type=str, default="CPO_Optical_Transceiver", help="目標板塊名稱")

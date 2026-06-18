@@ -243,7 +243,11 @@ class MarketInformationMonitor:
                 "backlog_yoy_curve_3m": backlog_yoy_curve[-3:],
                 
                 # 第二層思考判定：是否為「低共識 + 設備 Backlog 暴增 + 下游營收在谷底」的黃金潛伏標的
-                "is_golden_accumulation_target": (item["consensus_score"] < 60.0 and equipment_lead_active and yoy_curve[8] < 15.0)
+                "is_golden_accumulation_target": (item["consensus_score"] < 60.0 and equipment_lead_active and yoy_curve[8] < 15.0),
+                
+                # 歷史與預測的月營收曲線數據
+                "historical_base": last_year_rev,
+                "current_projected": all_current_year
             }
             
         return results

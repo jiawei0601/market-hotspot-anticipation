@@ -2,8 +2,8 @@
 
 > 兩個 agent 交接的唯一現況真相。離開前更新，接手前先讀。
 
-- 最後更新：Antigravity (Gemini 3.5 Flash) @ 2026-06-18 22:47
-- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入、Railway 雲端部署與績效/勝率追蹤)
+- 最後更新：Antigravity (Gemini 3.1 Pro) @ 2026-06-18 22:55
+- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入、Railway 雲端部署、績效/勝率追蹤、週一早上 7:30 排程與網頁固定連結報告服務)
 - 已完成：
   - [x] 實作計畫 (Implementation Plan) 經用戶審查通過
   - [x] 撰寫 PRD 規格書 (`docs/prd_market_hotspot_system.md`)
@@ -11,25 +11,28 @@
   - [x] 配置專案統一規範 (`AGENTS.md`)
   - [x] 實作 `market_monitor.py` 數據收集與 YoY 營收拐點模擬器
   - [x] 實作 `main_agent.py` LangGraph 狀態機（三專家 + 自我修正品質評審）
-  - [x] 配置 `.github/workflows/weekly_research_scheduler.yml` 自動排程
+  - [x] 配置 `.github/workflows/weekly_research_scheduler.yml` 自動排程 (已修改為每週一台北時間 07:30 執行，對應 UTC 週日 23:30)
   - [x] 寫入單元測試且全數通過 (7/7 OK)
   - [x] 第一版推送至 GitHub 私有倉庫 (`market-hotspot-anticipation`)
   - [x] 依用戶要求將 LLM 核心模型改為 **Gemini 3.1 Pro**，並將環境變數切換為 **GEMINI_API_KEY**
-  - [x] 實作 `send_email.py` 並在 GitHub Actions 中整合台灣週一上午 8:00 (00:00 UTC) 自動發信
-  - [x] 實作 `app.py` 與 `Procfile`，完成 Railway 雲端部署與 API 觸發機制配置
-  - [x] 實作 `performance_tracker.py` 並對接狀態機與 API，實現觀察名單 (watchlist.json) 每日 K 線股價追蹤與系統勝率評估報告
+  - [x] 實作 `send_email.py` 並在 GitHub Actions 中自動發信
+  - [x] 實作 `app.py` 與 `Procfile`，完成 Railway 雲端部署與 API 觸發機制配置，並設定內建排程為台灣時間週一 07:30
+  - [x] 實作 `performance_tracker.py` 並對接狀態機與 API，實現觀察名單 (`watchlist.json`) 每日 K 線股價追蹤與系統勝率評估報告
+  - [x] 實作 `/latest-report` 與 `/latest-performance` 網頁固定連結，以精美毛玻璃深色模式直接渲染最新 Markdown 報告
 - 進行中（做到哪一步）：
-  - 專案已處於 Production-ready 狀態。
+  - 所有功能皆已實作完畢，並完成本地測試與 GitHub Actions 排程修改。
 - 下一步：
-  - 指引用戶在 Railway 網頁端訪問 /performance 接口。
+  - 交付使用者，提供固定連結資訊以便加入其行事曆中，並將程式碼推送至 GitHub 觸發 Railway 自動重新部署。
 - 關鍵決策 + 為什麼：
   - 使用 `ChatGoogleGenerativeAI` 調用 `gemini-3.1-pro` 作為線上運行主力，並將環境變數對齊為 `GEMINI_API_KEY`。
   - 當無 API Key 時，系統自動回退至 `ChatOpenAI` 來調用本地端點 (Ollama) 或執行內建本地規則模版，以防排程中斷。
+  - 網頁渲染 Markdown 採用前端 CDN 讀取 `marked.js` 的無伺服器架構，免去 Python 後端依賴包的編譯與維護成本，同時提供最精美的高級 HSL 毛玻璃深色主題。
 - 雷區 / 別碰：
   - 注意 Windows 終端機編碼 (cp950) 的 stdout 輸出。代碼中已移除了 emojis 以防止 stdout編碼崩潰。
+  - 在 GitHub Actions 中跑測試需指定合適的 python 環境，本地測試則需使用 C:\Users\chang\AppData\Local\Programs\Python\Python312\python.exe 執行。
 - 怎麼跑 / 怎麼測：
   - 執行掃描：`python main_agent.py --sector CPO_Optical_Transceiver` (需要 GEMINI_API_KEY)
-  - 跑測試：`python -m unittest discover tests`
+  - 跑測試：`C:\Users\chang\AppData\Local\Programs\Python\Python312\python.exe -m unittest discover tests`
   - 測試發信：在 `.env` 中設定 SMTP 資料後執行 `python send_email.py`
-  - 運行 Web 伺服器：`python app.py` (預設 port: 8080，支援 POST `/run` 手動發信與分析，並內建台灣時間週一 08:00 自動排程)
-  - 檢視績效：直接讀取 `watchlist.json`，或訪問 `GET /performance` 取得勝率 JSON 數據。
+  - 運行 Web 伺服器：`python app.py` (預設 port: 8080，支援 POST `/run` 手動發信與分析，並內建台灣時間週一 07:30 自動排程)
+  - 檢視績效網頁：直接在瀏覽器訪問 `GET /latest-performance` 取得勝率與詳細表單，或 `GET /latest-report` 取得最新熱點可行性評估報告。
