@@ -87,3 +87,40 @@ python -m unittest discover -s tests -p "test_*.py"
 - **美東時區守護 (DST Guard)**：動態檢查紐約時間，判斷當前是夏令時 (EDT) 還是冬令時 (EST)，自動報告與美股收盤後的時差對齊性。
 - **防止 Action 停用 (Keep-Alive)**：GitHub 會在 Repo 超過 60 天無 commit 時停用 Cron 排程。為此，Workflow 執行完畢後會將最新報告自動 commit 並 push 回 Repo 預設分支，附帶 `[skip ci]` 標記，維持 Repo 活性。
 - **DeadMan Watchdog**：在工作流開始與結束時，透過 `curl` 向 `deadmancheck.io` 發送 ping 請求，確保若流程掛死或執行失敗，管理員能第一時間收到警報。
+
+---
+
+## 5. 使用 GitHub Pages 進行無伺服器發佈與行事曆整合
+
+為實現 **100% 免費、零維護成本** 的架構，系統在每週一自動執行完畢後，會由 `generate_static_pages.py` 自動將 Markdown 報告編譯為靜態 HTML 網頁並儲存於 `docs/` 目錄。您可以啟用 GitHub Pages 託管此目錄。
+
+### 5.1 啟用 GitHub Pages 步驟
+1. 進入您在 GitHub 的專案倉庫，點選右上角的 **Settings**。
+2. 在左側選單中找到並點選 **Pages**。
+3. 在 **Build and deployment -> Source** 中選擇 `Deploy from a branch`。
+4. 在 **Branch** 選單中：
+   - 分支選擇 **`main`**。
+   - 目錄選擇 **`/docs`** (取代預設的 `/root`)。
+5. 點選 **Save** 儲存設定。
+6. 等待約 1 分鐘，GitHub 便會在頁面頂端給出您的專屬託管網址，例如：
+   `https://<您的帳號>.github.io/market-hotspot-anticipation/`
+
+### 5.2 網頁固定連結
+啟用 Pages 後，您的行事曆固定瀏覽連結如下：
+* **每週最新熱點報告 (首頁)**：
+  `https://<您的帳號>.github.io/market-hotspot-anticipation/` 或 `index.html`
+* **長期績效與勝率統計報告**：
+  `https://<您的帳號>.github.io/market-hotspot-anticipation/performance.html`
+
+> [!TIP]
+> **私有專案 (Private Repo) 提示**：
+> 如果您的 GitHub 專案是私有的且為免費帳戶（不支援私有 Pages），您仍然可以使用 GitHub 提供的 Raw 原始碼檢視連結來觀看，只需將瀏覽器安裝 `Markdown Viewer` 等 Chrome 擴充套件，即可直接點擊以下連結觀看最新渲染：
+> * 最新熱點報告：`https://raw.githubusercontent.com/<您的帳號>/market-hotspot-anticipation/main/docs/index.html`
+> * 系統績效報告：`https://raw.githubusercontent.com/<您的帳號>/market-hotspot-anticipation/main/docs/performance.html`
+
+### 5.3 行事曆整合設定
+1. 打開 Google 日曆（或您常用的手機行事曆）。
+2. 在 **每週一早上 07:30** 新增一個重複的行事曆活動。
+3. 將您的 **GitHub Pages 固定連結** 貼在活動的「連結」或「說明描述」欄位中。
+4. 之後每週一早上時間一到，GitHub Actions 便會自動執行市場分析並將網頁推送至 Pages，您只需點開行事曆即可直接以精美的深色毛玻璃介面閱讀報告！
+

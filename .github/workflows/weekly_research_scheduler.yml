@@ -76,25 +76,30 @@ jobs:
         run: |
           python send_email.py
 
-      # 7. Inactivity Keep-Alive 守護：提交最新報告推回預設分支，使 Repo 持續活耀
+      # 8. 產生靜態網頁 HTML 報告 (用於 GitHub Pages 託管)
+      - name: Generate Static Web HTML Reports
+        run: |
+          python generate_static_pages.py
+
+      # 9. Inactivity Keep-Alive 守護：提交最新報告與網頁推回預設分支，使 Repo 持續活躍
       - name: Commit and Push Report (Keep-Alive Branch Activity)
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 檢查是否有新報告或觀察名單更新
-          if [ -n "$(git status --porcelain reports/ watchlist.json)" ]; then
-            echo "偵測到新產出的可行性研究報告或觀察名單變更，準備進行 commit..."
-            git add reports/ watchlist.json || true
+          # 檢查是否有新報告、觀察名單或網頁更新
+          if [ -n "$(git status --porcelain reports/ watchlist.json docs/)" ]; then
+            echo "偵測到新產出的報告、觀察名單或靜態網頁變更，準備進行 commit..."
+            git add reports/ watchlist.json docs/ || true
             # 使用 [skip ci] 避免觸發另一次無意義的 CI 循環
-            git commit -m "chore(report): auto-publish weekly research report and update watchlist [skip ci]"
+            git commit -m "chore(report): auto-publish weekly research report, update watchlist and static pages [skip ci]"
             
             # 使用 pull --rebase 處理可能的併發寫入，然後 push
             git pull --rebase origin main || echo "Git pull rebase failed, continuing."
             git push origin main || git push --force-with-lease origin main
-            echo "成功將最新報告推送回預設分支。Repo 活躍度已更新！"
+            echo "成功將最新報告與靜態網頁推送回預設分支。Repo 活躍度已更新！"
           else
-            echo "無新報告變更，跳過 Keep-Alive 提交。"
+            echo "無新變更，跳過 Keep-Alive 提交。"
           fi
 
       # 8. 守護最後一步：向 DeadMan Webhook 發送 DONE 心跳
