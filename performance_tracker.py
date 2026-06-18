@@ -15,7 +15,7 @@ def load_watchlist() -> List[Dict[str, Any]]:
             with open(WATCHLIST_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"[⚠️ 警告] 讀取 watchlist.json 失敗: {e}，建立新名單。")
+            print(f"[WARN] 讀取 watchlist.json 失敗: {e}，建立新名單。")
             return []
     return []
 
@@ -25,7 +25,7 @@ def save_watchlist(watchlist: List[Dict[str, Any]]):
             json.dump(watchlist, f, indent=2, ensure_ascii=False)
         print(f"Watchlist 已成功儲存至 {WATCHLIST_FILE}")
     except Exception as e:
-        print(f"[❌ 錯誤] 儲存 watchlist.json 失敗: {e}")
+        print(f"[ERROR] 儲存 watchlist.json 失敗: {e}")
 
 def add_to_watchlist(company_id: str, name: str, entry_price: float, sector: str):
     """
@@ -56,7 +56,7 @@ def add_to_watchlist(company_id: str, name: str, entry_price: float, sector: str
     
     watchlist.append(new_target)
     save_watchlist(watchlist)
-    print(f"🎉 成功將新標的 {name} ({company_id}) 加入觀察追蹤名單，進場基準價: {entry_price}")
+    print(f"[OK] 成功將新標的 {name} ({company_id}) 加入觀察追蹤名單，進場基準價: {entry_price}")
 
 def update_watchlist_daily_prices():
     """
@@ -81,23 +81,45 @@ def update_watchlist_daily_prices():
         print(f"正在更新 {item['name']} ({cid})，進場日期: {entry_date_str}...")
         
         try:
-            # 下載自進場日至今的歷史日 K 線數據
-            # yfinance 的 start date 需要格式為 YYYY-MM-DD
-            # 設定結束日期為明天，以獲取今日最新收盤價
+            # 計算前推 3 個月的 start_date，確保有足夠的歷史 K 線，並解決剛加入當天 yfinance 無資料問題
+            entry_date = datetime.datetime.strptime(entry_date_str, "%Y-%m-%d").date()
+            start_date = (entry_date - datetime.timedelta(days=90)).strftime("%Y-%m-%d")
             end_date = (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-            df = yf.download(cid, start=entry_date_str, end=end_date, progress=False)
+            
+            df = yf.download(cid, start=start_date, end=end_date, progress=False)
             
             if df.empty:
-                print(f"[⚠️ 警告] 無法取得 {cid} 自 {entry_date_str} 至今的 K 線數據。")
+                print(f"[WARN] 無法取得 {cid} 自 {start_date} 至今的 K 線數據。")
                 continue
                 
-            # 將欄位名稱轉為小寫
+            # 將欄位名稱轉為小寫，並處理 MultiIndex
+            if df.columns.nlevels > 1:
+                df.columns = df.columns.get_level_values(0)
             df.columns = [c.lower() for c in df.columns]
             
+            # 儲存全數日 K 線數據，提供前端網頁繪製圖表使用
+            kline_list = []
+            for date_idx, row in df.iterrows():
+                kline_list.append({
+                    "date": date_idx.strftime("%Y-%m-%d"),
+                    "open": round(float(row["open"]), 2),
+                    "high": round(float(row["high"]), 2),
+                    "low": round(float(row["low"]), 2),
+                    "close": round(float(row["close"]), 2),
+                    "volume": int(row["volume"])
+                })
+            item["kline_data"] = kline_list
+            
+            # 核心修正：計算「進場以來」的最高、最低、當前收盤價，必須只過濾進場日之後的數據！
+            df_after_entry = df.loc[entry_date_str:]
+            if df_after_entry.empty:
+                # 剛加入當天如果無後續 K 線，使用最新一筆作為基準
+                df_after_entry = df.tail(1)
+                
             # 取得歷史 K 線之最高價、最低價及最新收盤價 (使用 ffill 處理盤中最新可能之 NaN)
-            max_price = float(df["high"].max())
-            min_price = float(df["low"].min())
-            current_price = float(df["close"].ffill().iloc[-1])
+            max_price = float(df_after_entry["high"].max())
+            min_price = float(df_after_entry["low"].min())
+            current_price = float(df_after_entry["close"].ffill().iloc[-1])
             
             # 計算回報率
             current_return = (current_price - entry_price) / entry_price * 100
@@ -117,7 +139,7 @@ def update_watchlist_daily_prices():
             # 此處可供後續策略擴充
             
         except Exception as e:
-            print(f"[❌ 錯誤] 更新 {cid} 股價失敗: {e}")
+            print(f"[ERROR] 更新 {cid} 股價失敗: {e}")
             
     save_watchlist(watchlist)
     print("====== 觀察名單價格更新完畢 ======")
@@ -200,9 +222,19 @@ def generate_performance_report() -> str:
     report += """
 ---
 
-## 三、 長期績效評估方法論說明
+## 三、 個股歷史走勢與進場標記 (Interactive Charts)
+"""
+    for item in watchlist:
+        chart_id = f"chart_{item['company_id'].replace('.', '_')}"
+        report += f"\n### 📈 {item['name']} ({item['company_id']}) 走勢與進場點\n"
+        report += f'<div id="{chart_id}" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>\n'
+
+    report += """
+---
+
+## 四、 長期績效評估方法論說明
 1. **進場基準判定**：當系統透過 LangGraph 品質評審 (PASS) 輸出報告時，會同步呼叫營收基期與設備 Backlog 模擬器。若篩選出「共識度低於 60% 且設備 Backlog YoY > 50%、下游營收在谷底」的非共識黃金建倉標的，即以**報告產生當日的收盤價**作為推薦基準買入價，並於本名單中開立追蹤。
-2. **K 線追蹤防看前偏差**：系統每天利用 yfinance 自動拉取追蹤標的之每日日 K 線數據，動態刷新「推薦日之後的最高價與最低價」，排除任何歷史 look-ahead bias。
+2. **K 線追蹤與時間加長**：系統自動獲取該股進場日期**往前推 3 個月 (90天)** 至今日的歷史日 K 線。計算收益率與最高/最低波段價格時，僅過濾並計算進場後之數據，防範 NaN 出錯，同時於圖表上標記進場錨點。
 3. **退場與勝率計算**：勝率專注於中期（12-18個月）的「波段最大漲幅能否達標 ($15\%$)」，作為系統能否精確領先市場預見熱點的勝率證明。
 """
 

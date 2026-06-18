@@ -110,8 +110,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
-        :root {{
+        :root {
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             --text-color: #f1f5f9;
             --primary-cyan: #38bdf8;
@@ -120,8 +121,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             --card-bg: rgba(30, 41, 59, 0.7);
             --border-color: rgba(255, 255, 255, 0.08);
             --table-border: rgba(255, 255, 255, 0.06);
-        }}
-        body {{
+        }
+        body {
             font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
             background: var(--bg-gradient);
             background-attachment: fixed;
@@ -129,8 +130,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin: 0;
             padding: 0;
             line-height: 1.7;
-        }}
-        .header {{
+        }
+        .header {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--border-color);
@@ -141,8 +142,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             position: sticky;
             top: 0;
             z-index: 100;
-        }}
-        .logo {{
+        }
+        .logo {
             font-family: 'Outfit', sans-serif;
             font-size: 1.25rem;
             font-weight: 800;
@@ -150,23 +151,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             letter-spacing: 1px;
             display: flex;
             align-items: center;
-        }}
-        .logo span {{
+        }
+        .logo span {
             color: #fff;
             margin-left: 6px;
-        }}
-        .nav-links a {{
+        }
+        .nav-links a {
             color: #94a3b8;
             text-decoration: none;
             margin-left: 20px;
             font-size: 0.9rem;
             font-weight: 500;
             transition: color 0.2s;
-        }}
-        .nav-links a:hover, .nav-links a.active {{
+        }
+        .nav-links a:hover, .nav-links a.active {
             color: var(--primary-cyan);
-        }}
-        .container {{
+        }
+        .container {
             max-width: 960px;
             margin: 40px auto;
             padding: 40px;
@@ -175,16 +176,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border: 1px solid var(--border-color);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        }}
+        }
         /* Markdown 內容精細排版 */
-        h1, h2, h3, h4 {{
+        h1, h2, h3, h4 {
             font-family: 'Outfit', 'Noto Sans TC', sans-serif;
             font-weight: 700;
             color: #ffffff;
             margin-top: 1.8em;
             margin-bottom: 0.6em;
-        }}
-        h1 {{
+        }
+        h1 {
             font-size: 2.2rem;
             color: var(--primary-cyan);
             border-bottom: 2px solid rgba(56, 189, 248, 0.2);
@@ -193,22 +194,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             background: linear-gradient(to right, #38bdf8, #818cf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-        }}
-        h2 {{
+        }
+        h2 {
             font-size: 1.6rem;
             border-left: 5px solid var(--accent-green);
             padding-left: 14px;
-        }}
-        h3 {{
+        }
+        h3 {
             font-size: 1.25rem;
             color: #e2e8f0;
-        }}
-        p {{
+        }
+        p {
             color: #cbd5e1;
             margin-bottom: 1.5em;
-        }}
+        }
         /* 表格現代化樣式 */
-        table {{
+        table {
             width: 100%;
             border-collapse: collapse;
             margin: 28px 0;
@@ -216,75 +217,75 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--table-border);
-        }}
-        th, td {{
+        }
+        th, td {
             padding: 14px 18px;
             text-align: left;
             border-bottom: 1px solid var(--table-border);
             font-size: 0.95rem;
-        }}
-        th {{
+        }
+        th {
             background-color: rgba(56, 189, 248, 0.08);
             color: var(--primary-cyan);
             font-weight: 600;
             text-transform: uppercase;
             font-size: 0.85rem;
             letter-spacing: 0.5px;
-        }}
-        tr:last-child td {{
+        }
+        tr:last-child td {
             border-bottom: none;
-        }}
-        tr:hover td {{
+        }
+        tr:hover td {
             background: rgba(255, 255, 255, 0.01);
-        }}
+        }
         /* 區塊引用與警示 */
-        blockquote {{
+        blockquote {
             background: rgba(56, 189, 248, 0.05);
             border-left: 4px solid var(--primary-cyan);
             padding: 16px 20px;
             margin: 20px 0;
             border-radius: 0 12px 12px 0;
-        }}
-        blockquote p {{
+        }
+        blockquote p {
             margin: 0;
             color: #93c5fd;
             font-style: italic;
-        }}
+        }
         /* 程式碼與公式 */
-        pre {{
+        pre {
             background: #0f172a;
             padding: 18px;
             border-radius: 12px;
             overflow-x: auto;
             border: 1px solid var(--border-color);
-        }}
-        code {{
+        }
+        code {
             font-family: 'Fira Code', 'Courier New', monospace;
             background: rgba(255, 255, 255, 0.07);
             padding: 3px 7px;
             border-radius: 6px;
             color: #f472b6;
             font-size: 0.9rem;
-        }}
-        pre code {{
+        }
+        pre code {
             background: none;
             padding: 0;
             color: #e2e8f0;
-        }}
-        hr {{
+        }
+        hr {
             border: none;
             border-top: 1px solid var(--border-color);
             margin: 40px 0;
-        }}
-        a {{
+        }
+        a {
             color: var(--primary-cyan);
             text-decoration: none;
             transition: opacity 0.2s;
-        }}
-        a:hover {{
+        }
+        a:hover {
             opacity: 0.8;
             text-decoration: underline;
-        }}
+        }
     </style>
 </head>
 <body>
@@ -305,6 +306,88 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         // 讀取 Raw Markdown 字串並使用 marked 渲染
         const rawMarkdown = `{markdown_content}`;
         document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 動態渲染 ApexCharts K 線圖
+        const watchlistData = {watchlist_data_json};
+        if (watchlistData && watchlistData.length > 0) {
+            watchlistData.forEach(item => {
+                const cleanId = 'chart_' + item.company_id.replace('.', '_');
+                const container = document.getElementById(cleanId);
+                if (container && item.kline_data && item.kline_data.length > 0) {
+                    const entryTime = new Date(item.entry_date).getTime();
+                    
+                    const options = {
+                        series: [{
+                            name: '收盤價',
+                            data: item.kline_data.map(k => [new Date(k.date).getTime(), k.close])
+                        }],
+                        chart: {
+                            type: 'area',
+                            height: 240,
+                            background: 'transparent',
+                            toolbar: { show: false },
+                            foreColor: '#94a3b8'
+                        },
+                        colors: ['#38bdf8'],
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.3,
+                                opacityTo: 0.05,
+                                stops: [0, 90, 100]
+                            }
+                        },
+                        stroke: { curve: 'smooth', width: 2 },
+                        xaxis: {
+                            type: 'datetime',
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => val.toFixed(1)
+                            }
+                        },
+                        grid: { borderColor: 'rgba(255,255,255,0.04)' },
+                        annotations: {
+                            xaxis: [{
+                                x: entryTime,
+                                strokeDashArray: 4,
+                                borderColor: '#10b981',
+                                label: {
+                                    borderColor: '#10b981',
+                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
+                                    text: '列入觀察 (' + item.entry_date + ')'
+                                }
+                            }],
+                            points: [{
+                                x: entryTime,
+                                y: item.entry_price,
+                                marker: {
+                                    size: 6,
+                                    fillColor: '#10b981',
+                                    strokeColor: '#fff',
+                                    radius: 2
+                                },
+                                label: {
+                                    borderColor: '#10b981',
+                                    offsetY: -10,
+                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
+                                    text: '進場點: ' + item.entry_price
+                                }
+                            }]
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            x: { format: 'yyyy-MM-dd' }
+                        }
+                    };
+                    const chart = new ApexCharts(container, options);
+                    chart.render();
+                }
+            });
+        }
     </script>
 </body>
 </html>
@@ -335,7 +418,8 @@ def get_latest_report_web_view():
     
     html_page = HTML_TEMPLATE.format(
         title="最新市場熱點預見報告",
-        markdown_content=safe_md_content
+        markdown_content=safe_md_content,
+        watchlist_data_json="[]"
     )
     return HTMLResponse(html_page)
 
@@ -353,9 +437,18 @@ def get_latest_performance_web_view():
         
     safe_md_content = md_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
     
+    watchlist_json = "[]"
+    if os.path.exists("watchlist.json"):
+        try:
+            with open("watchlist.json", "r", encoding="utf-8") as f:
+                watchlist_json = f.read()
+        except Exception:
+            pass
+            
     html_page = HTML_TEMPLATE.format(
         title="系統績效與勝率統計報告",
-        markdown_content=safe_md_content
+        markdown_content=safe_md_content,
+        watchlist_data_json=watchlist_json
     )
     return HTMLResponse(html_page)
 

@@ -43,7 +43,7 @@ class MarketInformationMonitor:
                 "timeline": {"design_win": "2025-Q1", "pilot": "2026-Q1", "ramp_up": "2026-Q3"}
             },
             {
-                "company_id": "3131.TW",  # 弘塑 (GrandProcess)
+                "company_id": "3131.TWO",  # 弘塑 (GrandProcess)
                 "name": "GrandProcess",
                 "segment": "equipment",
                 "content_value_by_gen": {"Vera_Rubin": 10.0, "Feynman": 18.0, "Feynman_Next": 26.0},
@@ -61,7 +61,7 @@ class MarketInformationMonitor:
                 "timeline": {"design_win": "2025-Q1", "pilot": "2026-Q1", "ramp_up": "2026-Q3"}
             },
             {
-                "company_id": "3324.TW",  # 雙鴻 (Auras)
+                "company_id": "3324.TWO",  # 雙鴻 (Auras)
                 "name": "Auras",
                 "segment": "cooling",
                 "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 12.0, "Feynman_Next": 18.0},

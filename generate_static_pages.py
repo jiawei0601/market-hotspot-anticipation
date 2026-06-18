@@ -1,7 +1,7 @@
 import os
 import glob
 
-# 移植與優化的靜態 HTML 模板 (將路徑對齊為 index.html 與 performance.html)
+# 移植與優化的靜態 HTML 模板 (加入 ApexCharts 支援)
 STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
 <head>
@@ -10,6 +10,7 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         :root {{
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
@@ -208,6 +209,88 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
         // 讀取 Raw Markdown 字串並使用 marked 渲染
         const rawMarkdown = `{markdown_content}`;
         document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 動態渲染 ApexCharts K 線圖
+        const watchlistData = {watchlist_data_json};
+        if (watchlistData && watchlistData.length > 0) {{
+            watchlistData.forEach(item => {{
+                const cleanId = 'chart_' + item.company_id.replace('.', '_');
+                const container = document.getElementById(cleanId);
+                if (container && item.kline_data && item.kline_data.length > 0) {{
+                    const entryTime = new Date(item.entry_date).getTime();
+                    
+                    const options = {{
+                        series: [{{
+                            name: '收盤價',
+                            data: item.kline_data.map(k => [new Date(k.date).getTime(), k.close])
+                        }}],
+                        chart: {{
+                            type: 'area',
+                            height: 240,
+                            background: 'transparent',
+                            toolbar: {{ show: false }},
+                            foreColor: '#94a3b8'
+                        }},
+                        colors: ['#38bdf8'],
+                        fill: {{
+                            type: 'gradient',
+                            gradient: {{
+                                shadeIntensity: 1,
+                                opacityFrom: 0.3,
+                                opacityTo: 0.05,
+                                stops: [0, 90, 100]
+                            }}
+                        }},
+                        stroke: {{ curve: 'smooth', width: 2 }},
+                        xaxis: {{
+                            type: 'datetime',
+                            axisBorder: {{ show: false }},
+                            axisTicks: {{ show: false }}
+                        }},
+                        yaxis: {{
+                            labels: {{
+                                formatter: (val) => val.toFixed(1)
+                            }}
+                        }},
+                        grid: {{ borderColor: 'rgba(255,255,255,0.04)' }},
+                        annotations: {{
+                            xaxis: [{{
+                                x: entryTime,
+                                strokeDashArray: 4,
+                                borderColor: '#10b981',
+                                label: {{
+                                    borderColor: '#10b981',
+                                    style: {{ color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] }},
+                                    text: '列入觀察 (' + item.entry_date + ')'
+                                }}
+                            }}],
+                            points: [{{
+                                x: entryTime,
+                                y: item.entry_price,
+                                marker: {{
+                                    size: 6,
+                                    fillColor: '#10b981',
+                                    strokeColor: '#fff',
+                                    radius: 2
+                                }},
+                                label: {{
+                                    borderColor: '#10b981',
+                                    offsetY: -10,
+                                    style: {{ color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] }},
+                                    text: '進場點: ' + item.entry_price
+                                }}
+                            }}]
+                        }},
+                        tooltip: {{
+                            theme: 'dark',
+                            x: {{ format: 'yyyy-MM-dd' }}
+                        }}
+                    }};
+                    const chart = new ApexCharts(container, options);
+                    chart.render();
+                }}
+            }});
+        }}
     </script>
 </body>
 </html>
@@ -239,7 +322,8 @@ def generate_static_pages():
     safe_md_content = md_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
     html_page = STATIC_HTML_TEMPLATE.format(
         title="最新市場熱點預見報告",
-        markdown_content=safe_md_content
+        markdown_content=safe_md_content,
+        watchlist_data_json="[]"
     )
 
     with open("docs/index.html", "w", encoding="utf-8") as f:
@@ -260,9 +344,19 @@ def generate_static_pages():
 """
 
     safe_perf_content = perf_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+    
+    watchlist_json = "[]"
+    if os.path.exists("watchlist.json"):
+        try:
+            with open("watchlist.json", "r", encoding="utf-8") as f:
+                watchlist_json = f.read()
+        except Exception:
+            pass
+
     perf_html_page = STATIC_HTML_TEMPLATE.format(
         title="系統績效與勝率統計報告",
-        markdown_content=safe_perf_content
+        markdown_content=safe_perf_content,
+        watchlist_data_json=watchlist_json
     )
 
     with open("docs/performance.html", "w", encoding="utf-8") as f:

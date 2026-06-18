@@ -145,7 +145,7 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     - **核心優化**：解讀上游設備 Backlog 訂單 (Equipment Backlog)，該指標領分成品營收 6 個月，藉此捕捉股價起漲的先行信號。
     """
     sector = state["target_sector"]
-    company_ids = ["3450.TW", "3131.TW", "3013.TW", "3324.TW"]
+    company_ids = ["3450.TW", "3131.TWO", "3013.TW", "3324.TWO"]
     
     # 呼叫數據監控引擎
     pricing_data = monitor.get_high_frequency_pricing(sector)
@@ -184,11 +184,11 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
             f"### 設備 Backlog 領先指標與成品營收 YoY 拐點分析\n"
             f"1. **Catalyst 報價突破**：先進封裝設備材料指數近一月上漲 {pricing_data['weekly_change_pct']}%，報價率先止跌突破，資金催化劑成熟。\n"
             f"2. **設備 Backlog (領先 6 個月) 與營收 YoY 交叉驗證**：\n"
-            f"   - **GrandProcess (弘塑 - 3131.TW)**：目前下游成品營收 YoY 僅為 11.20% (處於低谷)，但其設備訂單 Backlog YoY 已經飆升至 **84.50%**，確認處於極強拉貨期，此為最領先的起漲訊號。\n"
+            f"   - **GrandProcess (弘塑 - 3131.TWO)**：目前下游成品營收 YoY 僅為 11.20% (處於低谷)，但其設備訂單 Backlog YoY 已經飆升至 **84.50%**，確認處於極強拉貨期，此為最領先的起漲訊號。\n"
             f"{foci_line}\n"
-            f"   - **Auras (雙鴻 - 3324.TW)**：成品營收 YoY 目前僅 8.9%，但設備與 DTC 專案 Backlog YoY 達 **52.40%**，符合『營收在谷底、Backlog 已動』的領先特徵。\n"
+            f"   - **Auras (雙鴻 - 3324.TWO)**：成品營收 YoY 目前僅 8.9%，但設備與 DTC 專案 Backlog YoY 達 **52.40%**，符合『營收在谷底、Backlog 已動』的領先特徵。\n"
             f"3. **黃金潛伏標的判定 (非共識黃金交叉)**：\n"
-            f"   - **GrandProcess (3131.TW)** 完美符合『低共識度 (35.0)、成品營收在谷底、設備訂單已率先暴增』之黃金潛伏標的特徵，股價尚未反映此 Backlog 爆發。"
+            f"   - **GrandProcess (3131.TWO)** 完美符合『低共識度 (35.0)、成品營收在谷底、設備訂單已率先暴增』之黃金潛伏標的特徵，股價尚未反映此 Backlog 爆發。"
         )
 
     return {
