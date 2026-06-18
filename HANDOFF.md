@@ -15,7 +15,7 @@
   - [x] 寫入單元測試且全數通過 (8/8 OK)
   - [x] 第一版推送至 GitHub 私有倉庫 (`market-hotspot-anticipation`)
   - [x] 依用戶要求將 LLM 核心模型改為 **Gemini 3.1 Pro**，並將環境變數切換為 **GEMINI_API_KEY**
-  - [x] 實作 `send_email.py` 並在 GitHub Actions 中自動發信
+  - [x] 實作 `send_email.py` 並在 GitHub Actions 中自動發信 (已依需求刪除此功能與檔案)
   - [x] 實作 `app.py` 與 `Procfile`，完成 Railway 雲端部署與 API 觸發機制配置，並設定內建排程為台灣時間週一 07:30
   - [x] 實作 `performance_tracker.py` 並對接狀態機與 API，實現觀察名單 (`watchlist.json`) 每日 K 線股價追蹤與系統勝率評估報告
   - [x] 實作 `/latest-report` 與 `/latest-performance` 網頁固定連結，以精美毛玻璃深色模式直接渲染最新 Markdown 報告
@@ -33,10 +33,9 @@
   - 網頁渲染 Markdown 採用前端 CDN 讀取 `marked.js` 的無伺服器架構，免去 Python 後端依賴包的編譯與維護成本，同時提供最精美的高級 HSL 毛玻璃深色主題。
 - 雷區 / 別碰：
   - 注意 Windows 終端機編碼 (cp950) 的 stdout 輸出。代碼中已移除了 emojis 以防止 stdout編碼崩潰。
-  - 在 GitHub Actions 中跑測試需指定合適的 python 環境，本地測試則需使用 C:\Users\chang\AppData\Local\Programs\Python\Python312\python.exe 執行。
+  - 在 GitHub Actions 中跑測試需指定合適的 python env，已設定 `python-version: '3.12'` 確保其依賴安裝與環境正確。
 - 怎麼跑 / 怎麼測：
   - 執行掃描：`python main_agent.py --sector CPO_Optical_Transceiver` (需要 GEMINI_API_KEY)
   - 跑測試：`C:\Users\chang\AppData\Local\Programs\Python\Python312\python.exe -m unittest discover tests`
-  - 測試發信：在 `.env` 中設定 SMTP 資料後執行 `python send_email.py`
-  - 運行 Web 伺服器：`python app.py` (預設 port: 8080，支援 POST `/run` 手動發信與分析，並內建台灣時間週一 07:30 自動排程)
+  - 運行 Web 伺服器：`python app.py` (預設 port: 8080，支援 POST `/run` 手動分析，並內建台灣時間週一 07:30 自動排程)
   - 檢視績效網頁：直接在瀏覽器訪問 `GET /latest-performance` 取得勝率與詳細表單，或 `GET /latest-report` 取得最新熱點可行性評估報告。

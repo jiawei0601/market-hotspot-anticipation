@@ -14,19 +14,17 @@ if os.path.exists(".env"):
                 key, val = stripped.split("=", 1)
                 os.environ[key.strip()] = val.strip()
 
-# 引入狀態機與發信
+# 引入狀態機
 from main_agent import run_hotspot_scan
-from send_email import send_latest_report
 
 app = FastAPI(title="Market Hotspot Anticipation Service")
 scheduler = BackgroundScheduler()
 
 # 定義自動化定時工作
 def weekly_task():
-    print(f"=== [排程觸發] 開始每週熱點掃描與發信 ({datetime.datetime.now()}) ===")
+    print(f"=== [排程觸發] 開始每週熱點掃描 ({datetime.datetime.now()}) ===")
     try:
         run_hotspot_scan("CPO_Optical_Transceiver")
-        send_latest_report()
         print("=== [排程觸發] 執行完畢 ===")
     except Exception as e:
         print(f"[❌ 排程出錯] 原因: {e}")
@@ -455,20 +453,19 @@ def get_latest_performance_web_view():
 # =================================================================
 
 # 異步執行包裝
-def trigger_analysis_and_mail():
+def trigger_analysis():
     try:
         run_hotspot_scan("CPO_Optical_Transceiver")
-        send_latest_report()
     except Exception as e:
         print(f"手動觸發執行失敗: {e}")
 
 @app.post("/run")
 def trigger_now(background_tasks: BackgroundTasks):
-    background_tasks.add_task(trigger_analysis_and_mail)
+    background_tasks.add_task(trigger_analysis)
     return JSONResponse(
         content={
             "status": "processing",
-            "message": "熱點分析與發信任務已在背景啟動，請稍候查收郵件。"
+            "message": "熱點分析任務已在背景啟動，請稍候重新載入頁面。"
         }
     )
 
