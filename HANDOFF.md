@@ -2,8 +2,8 @@
 
 > 兩個 agent 交接的唯一現況真相。離開前更新，接手前先讀。
 
-- 最後更新：Antigravity (Gemini 3.1 Pro) @ 2026-06-18 23:05
-- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入、GitHub Actions + GitHub Pages 無伺服器排程與發佈、績效/勝率追蹤、證交所每月營收真實數據對接)
+- 最後更新：Antigravity (Gemini 3.1 Pro) @ 2026-06-18 23:10
+- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 Gemini 3.1 Pro 接入、GitHub Actions + GitHub Pages 無伺服器排程與發佈、績效/勝率追蹤、證交所每月營收真實數據對接、Bug與邊界安全防護)
 - 已完成：
   - [x] 實作計畫 (Implementation Plan) 經用戶審查通過
   - [x] 撰寫 PRD 規格書 (`docs/prd_market_hotspot_system.md`)
@@ -20,8 +20,9 @@
   - [x] 實作 `performance_tracker.py` 並對接狀態機與 API，實現觀察名單 (`watchlist.json`) 每日 K 線股價追蹤與系統勝率評估報告
   - [x] 實作 `/latest-report` 與 `/latest-performance` 網頁固定連結，以精美毛玻璃深色模式直接渲染最新 Markdown 報告
   - [x] 實作 `generate_static_pages.py` 並整合至 GitHub Actions 流水線，實現每週自動將報告編譯並部署至 GitHub Pages
+  - [x] 根據 Double Review 結果，修復 yfinance 收盤價 NaN 問題與營收 YoY 逆推之極端值防護
 - 進行中（做到哪一步）：
-  - 專案已完全實現真實台灣證券交易所每月營收 API 的整合。
+  - 專案已完全實現真實台灣證券交易所每月營收 API 的整合，並根據 Double Review 修復了邊界 Bugs。
 - 下一步：
   - 定期觀看 GitHub Actions 的每週運行產出。
 - 關鍵決策 + 為什麼：

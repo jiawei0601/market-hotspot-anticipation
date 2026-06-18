@@ -94,10 +94,10 @@ def update_watchlist_daily_prices():
             # 將欄位名稱轉為小寫
             df.columns = [c.lower() for c in df.columns]
             
-            # 取得歷史 K 線之最高價、最低價及最新收盤價
+            # 取得歷史 K 線之最高價、最低價及最新收盤價 (使用 ffill 處理盤中最新可能之 NaN)
             max_price = float(df["high"].max())
             min_price = float(df["low"].min())
-            current_price = float(df["close"].iloc[-1])
+            current_price = float(df["close"].ffill().iloc[-1])
             
             # 計算回報率
             current_return = (current_price - entry_price) / entry_price * 100

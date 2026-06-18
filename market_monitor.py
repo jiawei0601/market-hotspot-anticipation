@@ -258,8 +258,11 @@ class MarketInformationMonitor:
                 # 利用數學逆推：將去年同月基期設定為與真實 YoY 對齊的數值
                 # yoy = (curr - prev) / prev * 100 => prev = curr / (1 + yoy/100)
                 denom = 1.0 + (real_yoy_pct / 100.0)
-                if denom != 0:
+                if denom > 0.01:  # 限制最大 YoY 跌幅在 -99% 以內，防範除零與極端基期爆發
                     last_year_rev[8] = round(real_rev_val / denom, 2)
+                else:
+                    # 極端情況下 (YoY 幾近腰斬或歸零)，採用模擬的歷史比例逆推
+                    last_year_rev[8] = round(real_rev_val * 2.0, 2)
             
             # 3. 模擬未來 3 個月出貨放量 (以最新月份營收為基期，設備商放量預期較陡)
             last_actual_rev = current_year_rev[-1]
