@@ -38,7 +38,12 @@
 - **Consensus**：股價＋外資持股%，各算「自身 12M 歷史百分位」＋「橫斷面同儕排名」，等權混合 0–100。
 - **Backlog**：板塊 `segment=equipment` 真月營收 YoY 聚合（誠實限制：動能背離代理、非真訂單）。
 - 接上真 PIT 後：market_monitor 三訊號改用真資料、回測引擎讀真 PIT 並**移除「示意」抬頭**。
-- ⚠️ 實作第一步＝小探查：實打 FinMind/TWSE 端點確認回傳歷史＋日期，再正式建。
+- ✅ **端點探查已完成（2026-06-19，已驗證可用）**：
+  - **FinMind `TaiwanStockMonthRevenue`**（無需 token）：3131 自 2015 有 138 月；欄位 `revenue`(單位**元**，÷1e8=億)、`revenue_month`/`revenue_year`(營收所屬期)、`date`、`create_time`(近期=**公布日**如 `2026-06-10`；舊資料為空)。PIT 可見性：**有 `create_time` 則用之，無則套「次月 10 日」規則**。
+  - **FinMind `TaiwanStockShareholding`**（無需 token，日頻）：`ForeignInvestmentSharesRatio`＝外資持股%（Consensus 用），含 `date`、`RecentlyDeclareDate`。
+  - **TWSE `openapi t187ap05_L`** 仍可用（最新月、1082 筆）→ 官方 fallback/校驗。
+  - ⚠️ FinMind 免費**有限流** → 回填要溫和（逐檔/快取、加 sleep），勿一次打爆。
+- 建置順序建議：①回填 revenue+holdings 至 `data/snapshots/`（一次性、不可變）②`pit_store` 加 revenue/holdings 讀取 ③`market_monitor`：Backlog=板塊 equipment 真營收 YoY 聚合、Consensus=12M百分位+同儕排名混合、`simulate_revenue_inflection` 改用真營收 ④回測引擎讀真 PIT、移除示意抬頭 ⑤補測試。
 - 次要結構債：yfinance 價格**倖存者偏差**（下市股消失）；兩回測引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導（脆弱、待改為傳參）。
 - **鐵律**：快照不可變、門檻/權重先驗固定不回測 tune。
 
