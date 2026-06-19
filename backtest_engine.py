@@ -15,6 +15,23 @@ from market_monitor import MarketInformationMonitor
 BACKTEST_WATCHLIST_FILE = "backtest_watchlist.json"
 BACKTEST_REPORT = "reports/backtest_results.md"
 
+CHINESE_MAPPING = {
+    "3131.TWO": "3131.弘塑",
+    "3131.TW": "3131.弘塑",
+    "3583.TW": "3583.辛耘",
+    "6187.TWO": "6187.萬潤",
+    "6683.TWO": "6683.雍智科技",
+    "3324.TWO": "3324.雙鴻",
+    "3017.TW": "3017.奇鋐",
+    "2486.TW": "2486.一詮",
+    "3680.TWO": "3680.家登",
+    "3680.TW": "3680.家登",
+    "6223.TWO": "6223.旺矽",
+    "8027.TWO": "8027.鈦昇",
+    "3450.TW": "3450.聯鈞",
+    "3013.TW": "3013.晟銘電"
+}
+
 class BacktestEngine:
     def __init__(self, start_date_str: str, end_date_str: str, sector: str):
         self.start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
@@ -144,10 +161,11 @@ class BacktestEngine:
             total_return += item["current_return_pct"]
             status_icon = "🟢 成功 (Win)" if is_win else "🔴 失敗 (Loss)"
             
+            display_name = CHINESE_MAPPING.get(item['company_id'], f"{item['company_id']}.{item['name']}")
             trade_rows.append(
-                f"| {idx+1} | {item['name']} ({item['company_id']}) | {item['entry_date']} | "
-                f"{item['entry_price']} | {item['current_price']} | {item['max_return_pct']}% | "
-                f"{item['current_return_pct']}% | {status_icon} |"
+                f"| {idx+1} | **{display_name}** | {item['entry_date']} | "
+                f"{int(round(item['entry_price']))} | {int(round(item['current_price']))} | {item['max_return_pct']:.1f}% | "
+                f"{item['current_return_pct']:.1f}% | {status_icon} |"
             )
             
         win_rate = (win_trades / total_trades * 100) if total_trades > 0 else 0.0
@@ -156,7 +174,7 @@ class BacktestEngine:
         report_content = f"""# 歷史無未來數據偏誤回測系統報告 (Point-in-Time)
 
 本報告記錄了自 {self.start_date} 至 {self.end_date} 期間，系統以**週**為單位進行模擬回測的結果。
-所有買入決策與技術指標計算皆採用當時點之前的歷史截斷數據，杜絕任何 Look-ahead Bias。
+All 買入決策與技術指標計算皆採用當時點之前的歷史截斷數據，杜絕任何 Look-ahead Bias。
 
 ## 📊 核心回測指標
 
@@ -166,8 +184,8 @@ class BacktestEngine:
 | **回測結束時間** | {self.end_date} |
 | **交易推薦總數** | {total_trades} 次 |
 | **成功交易次數 (漲幅 > 15%)** | {win_trades} 次 |
-| **系統勝率 (Win Rate)** | **{win_rate:.2f}%** |
-| **平均持有回報率** | **{avg_return:.2f}%** |
+| **系統勝率 (Win Rate)** | **{win_rate:.1f}%** |
+| **平均持有回報率** | **{avg_return:.1f}%** |
 
 ## 📈 詳細交易歷史明細
 

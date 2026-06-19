@@ -9,6 +9,23 @@ import yfinance as yf
 WATCHLIST_FILE = "watchlist.json"
 PERFORMANCE_REPORT = "reports/performance_tracker_summary.md"
 
+CHINESE_MAPPING = {
+    "3131.TWO": "3131.弘塑",
+    "3131.TW": "3131.弘塑",
+    "3583.TW": "3583.辛耘",
+    "6187.TWO": "6187.萬潤",
+    "6683.TWO": "6683.雍智科技",
+    "3324.TWO": "3324.雙鴻",
+    "3017.TW": "3017.奇鋐",
+    "2486.TW": "2486.一詮",
+    "3680.TWO": "3680.家登",
+    "3680.TW": "3680.家登",
+    "6223.TWO": "6223.旺矽",
+    "8027.TWO": "8027.鈦昇",
+    "3450.TW": "3450.聯鈞",
+    "3013.TW": "3013.晟銘電"
+}
+
 def load_watchlist() -> List[Dict[str, Any]]:
     if os.path.exists(WATCHLIST_FILE):
         try:
@@ -201,10 +218,10 @@ def generate_performance_report() -> str:
 | 指標名稱 | 統計結果 | 說明 |
 | :--- | :--- | :--- |
 | **追蹤標的總數** | **{total_targets} 支** | 系統主動甄選之非共識黃金建倉標的 |
-| **系統勝率 (Win Rate)** | **{win_rate:.2f}%** | 最大漲幅達標 $\ge {target_win_threshold}\%$ 的標的比率 |
-| **平均當前回報率** | **{avg_current_return:+.2f}%** | 若買入持有至今的等權重平均收益率 |
-| **平均最大潛在漲幅** | **{avg_max_return:+.2f}%** | 推薦後平均最大波段漲幅 |
-| **平均最大波段回撤** | **{avg_max_drawdown:.2f}%** | 推薦後曾遭遇的平均最大跌幅 |
+| **系統勝率 (Win Rate)** | **{win_rate:.1f}%** | 最大漲幅達標 $\ge {target_win_threshold}\%$ 的標的比率 |
+| **平均當前回報率** | **{avg_current_return:+.1f}%** | 若買入持有至今的等權重平均收益率 |
+| **平均最大潛在漲幅** | **{avg_max_return:+.1f}%** | 推薦後平均最大波段漲幅 |
+| **平均最大波段回撤** | **{avg_max_drawdown:.1f}%** | 推薦後曾遭遇的平均最大跌幅 |
 
 ---
 
@@ -216,11 +233,12 @@ def generate_performance_report() -> str:
 
     for item in watchlist:
         status_emoji = "🟢 追蹤中" if item["status"] == "tracking" else "🔴 已結案"
+        display_name = CHINESE_MAPPING.get(item['company_id'], f"{item['company_id']}.{item['name']}")
         report += (
-            f"| **{item['company_id']}**<br>{item['name']} | {item['sector']} | "
-            f"{item['entry_date']} | {item['entry_price']} | {item['current_price']} | "
-            f"**{item['current_return_pct']:+.2f}%** | **{item['max_return_pct']:+.2f}%** | "
-            f"{item['min_return_pct']:.2f}% | {status_emoji} |\n"
+            f"| **{display_name}** | {item['sector']} | "
+            f"{item['entry_date']} | {int(round(item['entry_price']))} | {int(round(item['current_price']))} | "
+            f"**{item['current_return_pct']:+.1f}%** | **{item['max_return_pct']:+.1f}%** | "
+            f"{item['min_return_pct']:.1f}% | {status_emoji} |\n"
         )
         
     report += """

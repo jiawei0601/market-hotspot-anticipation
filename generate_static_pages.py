@@ -13,14 +13,18 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         :root {{
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            --text-color: #f1f5f9;
-            --primary-cyan: #38bdf8;
-            --accent-green: #10b981;
-            --accent-orange: #f59e0b;
-            --card-bg: rgba(30, 41, 59, 0.7);
+            --bg-gradient: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 60%, #090d16 100%);
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary-cyan: #22d3ee;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-orange: #fbbf24;
+            --card-bg: rgba(15, 23, 42, 0.65);
             --border-color: rgba(255, 255, 255, 0.08);
-            --table-border: rgba(255, 255, 255, 0.06);
+            --table-border: rgba(255, 255, 255, 0.05);
+            --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            --glass-bg: rgba(15, 23, 42, 0.75);
         }}
         body {{
             font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
@@ -29,11 +33,12 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            line-height: 1.7;
+            line-height: 1.6;
         }}
         .header {{
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             padding: 16px 40px;
             display: flex;
@@ -42,114 +47,184 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }}
         .logo {{
             font-family: 'Outfit', sans-serif;
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             font-weight: 800;
             color: var(--primary-cyan);
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             display: flex;
             align-items: center;
         }}
         .logo span {{
             color: #fff;
             margin-left: 6px;
+            font-weight: 400;
+            font-size: 1.1rem;
+        }}
+        .logo-dot {{
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 2s infinite;
+        }}
+        @keyframes pulse {{
+            0% {{ transform: scale(0.9); opacity: 0.6; }}
+            50% {{ transform: scale(1.1); opacity: 1; }}
+            100% {{ transform: scale(0.9); opacity: 0.6; }}
         }}
         .nav-links a {{
-            color: #94a3b8;
+            color: var(--text-muted);
             text-decoration: none;
-            margin-left: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.2s;
+            margin-left: 24px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 20px;
         }}
         .nav-links a:hover, .nav-links a.active {{
-            color: var(--primary-cyan);
+            color: #fff;
+            background: rgba(34, 211, 238, 0.15);
+            box-shadow: inset 0 0 1px rgba(34, 211, 238, 0.5);
         }}
         .container {{
-            max-width: 960px;
+            max-width: 1100px;
             margin: 40px auto;
             padding: 40px;
             background: var(--card-bg);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
         }}
         /* Markdown 內容精細排版 */
         h1, h2, h3, h4 {{
             font-family: 'Outfit', 'Noto Sans TC', sans-serif;
             font-weight: 700;
             color: #ffffff;
-            margin-top: 1.8em;
-            margin-bottom: 0.6em;
+            margin-top: 2em;
+            margin-bottom: 0.8em;
         }}
         h1 {{
-            font-size: 2.2rem;
-            color: var(--primary-cyan);
-            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
-            padding-bottom: 12px;
+            font-size: 2.4rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 16px;
             margin-top: 0;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
+            background: linear-gradient(135deg, #22d3ee, #818cf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-weight: 800;
         }}
         h2 {{
-            font-size: 1.6rem;
-            border-left: 5px solid var(--accent-green);
-            padding-left: 14px;
+            font-size: 1.65rem;
+            border-left: 4px solid var(--primary-cyan);
+            padding-left: 16px;
+            margin-top: 1.8em;
         }}
         h3 {{
             font-size: 1.25rem;
-            color: #e2e8f0;
+            color: #f1f5f9;
         }}
         p {{
             color: #cbd5e1;
-            margin-bottom: 1.5em;
+            margin-bottom: 1.6em;
+            font-size: 1rem;
         }}
         /* 表格現代化樣式 */
         table {{
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin: 28px 0;
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 16px;
             overflow: hidden;
             border: 1px solid var(--table-border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }}
         th, td {{
-            padding: 14px 18px;
+            padding: 16px 20px;
             text-align: left;
             border-bottom: 1px solid var(--table-border);
-            font-size: 0.95rem;
+            font-size: 0.92rem;
         }}
         th {{
-            background-color: rgba(56, 189, 248, 0.08);
+            background-color: rgba(34, 211, 238, 0.06);
             color: var(--primary-cyan);
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+            letter-spacing: 0.8px;
+            border-bottom: 2px solid rgba(34, 211, 238, 0.15);
         }}
         tr:last-child td {{
             border-bottom: none;
         }}
         tr:hover td {{
-            background: rgba(255, 255, 255, 0.01);
+            background: rgba(255, 255, 255, 0.02);
+        }}
+        /* Badges & Highlights */
+        .badge {{
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: 0.2px;
+            border: 1px solid transparent;
+            margin: 2px;
+        }}
+        .badge-success {{
+            background: rgba(52, 211, 153, 0.12);
+            color: var(--accent-green);
+            border-color: rgba(52, 211, 153, 0.25);
+        }}
+        .badge-danger {{
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--accent-red);
+            border-color: rgba(248, 113, 113, 0.25);
+        }}
+        .badge-warning {{
+            background: rgba(251, 191, 36, 0.12);
+            color: var(--accent-orange);
+            border-color: rgba(251, 191, 36, 0.25);
+        }}
+        .stock-tag {{
+            font-family: 'Fira Code', monospace;
+            background: rgba(34, 211, 238, 0.1);
+            color: var(--primary-cyan);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            font-weight: 600;
+            display: inline-block;
         }}
         /* 區塊引用與警示 */
         blockquote {{
-            background: rgba(56, 189, 248, 0.05);
+            background: rgba(34, 211, 238, 0.04);
             border-left: 4px solid var(--primary-cyan);
-            padding: 16px 20px;
-            margin: 20px 0;
-            border-radius: 0 12px 12px 0;
+            padding: 20px 24px;
+            margin: 28px 0;
+            border-radius: 0 16px 16px 0;
+            border-top: 1px solid rgba(34, 211, 238, 0.08);
+            border-right: 1px solid rgba(34, 211, 238, 0.08);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.08);
         }}
         blockquote p {{
             margin: 0;
             color: #93c5fd;
             font-style: italic;
+            font-size: 1.05rem;
         }}
         /* 程式碼與公式 */
         pre {{
@@ -190,7 +265,7 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
     <div class="header">
-        <div class="logo">ANTIGRAVITY<span>RESEARCH</span></div>
+        <div class="logo"><div class="logo-dot"></div>ANTIGRAVITY<span>RESEARCH</span></div>
         <div class="nav-links">
             <a href="index.html" id="nav-rep">每週熱點報告</a>
             <a href="performance.html" id="nav-perf">系統實盤績效</a>
@@ -214,7 +289,51 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
         
         // 讀取 Raw Markdown 字串並使用 marked 渲染
         const rawMarkdown = `{markdown_content}`;
-        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+        const container = document.getElementById('content');
+        container.innerHTML = marked.parse(rawMarkdown);
+        
+        // UI/UX 動態排版後處理：將表格內特定文本包裝為漂亮的 Badge
+        const tables = container.querySelectorAll('table');
+        tables.forEach(table => {{
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {{
+                const cells = row.querySelectorAll('td, th');
+                cells.forEach(cell => {{
+                    let html = cell.innerHTML;
+                    
+                    // 1. 股票代碼與中文名稱標籤化 (例如: 3131.弘塑)
+                    const stockRegex = /(\\b\\d{{4}}\.[\\u4e00-\\u9fa5]+)/g;
+                    html = html.replace(stockRegex, '<span class="stock-tag">$1</span>');
+                    
+                    // 2. 交易狀態標籤化
+                    html = html.replace(/(🛑停損\\s*[-+]?\\d+(?:\\.\\d+)?%)/g, '<span class="badge badge-danger">$1</span>');
+                    html = html.replace(/(持滿\\s*[-+]?\\d+(?:\\.\\d+)?%)/g, '<span class="badge badge-success">$1</span>');
+                    html = html.replace(/(🟢 成功\\s*\\(Win\\))/g, '<span class="badge badge-success">$1</span>');
+                    html = html.replace(/(🔴 失敗\\s*\\(Loss\\))/g, '<span class="badge badge-danger">$1</span>');
+                    html = html.replace(/(🟢 建倉)/g, '<span class="badge badge-success">$1</span>');
+                    html = html.replace(/(🟢 追蹤中)/g, '<span class="badge badge-success">$1</span>');
+                    html = html.replace(/(🔴 已結案)/g, '<span class="badge badge-danger">$1</span>');
+                    
+                    // 3. 數值與正負回報率著色
+                    const percentRegex = /^\\s*([+-]?\\d+(?:\\.\\d+)?%)\\s*$/;
+                    const match = html.match(percentRegex);
+                    if (match) {{
+                        const pctStr = match[1];
+                        if (pctStr.startsWith('+') || parseFloat(pctStr) > 0) {{
+                            html = `<span style="color: var(--accent-green); font-weight: 700; font-family: 'Fira Code', monospace;">${{pctStr}}</span>`;
+                        }} else if (pctStr.startsWith('-') || parseFloat(pctStr) < 0) {{
+                            html = `<span style="color: var(--accent-red); font-weight: 700; font-family: 'Fira Code', monospace;">${{pctStr}}</span>`;
+                        }} else {{
+                            html = `<span style="color: var(--text-muted); font-family: 'Fira Code', monospace;">${{pctStr}}</span>`;
+                        }}
+                    }}
+                    
+                    if (html !== cell.innerHTML) {{
+                        cell.innerHTML = html;
+                    }}
+                }});
+            }});
+        }});
 
         // 動態渲染 ApexCharts K 線圖
         const watchlistData = {watchlist_data_json};

@@ -11,6 +11,23 @@ from typing import List, Dict, Any
 import performance_tracker
 from market_monitor import MarketInformationMonitor
 
+CHINESE_MAPPING = {
+    "3131.TWO": "3131.弘塑",
+    "3131.TW": "3131.弘塑",
+    "3583.TW": "3583.辛耘",
+    "6187.TWO": "6187.萬潤",
+    "6683.TWO": "6683.雍智科技",
+    "3324.TWO": "3324.雙鴻",
+    "3017.TW": "3017.奇鋐",
+    "2486.TW": "2486.一詮",
+    "3680.TWO": "3680.家登",
+    "3680.TW": "3680.家登",
+    "6223.TWO": "6223.旺矽",
+    "8027.TWO": "8027.鈦昇",
+    "3450.TW": "3450.聯鈞",
+    "3013.TW": "3013.晟銘電"
+}
+
 # 設定回測專用的數據儲存
 MONTE_CARLO_WATCHLIST = "monte_carlo_watchlist.json"
 MONTE_CARLO_REPORT = "reports/monte_carlo_analysis.md"
@@ -178,9 +195,9 @@ class MonteCarloSimulator:
             port_final_ret = sum(x["final_return"] for x in portfolio_details) / len(portfolio_details)
             
             is_win = port_max_ret >= 30.0  # 💡 門檻改為 >= 30.0% 視為成功
-            port_names_str = ", ".join([f"{x['name']} ({x['cid']})" for x in portfolio_details])
+            port_names_str = ", ".join([CHINESE_MAPPING.get(x['cid'], f"{x['cid']}.{x['name']}") for x in portfolio_details])
             
-            print(f" -> [組合結果] 標的數: {len(portfolio_details)} | 平均最大漲幅: {port_max_ret:.2f}% | 平均最大跌幅: {port_min_ret:.2f}% | 最終組合回報: {port_final_ret:.2f}% | {'[Win]' if is_win else '[Loss]'}")
+            print(f" -> [組合結果] 標的數: {len(portfolio_details)} | 平均最大漲幅: {port_max_ret:.1f}% | 平均最大跌幅: {port_min_ret:.1f}% | 最終組合回報: {port_final_ret:.1f}% | {'[Win]' if is_win else '[Loss]'}")
             
             results.append({
                 "sample_idx": idx + 1,
@@ -283,7 +300,7 @@ class MonteCarloSimulator:
                 win_icon = "🟢 成功 (Win)" if r["is_win"] else "🔴 失敗 (Loss)"
                 table_rows.append(
                     f"| {r['sample_idx']} | {r['entry_date']} | 🟢 建倉 | {r['company_name']} | "
-                    f"{r['max_return']}% | {r['min_return']}% | {r['final_return']}% | {win_icon} |"
+                    f"{r['max_return']:.1f}% | {r['min_return']:.1f}% | {r['final_return']:.1f}% | {win_icon} |"
                 )
                 
         report_content = f"""# 蒙地卡羅歷史隨機時間段回測與勝率分析報告 (52週追蹤)
@@ -299,10 +316,10 @@ class MonteCarloSimulator:
 | **發出買入訊號期數** | {total_trades} 組 |
 | **空倉觀望期數** | {total_samples - total_trades} 組 |
 | **成功交易次數 (波段漲幅 >= 30%)** | {win_trades} 次 |
-| **蒙地卡羅勝率 (Win Rate)** | **{win_rate:.2f}%** |
-| **52週平均最大潛在漲幅** | **{avg_max_return:.2f}%** |
-| **52週平均最大回撤 (跌幅)** | **{avg_min_return:.2f}%** |
-| **52週平均最終持有回報** | **{avg_final_return:.2f}%** |
+| **蒙地卡羅勝率 (Win Rate)** | **{win_rate:.1f}%** |
+| **52週平均最大潛在漲幅** | **{avg_max_return:.1f}%** |
+| **52週平均最大回撤 (跌幅)** | **{avg_min_return:.1f}%** |
+| **52週平均最終持有回報** | **{avg_final_return:.1f}%** |
 
 ## 📈 隨機採樣交易歷史明細
 
@@ -312,8 +329,8 @@ class MonteCarloSimulator:
 
 ## 💡 統計決策學意義
 
-1. **穿越牛熊的穩定性**：隨機抽樣覆蓋了 2015-2016 晶圓產能修正、2018 中美貿易戰、2020 新冠疫情以及 2022 升息循環。結果顯示，**低共識與設備 Backlog 領先指標** 的交叉驗證在不同牛熊階段皆能保持高勝率。
-2. **夏普比率與持股耐受度**：52週平均最大回撤（平均最大跌幅）為 **{avg_min_return:.2f}%**，為制定量化防禦性止損（如設定 10-15% 止損線）提供了明確的實體數據支持。
+1. **穿越牛熊的穩定性**：隨機抽樣覆蓋了 2015-2016 晶圓產能修正、2018 中名貿易戰、2020 新冠疫情以及 2022 升息循環。結果顯示，**低共識與設備 Backlog 領先指標** 的交叉驗證在不同牛熊階段皆能保持高勝率。
+2. **夏普比率與持股耐受度**：52週平均最大回撤（平均最大跌幅）為 **{avg_min_return:.1f}%**，為制定量化防禦性止損（如設定 10-15% 止損線）提供了明確的實體數據支持。
 """
         os.makedirs("reports", exist_ok=True)
         with open(MONTE_CARLO_REPORT, "w", encoding="utf-8") as f:
