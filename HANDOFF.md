@@ -33,9 +33,12 @@
 - `market_monitor.py` 已改**讀 `pit_store.load_content_value_priors()`**，移除 ~360 行 hardcoded 矩陣（行為等價：era 計數 6/9/10/12、邊界一致、10 tests 綠）。雙重真相來源消除。
 - `CHINESE_MAPPING` 已集中到新 `constants.py`（3 檔改 import，移除重複）。
 
-### ⏳ Stage 2 待辦（需真實外部資料源＋開放決策，**建議先 grill 再建**）
-- **Consensus** 改外資持股%+股價分位代理運算；**Backlog** 改上游 `segment=equipment` 真月營收 YoY；以上需 `pit_store` 月快照累積或歷史回填。⚠️ 開放決策：外資持股端點、Consensus 加權公式、回填深度——先 grill。
-- **歷史月營收回填**（公開月營收歸檔）讓營收訊號可做真回測；回測引擎改讀真 PIT 後移除示意抬頭。
+### ⏳ Stage 2 待辦（決策已 grill 並定於 [ADR 0006](docs/adr/0006-stage2-real-data-sourcing.md)；實作前需 FinMind/TWSE 端點探查）
+- **歷史回填**：FinMind `TaiwanStockMonthRevenue` 主＋TWSE/TPEx 官方備，自 2015 逐月寫 `data/snapshots/YYYY-MM/revenue.json`；外資持股歷史同樣回填（Consensus 用）。
+- **Consensus**：股價＋外資持股%，各算「自身 12M 歷史百分位」＋「橫斷面同儕排名」，等權混合 0–100。
+- **Backlog**：板塊 `segment=equipment` 真月營收 YoY 聚合（誠實限制：動能背離代理、非真訂單）。
+- 接上真 PIT 後：market_monitor 三訊號改用真資料、回測引擎讀真 PIT 並**移除「示意」抬頭**。
+- ⚠️ 實作第一步＝小探查：實打 FinMind/TWSE 端點確認回傳歷史＋日期，再正式建。
 - 次要結構債：yfinance 價格**倖存者偏差**（下市股消失）；兩回測引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導（脆弱、待改為傳參）。
 - **鐵律**：快照不可變、門檻/權重先驗固定不回測 tune。
 

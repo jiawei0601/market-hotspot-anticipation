@@ -16,12 +16,12 @@ _Avoid_: 公司營收佔比、毛利率（CV 是系統 BOM 視角，非公司財
 以主流 AI 運算架構為時間軸（Vera_Rubin → Feynman → Feynman_Next），作為 CV 與供應鏈洗牌的比較基準；當前代／次代／未來代為相對位置。
 
 **共識度（Consensus Score）**:
-市場對「此股為 AI 受惠者」題材的擁擠／已定價程度（0–100；高＝已擁擠、已反映，低＝逆勢、未被覆蓋）。B 階段以公開資料**代理**計算：外資持股比變化 ＋ 近 12 個月股價分位（分析師覆蓋家數若可得則加權），不再手填。
-_Avoid_: 估值貴賤、一致預期離散度（皆非本義）
+市場對「此股為 AI 受惠者」題材的擁擠／已定價程度（0–100；高＝已擁擠、已反映，低＝逆勢、未被覆蓋）。B 階段以公開資料代理：取「股價」與「外資持股%」兩指標，各算 **(a) 自身近 12 個月歷史百分位** ＋ **(b) universe 橫斷面同儕排名**，等權混合成 0–100。來源：外資持股 FinMind 主／TWSE 備、股價 yfinance/TWSE。權重/窗口先驗固定、不回測 tune。
+_Avoid_: 估值貴賤、一致預期離散度、手填分數
 
 **設備 Backlog 領先指標（Equipment Backlog Lead）**:
-上游設備／特用材料廠的月營收 YoY，作為下游零組件營收的領先代理（領先約 2 季／6-9 個月）。B 階段以 `segment=equipment` 公司的**真實月營收**計算，丟棄合成公式。
-_Avoid_: 字面「在手訂單簿」（per-company 免費無解，B 階段不採字面義）
+板塊內**所有 `segment=equipment` 公司真實月營收 YoY 的聚合值**，作為「上游正在拉貨」的領先背景（領先下游約 2 季）。⚠️ **誠實限制**：因 per-company 在手訂單／order-book 資料免費不可得，這是「**營收動能背離代理**」，非真正的「訂單領先營收」；原 backlog-leads-revenue 論述據此**降級**。
+_Avoid_: 字面「在手訂單簿」；亦勿宣稱「訂單領先」的強論述。
 
 **非共識黃金建倉標的（Golden Accumulation Target）**:
 同時滿足三條件的潛伏買點，三者**必須同時成立**（AND）：① 逆勢（Consensus < `CONSENSUS_MAX`）② 領先已動（Equipment Backlog Lead > `BACKLOG_LEAD_MIN`）③ 基本面未現（下游當月營收 YoY < `DOWNSTREAM_YOY_MAX`）。v1 為 boolean。
