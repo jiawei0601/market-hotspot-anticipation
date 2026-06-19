@@ -5,24 +5,23 @@ import datetime
 from typing import TypedDict, List, Dict, Any
 from pydantic import BaseModel, Field
 
-# 閫�捱 Windows 蝯�垢璈� CP950 蝺函Ⅳ�誯�嚗諹𥅾�� Windows 撟喳蝱�舫�脰�蝺函Ⅳ�啣��脰風
+# 解決 Windows 終端機 CP950 編碼問題，若為 Windows 平台可進行編碼環境防護
 import codecs
 if sys.platform.startswith('win'):
     try:
-        # �𡑒岫�齿鰵撠��皞𤥁撓�箄身摰𡁶� UTF-8 隞仿俈 emoji �碶葉�������游援瞏�
+        # 嘗試重新將標準輸出設定為 UTF-8 以防 emoji 或中文字元導致崩潰
         sys.stdout.reconfigure(encoding='utf-8')
         sys.stderr.reconfigure(encoding='utf-8')
     except AttributeError:
-        # Python �羓��祉� reconfigure �寞����摰匧� fallback
+        # Python 舊版本無 reconfigure 方法時的安全 fallback
         pass
 
-# LangChain & LangGraph �賊�靘肽陷
+# LangChain & LangGraph 相關依賴
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, START, END
 
-# �芸�霈��𡝗𧋦�� .env 瑼娍�銝血神�亦兛憓����
+# 自動讀取本地 .env 檔案並寫入環境變數
 if os.path.exists(".env"):
     with open(".env", "r", encoding="utf-8") as f:
         for line in f:
@@ -31,101 +30,101 @@ if os.path.exists(".env"):
                 key, val = stripped.split("=", 1)
                 os.environ[key.strip()] = val.strip()
 
-# �臬��豢���綉撘閙�
+# 匯入數據監控引擎
 from market_monitor import MarketInformationMonitor
 
-# 1. ���见�蝢� (TypedDict) - ���隞亙��思�銝衤�隞��閬见漲��身�躰��株��鞉�撌桀�霅睃���
+# 1. 狀態定義 (TypedDict) - 升級以包含下下一代能見度、設備訂單與預期差共識分析
 class MarketHotspotState(TypedDict):
-    target_sector: str                  # �格�銵峕平/��銵𤘪踎憛� (靘见�: "CPO_Optical_Transceiver")
-    current_generation: str             # �嗅�銝餅��嗆� (靘见�: "Vera_Rubin")
-    next_generation: str                # 銝衤�隞�沲瑽� (靘见�: "Feynman")
-    future_generation: str              # 銝衤�銝�隞�沲瑽� (靘见�: "Feynman_Next")
+    target_sector: str                  # 目標行業/技術板塊 (例如: "CPO_Optical_Transceiver")
+    current_generation: str             # 當前主流架構 (例如: "Vera_Rubin")
+    next_generation: str                # 下一代架構 (例如: "Feynman")
+    future_generation: str              # 下下一代架構 (例如: "Feynman_Next")
     
-    # 撠�振�Ｗ枂鞈��
-    supply_chain_analysis: Dict[str, Any]      # ��鉄銝衤�銝碶誨�蹂誨憸券麬���
-    pricing_revenue_analysis: Dict[str, Any]   # ��鉄閮剖� Backlog �睃�������
-    media_story_anticipation: Dict[str, Any]   # ��鉄�梯�摨阡�瞈曇�蝚砌�撅斗�肽���雿𡏭���
+    # 專家產出資料
+    supply_chain_analysis: Dict[str, Any]      # 包含下下世代替代風險分析
+    pricing_revenue_analysis: Dict[str, Any]   # 包含設備 Backlog 領先指標分析
+    media_story_anticipation: Dict[str, Any]   # 包含共識度過濾與第二層思考操作規劃
     
-    # �勗����撖拍���
-    feasibility_report_draft: str       # �勗��厩阮 (Markdown)
-    critic_feedback: str                # 閰訫祟�漤�
-    iteration_count: int                # �芣�靽格迤餈凋誨甈⊥彍
-    validation_status: str              # 撖拇䰻����: "PASS" �� "FAIL"
-    as_of_date: str                     # �墧葫�箸�暺墧��� (�舫�嚗屸�閮剔征摮𦯀葡銵函內����)
+    # 報告與評審狀態
+    feasibility_report_draft: str       # 報告草稿 (Markdown)
+    critic_feedback: str                # 評審反饋
+    iteration_count: int                # 自我修正迭代次數
+    validation_status: str              # 審查狀態: "PASS" 或 "FAIL"
+    as_of_date: str                     # 回測基準點時間 (可選，預設空字串表示最新)
 
-# 2. Pydantic 蝯鞉��� Critic 頛詨枂摰𡁶儔 - 撘瑕�撖拇䰻頞�����
+# 2. Pydantic 結構化 Critic 輸出定義 - 強制審查超前指標
 class CriticDecision(BaseModel):
     validation_status: str = Field(
         ..., 
-        description="撖拇䰻�勗���釭��𥼚�𠰴��������恬�1. 18-24�𧢲�銝衤�銝碶誨�蹂誨憸券麬嚗�2. 閮剖��㕑疏�睃�摨� (Backlog YoY) �豢�嚗�3. �梯�摨西��鞉�撌� (Consensus Score) ����梯�璅嗵������遛頞喳� PASS嚗�炏�� FAIL��"
+        description="審查報告品質。報告必須同時包含：1. 18-24個月下下世代替代風險；2. 設備拉貨領先度 (Backlog YoY) 數據；3. 共識度與預期差 (Consensus Score) 的非共識標的分析。滿足則 PASS，否則 FAIL。"
     )
     critic_feedback: str = Field(
         ..., 
-        description="閰喟敦��祟�亙�擖𧢲�閬卝��𥅾 validation_status �� FAIL嚗峕��箏𪑛鈭𥡝��滚��𤩺彍�𡁏��𧼮�霅睃��鞟撩憭晞��"
+        description="詳細的審查反饋意見。若 validation_status 為 FAIL，指出哪些超前定量數據或非共識分析缺失。"
     )
 
-# �嘥��� LLM 璅∪�嚗�𣈲�渡兛憓���� GEMINI_API_KEY嚗�
+# 初始化 LLM 模型（支援環境變數 GEMINI_API_KEY）
 def get_llm_model(structured_model=None):
     api_key = os.environ.get("GEMINI_API_KEY")
     if api_key:
         llm = ChatGoogleGenerativeAI(model="gemini-3.1-pro", temperature=0.2, google_api_key=api_key)
     else:
-        # �嗉��� GitHub Actions �𡝗糓撌脰身摰𡁜𠂔�潭芋撘𤩺�嚗𣬚� API Key �湔𦻖�梢𥲤嚗䔶�隞亙��豢�瘛瑟�
-        raise ValueError("蝻箏�敹���� GEMINI_API_KEY �啣�霈𦠜彍����典�獢�身摰𡁏� GitHub Secrets 銝剝�蝵桀���")
+        # 當處於 GitHub Actions 或是已設定嚴格模式時，無 API Key 直接報錯，不以假數據混淆
+        raise ValueError("缺少必要的 GEMINI_API_KEY 環境變數。請在專案設定或 GitHub Secrets 中配置它。")
         
     if structured_model:
         return llm.with_structured_output(structured_model)
     return llm
 
-# �嘥��𣇉𧙗�批膥
+# 初始化監控器
 monitor = MarketInformationMonitor()
 
-# ==================== Agent 蝭�暺� (Nodes) 撖虫� ====================
+# ==================== Agent 節點 (Nodes) 實作 ====================
 
 def supply_chain_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
-    靘𥟇摰嗥暺痹
-    - 冽 18-24 𧢲質摨衣嚗𣬚潸游暹靘𥟇甇𢒰Ｗ蔣踴
-    - 孵ê̌颲刻芯撱惩𣇉函訜滢誨憭扯竟嚗䔶撌脤𢒰其銝碶誨鋡急𤜯隞潭飛嗥憸券麬
+    供應鏈洗牌專家節點：
+    - 推演 18-24 個月能見度窗口下，物理規格變更對現有供應商的正面與反面影響。
+    - 特別辨識哪些廠商雖然在當前代大賺，但已面臨下世代被替代、價值歸零的風險。
     """
     current_gen = state.get("current_generation", "Vera_Rubin")
     next_gen = state.get("next_generation", "Feynman")
     future_gen = "Feynman_Next"
     
-    # 澆㙈豢綉撘閙嚗峕𣈲 point-in-time 甇瑕蟮墧葫芣𪃾
+    # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
     as_of_date = state.get("as_of_date")
     raw_schedule = monitor.get_supply_chain_schedule(current_gen, next_gen, as_of_date=as_of_date if as_of_date else None)
     
     prompt = (
-        f"雿䭾糓銝贝瘛勗撠𡡞蝖祇靘𥟇摰嗚n"
-        f"隢钅撠滨訜滢隞 {current_gen}銝隞 {next_gen}嚗𣬚鸌交糓頞 18-24 𧢲銝衤隞沲瑽 {future_gen} 拚脰瘣㛖n"
-        f"撖阡綉豢憒嚗䨵n{raw_schedule}\n\n"
-        f"雿删敹撠釣潘\n"
-        f"1. **Content Value (CV) 迤漤𢒰瞍娪**嚗𡁜𪑛鈭𥕦銁唳沲瑽衤孵潭𠂔瞍莎芯撱惩嚗憒 FOCICT嚗匧銁銝衤銝隞 {future_gen} 删銵栞◤游𡝗𤜯隞屸𢒰 CV 渲/甇賊妟憸券麬嚗髿n"
-        f"2. **Design Win 岫Ｘ𦆮𤩺蝔**嚗𡁏箄身嗵垢暸瘥𥪜隞嗥垢睃菜㯄"
+        f"你是一個資深半導體與科技硬體供應鏈專家。\n"
+        f"請針對當前世代 {current_gen}、下一代 {next_gen}，特別是超前 18-24 個月的下下一代架構 {future_gen} 的物理變革進行洗牌分析。\n"
+        f"實體監控數據如下：\n{raw_schedule}\n\n"
+        f"你的分析必須專注於：\n"
+        f"1. **Content Value (CV) 的正反面演進**：哪些廠商在新架構下價值暴漲？哪些廠商（例如 FOCI、MCT）在下下一代 {future_gen} 因為技術被整合或替代而面臨 CV 暴跌/歸零風險？\n"
+        f"2. **Design Win 與試產放量時程**：指出設備端放量比元件端領先的關鍵時間點。"
     )
     
     if state.get("critic_feedback"):
-        prompt += f"\n\n[瘜冽] 滢頛 Critic 𣂼枂耨甇閬讠嚗㝯state['critic_feedback']}嘥甇文遣霅唬耨甇僐"
+        prompt += f"\n\n[注意] 前一輪 Critic 提出的修正意見為：{state['critic_feedback']}。請針對此建議修正分析。"
 
     try:
         llm = get_llm_model()
         response = llm.invoke([
-            SystemMessage(content="雿䭾糓銝贝瘛梁Ｘ平撣恬蝎暸𡁜撠𡡞孵潮 (Content Value) 瘣㛖滢隞𤜯隞◢芾隡啜"),
+            SystemMessage(content="你是一個資深科技產業分析師，精通半導體價值量 (Content Value) 洗牌與超前世代替代風險評估。"),
             HumanMessage(content=prompt)
         ])
         analysis_text = response.content
     except Exception:
-        # Fallback: 砍𧑐擃条移摨行見輻
+        # Fallback: 本地高精度樣板生成
         analysis_text = (
-            f"### {future_gen} (18-24 𧢲) 靘𥟇齿諹蹂誨憸券麬\n"
-            f"1. **銝衤銝隞拙瘥**嚗朞䌊 {next_gen}  CPO 璅∠瞍娪脰秐 {future_gen} 匧飛鈭㘾湔𦻖游亥蝞埈榊蜓擃 (Optical I/O)蝯勗璅∠撱惩Ｚ𠪊縧璅∠硔齿𤜯隞◢芥n"
-            f"2. **漤𢒰敶梢𣳽 (Content Value 甇賊妟霅血)**嚗䨵n"
-            f"   - **FOCI (舫)**嚗𡁜銁 {next_gen} 銝碶誨箸憭批𡃏 (CV  14%)嚗䔶 {future_gen} 銝碶誨嚗𣬚眏潭榊蝎垍 Optical I/O 芦𠺪函 CPO 璅∠孵澆之撟憭梧嗅摰孵潛眏 14.0% 單 8.0% (銵圈 -42.86%)迨粹憭抒瑽𧢲扯◤蹂誨憸券麬嚗諹孵虾賣滚㰘n"
-            f"   - **MCT (晟銘電)**：在 {future_gen} 世代轉型 DTC 液冷整合機架，CV 由 9.0% 成長至 12.0% (+33.3%)，替代風險為 LOW。建議觀察而非主動追高。\n"
-            f"3. **甇𢒰敶梢𣳽 (冽鰵亙瑁)**嚗䨵n"
-            f"   - **GrandProcess (撘睃)**嚗帋 3D 撠鋆賜閮剖樴漤嚗銁 {future_gen} 銴摨血牐嚗諹身 Content Value  18.0% 脖甇交𠂔憓噼秐 26.0% (憓鮋𩑈 44.44%)嚗䔶嗉身坔枂鞎冽蝔𧢲銝𧢲虜暸睃 2 见迤摨艾n"
-            f"   - **Auras (䠷暑)**嚗𡁏∩銝隞 DTC 瘨脣詨撠⏚嚗銁 {future_gen} 銝碶誨銝剖摰孵潛眏 12.0% 秐 18.0% (憓鮋𩑈 50.0%)"
+            f"### {future_gen} (18-24 個月) 供應鏈超前洗牌與替代風險分析\n"
+            f"1. **下下一代物理變革對比**：自 {next_gen} 的外部 CPO 模組演進至 {future_gen} 時，光學互連將直接整合入計算晶片主體 (Optical I/O)。傳統光模組廠商面臨「去模組化」替代風險。\n"
+            f"2. **反面影響 (Content Value 歸零警告)**：\n"
+            f"   - **FOCI (聯鈞)**：在 {next_gen} 世代為最大受益者 (CV 達 14%)，但在 {future_gen} 世代，由於晶粒級 Optical I/O 的普及，獨立 CPO 模組價值大幅流失，其內容價值由 14.0% 銳減至 8.0% (衰退 -42.86%)。此為重大結構性被替代風險，股價可能提前反映見頂。\n"
+            f"   - **MCT (晟銘電)**：散熱機殼內容價值在 {future_gen} 世代，CV 由 9.0% 成長至 12.0% (+33.3%)，替代風險為 LOW。\n"
+            f"3. **正面影響 (全新入局與增長者)**：\n"
+            f"   - **GrandProcess (弘塑)**：作為 3D 封裝與濕製程設備龍頭，在 {future_gen} 複雜度增加下，設備 Content Value 自 18.0% 進一步暴增至 26.0% (增長 44.44%)，且其設備出貨排程比下游放量領先 2 個季度。\n"
+            f"   - **Auras (雙鴻)**：掌握下一代 DTC 液冷核心專利，在 {future_gen} 世代中內容價值由 12.0% 攀升至 18.0% (增長 50.0%)。"
         )
 
     return {
@@ -137,102 +136,104 @@ def supply_chain_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
 
 def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
-    寞聢嗅摰嗥暺痹
-    - 閫擃㗛朌勗頞典𨋍
-    - **詨芸**嚗朞圾霈銝𦠜虜閮剖 Backlog 閮鱓 (Equipment Backlog)嚗諹府睃𣂼𤣰 6 𧢲嚗諹甇斗㕑寡絲瞍脩靽∟
+    價格與營收專家節點：
+    - 解析高頻報價趨勢。
+    - **核心優化**：解讀上游設備 Backlog 訂單 (Equipment Backlog)，該指標領分成品營收 6 個月，藉此捕捉股價起漲的先行信號。
     """
     sector = state["target_sector"]
     as_of_date = state.get("as_of_date")
     current_matrix = monitor.get_point_in_time_matrix(as_of_date if as_of_date else None)
     company_ids = [x["company_id"] for x in current_matrix]
     
-    # 澆㙈豢綉撘閙嚗峕𣈲 point-in-time 甇瑕蟮墧葫芣𪃾
+    # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
     pricing_data = monitor.get_high_frequency_pricing(sector, as_of_date=as_of_date if as_of_date else None)
     revenue_data = monitor.simulate_revenue_inflection(company_ids, as_of_date=as_of_date if as_of_date else None)
     
     prompt = (
-        f"3. **撠𧢲𪄳暺��瞏𥕢�璅嗵�**嚗𡁏覔�𡁶洵鈭�惜�肽����文��芯��砍虬蝚血��𦒘��梯����皜貊��嗅銁靚瑕��餃澈摮塩���銝𦠜虜閮剖� Backlog 閮�鱓撌脩���𠂔憓𠺶�讐�暺��蝛滨敞�孵噩��"
+        f"你是一個量化金融與產業營收分析專家。\n"
+        f"請針對高頻報價走勢與各供應鏈廠商的成品營收 YoY、設備 Backlog 訂單 YoY 數據進行定量解析。\n"
+        f"高頻價格數據：\n{pricing_data}\n"
+        f"營收與設備 Backlog 數據（包含來自台灣證券交易所開放 API 的真實營收）：\n{revenue_data}\n\n"
+        f"你的分析必須專注於：\n"
+        f"1. **優先呈現真實數據**：如果數據中包含真實的公開月度營收（即 `has_real_data` 為 True 的標的），請在分析中優先指出該公司最新的實際營收金額（單位：億元）、實際 YoY 成長率，並基於這些真實基期對未來的營收與訂單拐點進行合理推演，而非僅依賴模擬數據。\n"
+        f"2. **設備訂單 (Backlog) 的領先性**：設備 Backlog YoY 是否已率先爆發 (大於 50%)，即使此時下游成品營收依然在谷底？\n"
+        f"3. **尋找黃金潛伏標的**：根據第二層思考，判定哪些公司符合『低共識、下游營收在谷底去庫存、但上游設備 Backlog 訂單已率先暴增』的黃金積累特徵。"
     )
     
     if state.get("critic_feedback"):
-        prompt += f"\n\n[瘜冽�] �滢�頛� Critic �𣂼枂��耨甇��閬讠�嚗㝯state['critic_feedback']}����嘥�甇文遣霅唬耨甇���僐��"
+        prompt += f"\n\n[注意] 前一輪 Critic 提出的修正意見為：{state['critic_feedback']}。請針對此建議修正分析。"
 
     try:
         llm = get_llm_model()
         response = llm.invoke([
-            SystemMessage(content="雿删移�𡁻��硋��僐��身�躰��� (Backlog) �睃��望��斗𪃾����� YoY �鞾�摰𡁻�隡啁���"),
+            SystemMessage(content="你精通量化分析、設備訂單 (Backlog) 領先週期判斷與營收 YoY 拐點定量估算。"),
             HumanMessage(content=prompt)
         ])
         analysis_text = response.content
     except Exception:
-        # Fallback ���撖西��坔��讠�鋆�
+        # Fallback 與真實資料動態組裝
         foci_info = revenue_data.get("3450.TW", {})
         if foci_info.get("has_real_data"):
-            foci_line = f"   - **FOCI (�舫� - 3450.TW)**嚗𡁏��� {foci_info['real_date_ym']} 撖阡�����園� **{foci_info['real_revenue_billion']} ���**嚗𣬚�撖血僑憓䂿� (YoY) �� **{foci_info['real_yoy_pct']}%**嚗𣬚�璆剜𤣰�亙歇�����䔄嚗䔶��梯�摨阡�擃矋�����讛��孵歇�齿�憸券麬��"
+            foci_line = f"   - **FOCI (聯鈞 - 3450.TW)**：最新 {foci_info['real_date_ym']} 實際月營收達 **{foci_info['real_revenue_billion']} 億元**，真實年增率 (YoY) 達 **{foci_info['real_yoy_pct']}%**，營業收入已率先爆發，但共識度過高，須留意股價已反映風險。"
         else:
-            foci_line = f"   - **FOCI (�舫� - 3450.TW)**嚗𡁏�����園�閮�䲰 {revenue_data['3450.TW']['peak_month']} �𥪜� YoY 撜啣�潘��嗥𤌍�� Backlog YoY �券�雿滨𥿢�湛�雿��霅睃漲�𡡞�嚗峕��∪��𤩺𣈲憸券麬��"
+            foci_line = f"   - **FOCI (聯鈞 - 3450.TW)**：成品營收預計於 {revenue_data['3450.TW']['peak_month']} 達到 YoY 峰值，其目前 Backlog YoY 在高位盤整，但共識度過高，有股價透支風險。"
             
         analysis_text = (
-            f"### 閮剖� Backlog �睃������������ YoY �鞾����\n"
-            f"1. **Catalyst �勗�蝒�聦**嚗𡁜��脣�鋆肽身�蹱��蹱��貉�銝����瞍� {pricing_data['weekly_change_pct']}%嚗�𥼚�寧���迫頝𣬚��湛�鞈���砍��烐��麄��n"
-            f"2. **閮剖� Backlog (�睃� 6 �𧢲�) ����� YoY 鈭文�撽𡑒�**嚗䨵n"
-            f"   - **GrandProcess (撘睃� - 3131.TWO)**嚗𡁶𤌍�滢�皜豢������ YoY ��� 11.20% (�閙䲰雿舘健)嚗䔶��嗉身�躰��� Backlog YoY 撌脩�憌���� **84.50%**嚗𣬚Ⅱ隤滩��潭扔撘瑟�鞎冽�嚗峕迨�箸��睃���絲瞍脰��麄��n"
+            f"### 設備 Backlog 領先指標與成品營收 YoY 拐點分析\n"
+            f"1. **Catalyst 報價突破**：先進封裝設備材料指數近一月上漲 {pricing_data['weekly_change_pct']}%，報價率先止跌突破，資金催化劑成熟。\n"
+            f"2. **設備 Backlog (領先 6 個月) 與營收 YoY 交叉驗證**：\n"
+            f"   - **GrandProcess (弘塑 - 3131.TWO)**：目前下游成品營收 YoY 僅為 11.20% (處於低谷)，但其設備訂單 Backlog YoY 已經飆升至 **84.50%**，確認處於極強拉貨期，此為最領先的起漲訊號。\n"
             f"{foci_line}\n"
-            f"   - **Auras (�䠷暑 - 3324.TWO)**嚗𡁏������ YoY �桀��� 8.9%嚗䔶�閮剖��� DTC 撠�� Backlog YoY �� **52.40%**嚗𣬚泵���𡒊��嗅銁靚瑕���acklog 撌脣��讐��睃��孵噩��n"
-            f"3. **暺��瞏𥕢�璅嗵��文� (�𧼮�霅㗛��睲漱��)**嚗䨵n"
-            f"   - **GrandProcess (3131.TWO)** 摰𣬚�蝚血��𦒘��梯�摨� (35.0)�������嗅銁靚瑕���身�躰��桀歇����游��譍�暺��瞏𥕢�璅嗵��孵噩嚗諹��孵��芸��䭾迨 Backlog ��䔄��"
+            f"   - **Auras (雙鴻 - 3324.TWO)**：成品營收 YoY 目前僅 8.9%，但設備與 DTC 專案 Backlog YoY 達 **52.40%**，符合『營收在谷底、Backlog 已動』的領先特徵。\n"
+            f"3. **黃金潛伏標的判定 (非共識黃金交叉)**：\n"
+            f"   - **GrandProcess (3131.TWO)** 完美符合『低共識度 (35.0)、成品營收在谷底、設備訂單已率先暴增』之黃金潛伏標的特徵，股價尚未反映此 Backlog 爆發。"
         )
 
     return {
         "pricing_revenue_analysis": {
             "summary": analysis_text,
-                    # Fallback
-        report_text = f"""# 18-24 �𧢲�頞��撣�聦�梢��鞱��勗�嚗㝯state['target_sector']} ��銵𤘪踎憛�
+            "raw_pricing": pricing_data,
+            "raw_revenue": revenue_data
+        }
+    }
 
-## 銝��� ��銵梶�����嗉�頞�� 18-24 �𧢲� (Feynman_Next) 瘣㛖�獢�沲
-�嗅��港��梁�閮舘� {state['next_generation']} 銝碶誨����Ｘ𦆮�𤩺�嚗屸�撠𡝗�鞈�犖敹��撠��閬见漲�厰𩑈�� 18-24 �𧢲�敺𣬚� Feynman_Next 銝碶誨��銁甇方��滢�隞�葉嚗��蝯梁���扔�𣂼�甈∟◤�梶聦嚗�
-1. **�餅芋蝯��憸券麬**嚗𡁜�摮貊㮾撟脣�頛� (CPO) 璅∠�撠�凒�交㟲���閮���嗥�銝駁� (Silicon Photonics Integrated I/O)嚗���渡崕蝡� CPO 璅∠�撣�聦�𡒊葬��
-2. **璆菟����頧厩宏**嚗𡁏袇�勗��喟絞瘞游��脣��箸榊����湔𦻖瘞游� (DTC) �游�閮剛���
-
-## 鈭䎚�� 靘𥟇����摰孵��� (Content Value) 甇���Ｘ綫瞍磰�銝衤�隞�𤜯隞�◢�芾郎��
-�祉�蝛園�撠滢�銝碶誨�拍�霈𦠜凒嚗屸�脰�鈭��摰孵��潸��閧� ($\Delta$CV) ��迤�漤𢒰�冽�嚗�
-- **�漤𢒰霅血� (�蹂誨甇賊妟憸券麬)**嚗�
-  - **3450.�舫�**嚗𡁜銁 {state['next_generation']} 銝碶誨�批捆�孵�潮� 14.0%嚗䔶��� Feynman_Next 銝碶誨�惩縧璅∠��吔��批捆�孵�潸��祈秐 8.0% (銵圈�� -42.86%)����孵歇�齿� Rubin/Feynman �拙�嚗䔶�銝碶誨�Ｚ𠪊瘛䀹掠憸券麬嚗�撥��遣霅唬�摰𡏭蕭擃塩��
-- **低風險觀察 (替代風險 LOW)**：
-  - **3013.晟銘電**：Feynman_Next 世代轉型 DTC 液冷整合機架，CV 由 9.0% 成長至 12.0% (+33.3%)，替代風險為 LOW。Consensus Score 為 55，建議觀察而非主動追高。
-- **甇�𢒰頧㗇� (�圈�脣�����潭楲撘菔��)**嚗�
-  - **3131.撘睃�**嚗鎄eynman_Next 3D 撠��瞈閗ˊ蝔贝��𨅯漲�游�嚗��摰孵��潛眏 18.0% �游��� 26.0% (憓鮋𩑈 44.44%)��
-  - **3324.�䠷暑**嚗𡁏��∩�銝�隞� DTC 瘨脣��詨�撠�⏚嚗��摰孵��潛眏 12.0% ����秐 18.0% (憓鮋𩑈 50.0%)��
-
-## 銝剹�� �睃� 6-9 �𧢲�銋贝身�� Backlog 閮�鱓����嗅抅�笔��誯�皜�
-1. **銝𦠜虜閮剖�閮�鱓�睃���**嚗帋�皜豢�����嗆糓�賢����嚗諹�䔶�皜詨��脣�鋆肽身�� Backlog 閮�鱓�睃�銝𧢲虜�𣂼���𤣰 2 �见迤摨� (6�𧢲�) ��䔄��
-2. **摰𡁻��𣂷摯**嚗�
-  - 3131.撘睃�嚗𡁶𤌍�齿������ YoY ��� 11.20%嚗䔶��嗉身�躰��� Backlog YoY 撌脩�憌���� **84.50%**嚗𣬚Ⅱ隤滩��潭扔撘瑟�鞎冽�嚗峕迨�箸��睃���絲瞍脰��麄��
-  - 3324.�䠷暑嚗𡁶𤌍�齿������ YoY �� 8.90%嚗䔶�閮剖��� DTC 撠�� Backlog YoY �� **52.40%**嚗屸��笔銁 6 �𧢲�敺䔶�皜貊��嗅�餈𦒘� YoY �����
-
-## �䜘�� �鞉�撌株��梯�摨� (Consensus Score) �擧蕪�滢�蝑𣇉裦
-蝟餌絞�拍鍂���霅睃漲敺堒��漤�脰��鞉�撌桅�瞈橘�隞仿俈鞎瑕���歇�齿��滢��梢��梯�璅嗵�嚗�
-- **�梯�撌脣��䭾���**嚗�3450.�舫� (Consensus: 92.0)��3013.�罸��� (Consensus: 85.0)��歇鋡急袇�嗉�慦㘾�撱���勗�嚗諹��寥�𤩺𣈲��
-- **�𧼮�霅䀹�隡𤩺���**嚗�3131.撘睃� (Consensus: 35.0)��3324.�䠷暑 (Consensus: 52.0)����湧�瘜典漲雿𠬍��鞉�撌格扔憭改�銝磰身�躰��桀歇�����䔄嚗𣬚�暺��撱箏�厩�����
-
-## 鈭𢛵�� 蝯鞱�����梯� (Non-Consensus) �閗�撱箄降
-1. **�滢�蝑𣇉裦**嚗𡁜撥��遣霅圈��见歇憭批��齿�銝𥪯�銝衤�隞�𢒰�冽𤜯隞�◢�芰� 3450.�舫� �� 3013.�罸��颯��
-2. **�詨��滨蔭**嚗𡁻�Ｖ����瞏𥕢�雿𤾸�霅睃漲��身�� Backlog �游��������嗅銁靚瑕��� 3131.撘睃� �� 3324.�䠷暑��銁�芯� 3 �𧢲�慦㘾�隞亙��脣�鋆肽身�坔枂鞎券�撜啁��剜�憭扯�摰����袇�嗉�憟格�嚗�嘑銵𣬚㬢�拐�蝯僐��
-"""鍂�梯�摨阡�瞈整�舘��孵歇�齿��𤩺�����"),
+def media_story_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
+    """
+    新聞與情緒預判專家節點：
+    - **核心優化**：解析「共識度 (Consensus Score)」，排除市場已經大幅反映的 Consensus 標的。
+    - 專注於「低共識 + 高預期差」的標的，規劃超前於媒體報導的潛伏佈局操作。
+    """
+    prompt = (
+        f"你是一個行為金融學與財經媒體炒作週期專家。\n"
+        f"請分析供應鏈與營收/設備指標的結論，並結合各廠商的『共識度得分 (Consensus Score)』進行預期差過濾。\n\n"
+        f"請規劃操作策略：\n"
+        f"1. **排除 Consensus 標的**：對於媒體已經寫爆、市場高度共識 (Consensus > 80) 的股票（如 FOCI 聯鈞、MCT 晟銘電），提出『已充分反映』與『下世代替代風險』的警告。\n"
+        f"2. **規劃非共識 (Non-Consensus) 潛伏期**：針對低共識度 (Consensus < 60) 且設備訂單先行暴增的標的（如 GrandProcess 弘塑、Auras 雙鴻），模擬未來 2-3 個月新聞會如何包裝（從『無人關注的冷門設備』到『先進封裝與液冷直接受益者』的 Storytelling 傳導），並制定精確的潛伏與退場時間表。"
+    )
+    
+    try:
+        context = (
+            f"供應鏈洗牌結論：\n{state['supply_chain_analysis']['summary']}\n\n"
+            f"價格與營收結論：\n{state['pricing_revenue_analysis']['summary']}"
+        )
+        llm = get_llm_model()
+        response = llm.invoke([
+            SystemMessage(content="你擅長預判財經新聞 Storytelling 的集體發酵點，並利用共識度過濾『股價已反映』標的。"),
             HumanMessage(content=f"{context}\n\n{prompt}")
         ])
         analysis_text = response.content
     except Exception:
         # Fallback
         analysis_text = (
-            f"### �鞉�撌株��梯�摨阡�瞈� (Expectation Gap Filter) ���雿𡏭���n"
-            f"1. **Consensus (�梯�撌脣���) 璅嗵�霅血�**嚗䨵n"
-            f"   - **FOCI (�舫�)** (�梯�摨� 92.0) �� **MCT (�罸���)** (�梯�摨� 85.0)嚗𡁶𤌍�滚歇�鞟�撣�聦鈭箇椘��䰻����蠘�嚗�之�曉�擃娪𪊽憭抵��啣𥼚撠� Rubin 閮�鱓����孵歇憭批��齿��嗅��拙�嚗䔶��抵��銁銝衤�銝�隞� {state['current_generation']}_Next 銝碶誨��𢒰�� Content Value �唳愇�𡝗㟲��𤜯隞�◢�芥��撥��遣霅�**銝滚銁甇方蕭擃�**��n"
-            f"2. **Non-Consensus (�𧼮�霅㗛��笔榆) 暺��瞏𥕢�璅嗵�**嚗䨵n"
-            f"   - **GrandProcess (撘睃� - 3131.TW)** (�梯�摨� 35.0)嚗𡁜��渡𤌍�滚��嗉��箏�蝯勗�撠𡡞�閮剖�撱𩤃�敹質�鈭��銝衤�隞� 3D ���脣�鋆嘥��嗆�鋆賜�閮剖�����折�瘙����閮剖� Backlog 撌脩��睃���䔄嚗屸��笔榆璆萄之嚗𣬚𤌍�滨�暺��瞏𥕢��麄��n"
-            f"3. **�芯� 3 �𧢲� Storytelling �𣂼ế**嚗䨵n"
-            f"   - **瞏𥕢��� (�嗅� - 2 �𧢲���)**嚗𡁜�擃𥪜��芷��㵪�銝𦠜虜閮剖�撱㰘��格���枂鞎剁��箔蜓�𥡝��唳��Ｗ𣈲銝�撱箏�厩�����n"
-            f"   - **�潮��� (3 �𧢲�敺�)**嚗帋�皜貊��嗆彍摮烾��綽�銝餅�慦㘾��剜���䔄嚗��憒��*��3D 撠���舐��園瓲蝒�聦嚗��憛穃之憟� Feynman_Next 閮剖��典振閮�鱓��*嚗㚁����餈賣撞����喟��𧼮�霅䀝�撅���㬢�拚���湧���"
+            f"### 預期差與共識度過濾 (Expectation Gap Filter) 與操作規劃\n"
+            f"1. **Consensus (共識已反映) 標的警告**：\n"
+            f"   - **FOCI (聯鈞)** (共識度 92.0)：目前已成為市場人盡皆知的明星股，大眾媒體鋪天蓋地報導 Rubin 訂單。股價已大幅反映當前利多，且在下下一代 {state['current_generation']}_Next 世代面臨 Content Value 腰斬或整合替代風險。強烈建議**不在此追高**。\n"
+            f"   - **MCT (晟銘電)** (共識度 55.0)：CV 由 9.0% 成長至 12.0% (+33.3%)，替代風險為 LOW，屬中性觀察標的。\n"
+            f"2. **Non-Consensus (非共識預期差) 黃金潛伏標的**：\n"
+            f"   - **GrandProcess (弘塑 - 3131.TW)** (共識度 35.0)：市場目前將其視為傳統半導體設備廠，忽視了下下世代 3D 先進封裝對其濕製程設備的剛性需求。其設備 Backlog 已經領先爆發，預期差極大，目前為黃金潛伏期。\n"
+            f"3. **未來 3 個月 Storytelling 預判**：\n"
+            f"   - **潛伏期 (當前 - 2 個月內)**：媒體尚未點名，上游設備廠訂單悄悄出貨，為主力與聰明錢唯一建倉窗口。\n"
+            f"   - **發酵期 (3 個月後)**：下游營收數字開出，主流媒體頭條爆發（例如：*『3D 封裝良率瓶頸突破，弘塑大奪 Feynman_Next 設備獨家訂單』*），散戶追漲時，即為非共識佈局的獲利退場點。"
         )
 
     return {
@@ -243,105 +244,105 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
 
 def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
-    �勗��啣神蝭�暺痹��游�撠�振�鞉�嚗峕兛撖怎�擃𥪯葉��飛銵梶� 18-24 �𧢲�頞���質�摨血虾銵峕�扯�隡啣𥼚�𨳍��
+    報告撰寫節點：整合專家成果，撰寫繁體中文學術級 18-24 個月超前能見度可行性評估報告。
     """
     prompt = (
-        f"隢见�隞乩�銝劐�撠�振����斤��𨀣㟲����啣神銝�隞賣沲瑽𧢲扔�嗅𠂔雓嫘����坔飛銵梶�蝛嗅𥼚�𦠜楛摨衣��喟絞銝剜�嚗��擃𥪯葉����航��扯�隡啣𥼚�𨳍��n"
-        f"�格���銵𤘪踎憛𠺪�{state['target_sector']}\n"
-        f"�Ｗ�銝碶誨瞍娪�莎�{state['current_generation']} --> {state['next_generation']} --> Feynman_Next (頞�� 18-24 �𧢲�)\n\n"
-        f"�𣂷��厰�撠�振瘣㛖�����𡢅�\n{state['supply_chain_analysis']['summary']}\n\n"
-        f"�𣂼��潸�閮剖�閮�鱓����𡢅�\n{state['pricing_revenue_analysis']['summary']}\n\n"
-        f"�𣂼�霅㗛�瞈曇��啗��������𡢅�\n{state['media_story_anticipation']['summary']}\n\n"
-        f"�勗��啣神�澆�閬��嚗䨵n"
-        f"- 敹���𡒊Ⅱ���隞乩�鈭𥪜之�典�嚗䨵n"
-        f"  銝��� ��銵梶�����嗉�頞�� 18-24 �𧢲� (Feynman_Next) 瘣㛖�獢�沲\n"
-        f"  鈭䎚�� 靘𥟇����摰孵��� (Content Value) 甇���Ｘ綫瞍磰�銝衤�隞�𤜯隞�◢�芾郎�蹾n"
-        f"  銝剹�� �睃� 6-9 �𧢲�銋贝身�� Backlog 閮�鱓����嗅抅�笔��誯�皜枯n"
-        f"  ��... �鞉�撌株��梯�摨� (Consensus Score) �擧蕪�滢�蝑𣇉裦\n"
-        f"  鈭𢛵�� 蝯鞱�����梯� (Non-Consensus) �閗�撱箄降\n"
-        f"- **摰𡁻����瘥𠉛�銝滚虾雿擧䲰 40%**�������恬���誨 Content Value 霈𠰴�瘥𠉛���身�� Backlog 憓𧼮���onsensus Score���隡� YoY 撜啣�潦��n"
-        f"- �∠鍂�渲牲����坔飛銵𤘪�銝娍��Ｙ�蝜��銝剜��啣神��"
+        f"請將以下三位專家的研判結果整合，撰寫一份架構極其嚴謹、具備學術研究報告深度的傳統中文（繁體中文）可行性評估報告。\n"
+        f"目標技術板塊：{state['target_sector']}\n"
+        f"產品世代演進：{state['current_generation']} --> {state['next_generation']} --> Feynman_Next (超前 18-24 個月)\n\n"
+        f"【供應鏈專家洗牌分析】：\n{state['supply_chain_analysis']['summary']}\n\n"
+        f"【價格與設備訂單分析】：\n{state['pricing_revenue_analysis']['summary']}\n\n"
+        f"【共識過濾與新聞情緒分析】：\n{state['media_story_anticipation']['summary']}\n\n"
+        f"報告撰寫格式要求：\n"
+        f"- 必須明確分為以下五大部分：\n"
+        f"  一、 技術物理限制與超前 18-24 個月 (Feynman_Next) 洗牌框架\n"
+        f"  二、 供應鏈內容價值 (Content Value) 正反面推演與下世代替代風險警告\n"
+        f"  三、 領先 6-9 個月之設備 Backlog 訂單與營收基期定量預測\n"
+        f"  四... 預期差與共識度 (Consensus Score) 過濾操作策略\n"
+        f"  五、 結論與非共識 (Non-Consensus) 投資建議\n"
+        f"- **定量指標比率不可低於 40%**。必須包含：各代 Content Value 變動比率、設備 Backlog 增幅、Consensus Score、預估 YoY 峰值。\n"
+        f"- 採用嚴謹、具備學術感且流暢的繁體中文撰寫。"
     )
     
     try:
         llm = get_llm_model()
         response = llm.invoke([
-            SystemMessage(content="雿䭾糓�������𡝗�鞈��瑽钅�撣剖��𣂼葦嚗峕兛撖恍◢�澆𠂔雓對�蝎暸�𡁶洵鈭�惜�肽����𧼮�霅䀹迤蝣箏��琜�雿輻鍂蝜��銝剜���"),
+            SystemMessage(content="你是頂尖的量化投資機構首席分析師，撰寫風格嚴謹，精通第二層思考與非共識正確分析，使用繁體中文。"),
             HumanMessage(content=prompt)
         ])
         report_text = response.content
     except Exception:
         # Fallback
-        report_text = f"""# 18-24 �𧢲�頞��撣�聦�梢��鞱��勗�嚗㝯state['target_sector']} ��銵𤘪踎憛�
+        report_text = f"""# 18-24 個月超前市場熱點預見報告：{state['target_sector']} 技術板塊
 
-## 銝��� ��銵梶�����嗉�頞�� 18-24 �𧢲� (Feynman_Next) 瘣㛖�獢�沲
-�嗅��港��梁�閮舘� {state['next_generation']} 銝碶誨����Ｘ𦆮�𤩺�嚗屸�撠𡝗�鞈�犖敹��撠��閬见漲�厰𩑈�� 18-24 �𧢲�敺𣬚� Feynman_Next 銝碶誨��銁甇方��滢�隞�葉嚗��蝯梁���扔�𣂼�甈∟◤�梶聦嚗�
-1. **�餅芋蝯��憸券麬**嚗𡁜�摮貊㮾撟脣�頛� (CPO) 璅∠�撠�凒�交㟲���閮���嗥�銝駁� (Silicon Photonics Integrated I/O)嚗���渡崕蝡� CPO 璅∠�撣�聦�𡒊葬��
-2. **璆菟����頧厩宏**嚗𡁏袇�勗��喟絞瘞游��脣��箸榊����湔𦻖瘞游� (DTC) �游�閮剛���
+## 一、 技術物理限制與超前 18-24 個月 (Feynman_Next) 洗牌框架
+當市場仍熱烈討論 {state['next_generation']} 世代的量產放量時，頂尖投資人必須將能見度拉長至 18-24 個月後的 Feynman_Next 世代。在此超前世代中，傳統物理極限再次被打破：
+1. **去模組化風險**：光學相干傳輸 (CPO) 模組將直接整合入計算晶粒主體 (Silicon Photonics Integrated I/O)，導致獨立 CPO 模組市場萎縮。
+2. **極限散熱轉移**：散熱從傳統水冷進化為晶片內直接水冷 (DTC) 整合設計。
 
-## 鈭䎚�� 靘𥟇����摰孵��� (Content Value) 甇���Ｘ綫瞍磰�銝衤�隞�𤜯隞�◢�芾郎��
-�祉�蝛園�撠滢�銝碶誨�拍�霈𦠜凒嚗屸�脰�鈭��摰孵��潸��閧� ($\Delta$CV) ��迤�漤𢒰�冽�嚗�
-- **�漤𢒰霅血� (�蹂誨甇賊妟憸券麬)**嚗�
-  - **FOCI (3450.TW - �舫�)**嚗𡁜銁 {state['next_generation']} 銝碶誨�批捆�孵�潮� 14.0%嚗䔶��� Feynman_Next 銝碶誨�惩縧璅∠��吔��批捆�孵�潸��祈秐 8.0% (銵圈�� -42.86%)����孵歇�齿� Rubin/Feynman �拙�嚗䔶�銝碶誨�Ｚ𠪊瘛䀹掠憸券麬嚗�撥��遣霅唬�摰𡏭蕭擃塩��
-- **低風險觀察 (替代風險 LOW)**：
-  - **3013.晟銘電**：Feynman_Next 世代轉型 DTC 液冷整合機架，CV 由 9.0% 成長至 12.0% (+33.3%)，替代風險為 LOW。Consensus Score 為 55，建議觀察而非主動追高。
-- **甇�𢒰頧㗇� (�圈�脣�����潭楲撘菔��)**嚗�
-  - **GrandProcess (3131.TW - 撘睃�)**嚗鎄eynman_Next 3D 撠��瞈閗ˊ蝔贝��𨅯漲�游�嚗��摰孵��潛眏 18.0% �游��� 26.0% (憓鮋𩑈 44.44%)��
-  - **Auras (3324.TW - �䠷暑)**嚗𡁏��∩�銝�隞� DTC 瘨脣��詨�撠�⏚嚗��摰孵��潛眏 12.0% ����秐 18.0% (憓鮋𩑈 50.0%)��
+## 二、 供應鏈內容價值 (Content Value) 正反面推演與下世代替代風險警告
+本研究針對下世代物理變更，進行了內容價值變動率 ($\Delta$CV) 的正反面推演：
+- **反面警告 (替代歸零風險)**：
+  - **FOCI (3450.TW - 聯鈞)**：在 {state['next_generation']} 世代內容價值達 14.0%，但至 Feynman_Next 世代因去模組化，內容價值腰斬至 8.0% (衰退 -42.86%)。股價已反映 Rubin/Feynman 利多，下世代面臨淘汰風險，強烈建議不宜追高。
+  - **MCT (3013.TW - 晟銘電)**：CV 由 9.0% 成長至 12.0% (+33.3%)，替代風險為 LOW。
+- **正面轉機 (新進入與價值擴張者)**：
+  - **GrandProcess (3131.TW - 弘塑)**：Feynman_Next 3D 封裝濕製程複雜度暴增，內容價值由 18.0% 暴增至 26.0% (增長 44.44%)。
+  - **Auras (3324.TW - 雙鴻)**：掌握下一代 DTC 液冷核心專利，內容價值由 12.0% 攀升至 18.0% (增長 50.0%)。
 
-## 銝剹�� �睃� 6-9 �𧢲�銋贝身�� Backlog 閮�鱓����嗅抅�笔��誯�皜�
-1. **銝𦠜虜閮剖�閮�鱓�睃���**嚗帋�皜豢�����嗆糓�賢����嚗諹�䔶�皜詨��脣�鋆肽身�� Backlog 閮�鱓�睃�銝𧢲虜�𣂼���𤣰 2 �见迤摨� (6�𧢲�) ��䔄��
-2. **摰𡁻��𣂷摯**嚗�
-  - 撘睃� (3131.TW)嚗𡁶𤌍�齿������ YoY ��� 11.20%嚗䔶��嗉身�躰��� Backlog YoY 撌脩�憌���� **84.50%**嚗𣬚Ⅱ隤滩��潭扔撘瑟�鞎冽�嚗峕迨�箸��睃���絲瞍脰��麄��
-  - �䠷暑 (3324.TW)嚗𡁶𤌍�齿������ YoY �� 8.90%嚗䔶�閮剖��� DTC 撠�� Backlog YoY �� **52.40%**嚗屸��笔銁 6 �𧢲�敺䔶�皜貊��嗅�餈𦒘� YoY �����
+## 三、 領先 6-9 個月之設備 Backlog 訂單與營收基期定量預測
+1. **上游設備訂單領先性**：下游成品營收是落後指標，而上游先進封裝設備 Backlog 訂單領先下游成品營收 2 個季度 (6個月) 爆發。
+2. **定量預估**：
+  - 弘塑 (3131.TW)：目前成品營收 YoY 僅為 11.20%，但其設備訂單 Backlog YoY 已經飆升至 **84.50%**，確認處於極強拉貨期，此為最領先的起漲訊號。
+  - 雙鴻 (3324.TW)：目前成品營收 YoY 為 8.90%，但設備與 DTC 專案 Backlog YoY 達 **52.40%**，預期在 6 個月後下游營收將迎來 YoY 爆增。
 
-## �䜘�� �鞉�撌株��梯�摨� (Consensus Score) �擧蕪�滢�蝑𣇉裦
-蝟餌絞�拍鍂���霅睃漲敺堒��漤�脰��鞉�撌桅�瞈橘�隞仿俈鞎瑕���歇�齿��滢��梢��梯�璅嗵�嚗�
-- **�梯�撌脣��䭾���**嚗朞��� (Consensus: 92.0)����㗛𤓖 (Consensus: 85.0)��歇鋡急袇�嗉�慦㘾�撱���勗�嚗諹��寥�𤩺𣈲��
-- **�𧼮�霅䀹�隡𤩺���**嚗𡁜�憛� (Consensus: 35.0)���暾� (Consensus: 52.0)����湧�瘜典漲雿𠬍��鞉�撌格扔憭改�銝磰身�躰��桀歇�����䔄嚗𣬚�暺��撱箏�厩�����
+## 四、 預期差與共識度 (Consensus Score) 過濾操作策略
+系統利用「共識度得分」進行預期差過濾，以防買入「已反映」之熱門共識標的：
+- **共識已反映標的**：聯鈞 (Consensus: 92.0)。已被散戶與媒體廣泛報導，股價透支。
+- **中性觀察標的**：晟銘電 (Consensus: 55.0)，CV 由 9.0% 成長至 12.0% (+33.3%)，替代風險為 LOW。
+- **非共識潛伏標的**：弘塑 (Consensus: 35.0)、雙鴻 (Consensus: 52.0)。市場關注度低，預期差極大，且設備訂單已率先爆發，為黃金建倉窗口。
 
-## 鈭𢛵�� 蝯鞱�����梯� (Non-Consensus) �閗�撱箄降
-1. **�滢�蝑𣇉裦**嚗𡁜撥��遣霅圈��见歇憭批��齿�銝𥪯�銝衤�隞�𢒰�冽𤜯隞�◢�芰� FOCI �� MCT��
-2. **�詨��滨蔭**嚗𡁻�Ｖ����瞏𥕢�雿𤾸�霅睃漲��身�� Backlog �游��������嗅銁靚瑕��� GrandProcess (3131.TW) �� Auras (3324.TW)��銁�芯� 3 �𧢲�慦㘾�隞亙��脣�鋆肽身�坔枂鞎券�撜啁��剜�憭扯�摰����袇�嗉�憟格�嚗�嘑銵𣬚㬢�拐�蝯僐��
+## 五、 結論與非共識 (Non-Consensus) 投資建議
+1. **操作策略**：強烈建議避開已大幅反映且下下一代面臨替代風險的 FOCI；MCT (晟銘電) CV 成長 +33.3%、替代風險 LOW，列中性觀察，不建議追高亦不需迴避。
+2. **核心配置**：逢低悄悄潛伏低共識度、設備 Backlog 暴增、成品營收在谷底的 GrandProcess (3131.TW) 與 Auras (3324.TW)。在未來 3 個月媒體以先進封裝設備出貨高峰為頭條大肆宣傳、散戶興奮時，執行獲利了結。
 """
 
     return {"feasibility_report_draft": report_text}
 
 def quality_critic_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
-    閰訫祟蝭�暺痹�瑼Ｘ䰻�勗��臬炏�𡒊Ⅱ��鉄嚗帋�銝衤�隞�𤜯隞�◢�芥��身�蹱�鞎券���漲 (Backlog)���霅睃漲/�鞉�撌桀�����
+    評審節點：檢查報告是否明確包含：下下一代替代風險、設備拉貨領先度 (Backlog)、共識度/預期差得分。
     """
     report = state.get("feasibility_report_draft", "")
     iteration = state.get("iteration_count", 0) + 1
     
     prompt = (
-        f"隢见祟�乩誑銝见虾銵峕�抒�蝛嗅𥼚�𦠜糓�行遛頞唾��齿�璅坔��湔�扼��n"
-        f"閬���勗�銝剖�����啣��恬�\n"
-        f"1. 18-24�𧢲�銝衤�銝碶誨 (Feynman_Next) 瘣㛖���𤜯隞�◢�芾郎�𠺪�\n"
-        f"2. �喳�銝�摰嗉身�坔����鞎券���漲 (Backlog YoY) 摰𡁻��豢�嚗鞸n"
-        f"3. 靘𥟇�����貊��梯�摨血��� (Consensus Score) ����笔榆�𧼮�霅睃ế摰𠾼��n\n"
-        f"�𣂼𥼚�𠰴�摰嫘�𡢅�\n{report}\n"
+        f"請審查以下可行性研究報告是否滿足超前指標完整性。\n"
+        f"要求報告中必須清晰包含：\n"
+        f"1. 18-24個月下下世代 (Feynman_Next) 洗牌與替代風險警告；\n"
+        f"2. 至少一家設備商的拉貨領先度 (Backlog YoY) 定量數據；\n"
+        f"3. 供應鏈公司的共識度得分 (Consensus Score) 與預期差非共識判定。\n\n"
+        f"【報告內容】：\n{report}\n"
     )
     
     try:
-        # 雿輻鍂蝯鞉��𤥁撓�� API
+        # 使用結構化輸出 API
         critic_llm = get_llm_model(CriticDecision)
         decision = critic_llm.invoke([
-            SystemMessage(content="雿䭾糓�訫祟��蜓撣哨��湔聢�瑁�蝚砌�撅斗�肽��祟�伐�蝯蓥��亙�蝻箏�銝衤�銝碶誨�蹂誨憸券麬��身�� Backlog �硋�霅睃漲�擧蕪�����𥼚�𨳍��"),
+            SystemMessage(content="你是投審會主席，嚴格執行第二層思考審查，絕不接受缺少下下世代替代風險、設備 Backlog 或共識度過濾分析的報告。"),
             HumanMessage(content=prompt)
         ])
         status = decision.validation_status
         feedback = decision.critic_feedback
     except Exception:
-        # Fallback 閬誩�嚗𡁜銁�砍𧑐璅⊥挱����望䲰璅⊥踎撌脣��函泵���餈唬�暺痹��鞱身�� PASS
+        # Fallback 規則：在本地模擬時，由於模板已完全符合上述三點，預設為 PASS
         status = "PASS"
-        feedback = "�勗���鉄銝衤�銝�隞�𤜯隞�◢�迎�FOCI/MCT�唳愇霅血�嚗剹��身�� Backlog嚗��憛�+84.50%嚗劐誑�𠰴�霅睃漲敺堒�嚗���� 92.0 / 撘睃� 35.0嚗㚁��文���聢��"
+        feedback = "報告包含下下一代替代風險（FOCI/MCT腰斬警告）、設備 Backlog（弘塑+84.50%）以及共識度得分（聯鈞 92.0 / 弘塑 35.0），判定合格。"
         
         if iteration == 1 and not state.get("critic_feedback"):
             status = "FAIL"
-            feedback = "�勗�銝剝�撠� Feynman_Next (銝衤�銝�隞�) �嗆�銝页��䠷暑 (Auras) DTC 瘨脣�閮剛����摰孵��潸��訫��𣂷�憭䭾楛�伐�隢贝��� Auras ����誩��𣂷誑摰峕㟲撠齿���"
+            feedback = "報告中針對 Feynman_Next (下下一代) 架構下，雙鴻 (Auras) DTC 液冷設計的內容價值變動分析不夠深入，請補充 Auras 的定量分析以完整對比。"
 
-    print(f"[Critic 閰訫祟] 餈凋誨甈⊥彍: {iteration} | ����: {status} | �漤�: {feedback}")
+    print(f"[Critic 評審] 迭代次數: {iteration} | 狀態: {status} | 反饋: {feedback}")
     
     return {
         "validation_status": status,
@@ -349,36 +350,36 @@ def quality_critic_node(state: MarketHotspotState) -> Dict[str, Any]:
         "iteration_count": iteration
     }
 
-# ==================== 頝舐眏�批���楊霅� ====================
+# ==================== 路由控制與編譯 ====================
 
 def route_based_on_critic(state: MarketHotspotState) -> str:
     """
-    瘙箏�銝衤�甇亥楝敺㻫����𨅯�鞈芯���聢銝磰翮隞�活�� < 3嚗屸���𧼮�摰園��啣��吔��血�蝯鞉���
+    決定下一步路徑。如果品質不合格且迭代次數 < 3，退回專家重新優化；否則結束。
     """
     if state["validation_status"] == "FAIL" and state["iteration_count"] < 3:
-        print("--> 撖拇䰻�芷�𡁻�嚗諹孛�潸䌊�睲耨甇� (Self-Correction) 璈笔�嚗��皞航秐撠�振蝭�暺�...")
+        print("--> 審查未通過，觸發自我修正 (Self-Correction) 機制，回溯至專家節點...")
         return "supply_chain_expert"
-    print("--> 撖拇䰻�𡁻��㚚�餈凋誨銝𢠃�嚗���𤑳��毺�暺𠺶��")
+    print("--> 審查通過或達迭代上限，導向結束節點。")
     return END
 
-# 撱箇�銝衣楊霅舐��𧢲���
+# 建立並編譯狀態機圖
 workflow = StateGraph(MarketHotspotState)
 
-# 閮餃�蝭�暺�
+# 註冊節點
 workflow.add_node("supply_chain_expert", supply_chain_expert_node)
 workflow.add_node("pricing_revenue_expert", pricing_revenue_expert_node)
 workflow.add_node("media_story_expert", media_story_expert_node)
 workflow.add_node("report_writer", report_writer_node)
 workflow.add_node("quality_critic", quality_critic_node)
 
-# 閮剖���
+# 設定邊
 workflow.add_edge(START, "supply_chain_expert")
 workflow.add_edge("supply_chain_expert", "pricing_revenue_expert")
 workflow.add_edge("pricing_revenue_expert", "media_story_expert")
 workflow.add_edge("media_story_expert", "report_writer")
 workflow.add_edge("report_writer", "quality_critic")
 
-# 璇苷辣��
+# 條件邊
 workflow.add_conditional_edges(
     "quality_critic",
     route_based_on_critic,
@@ -388,65 +389,35 @@ workflow.add_conditional_edges(
     }
 )
 
-# 蝺刻陌 App
+# 編譯 App
 app = workflow.compile()
 
-# ==================== �賭誘�烾�脣�暺� ====================
+# ==================== 命令列進入點 ====================
 
 def run_daily_price_update():
     """
-    ��嘑銵峕��亥��寡蕭頩方�閫�撖笔��格凒�堆�銝滩矽�� LLM嚗𣬚��� Tokens��
+    僅執行每日股價追蹤與觀察名單更新，不調用 LLM，節省 Tokens。
     """
     print(f"==================================================")
-    print(f"[*] �笔�瘥𤩺𠯫閫�撖笔��株��寡蕭頩方�蝮暹��勗��湔鰵")
-    print(f"�嗅����: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"[*] 啟動每日觀察名單股價追蹤與績效報告更新")
+    print(f"當前時間: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"==================================================")
     try:
         import performance_tracker
         performance_tracker.update_watchlist_daily_prices()
         performance_tracker.generate_performance_report()
-        print(f"[OK] 瘥𤩺𠯫�∪�餈質馱��蜀��𥼚�𦠜凒�啣��琜�")
+        print(f"[OK] 每日股價追蹤與績效報告更新完成！")
     except Exception as e:
-        print(f"[�� �航炊] �瑁�瘥𤩺𠯫�∪�餈質馱�粹𥲤: {e}")
+        print(f"[❌ 錯誤] 執行每日股價追蹤出錯: {e}")
         sys.exit(1)
-
-def unify_stock_names(text: str) -> str:
-    import re
-    # 撱箇��∠巨隞�Ⅳ��葉���蝔勗�朣𡃏����瘨菔�撣貉����蝔株㘚��/銝剜�璅躰酉霈𢠃�
-    mappings = {
-        "3131.撘睃�": [r"GrandProcess\s*\((?:3131\.TW|3131\.TWO|撘睃�).*?\)", r"GrandProcess", r"3131\.TW", r"3131\.TWO", r"(?<!\d{4}\.)撘睃�"],
-        "3324.�䠷暑": [r"Auras\s*\((?:3324\.TW|3324\.TWO|�䠷暑).*?\)", r"Auras", r"3324\.TW", r"3324\.TWO", r"(?<!\d{4}\.)�䠷暑"],
-        "3450.�舫�": [r"FOCI\s*\((?:3450\.TW|3450\.TWO|�舫�).*?\)", r"FOCI", r"3450\.TW", r"3450\.TWO", r"(?<!\d{4}\.)�舫�"],
-        "3013.�罸���": [r"MCT\s*\((?:3013\.TW|3013\.TWO|�罸���).*?\)", r"MCT", r"3013\.TW", r"3013\.TWO", r"(?<!\d{4}\.)�罸���"],
-        "3583.颲𥡝��": [r"Scientech\s*\((?:3583\.TW|3583\.TWO|颲𥡝��).*?\)", r"Scientech", r"3583\.TW", r"3583\.TWO", r"(?<!\d{4}\.)颲𥡝��"],
-        "6187.�祆膜": [r"Allring\s*\((?:6187\.TW|6187\.TWO|�祆膜).*?\)", r"Allring", r"6187\.TW", r"6187\.TWO", r"(?<!\d{4}\.)�祆膜"],
-        "6683.�齿惣蝘烐�": [r"UMT\s*\((?:6683\.TW|6683\.TWO|�齿惣蝘烐�).*?\)", r"UMT", r"6683\.TW", r"6683\.TWO", r"(?<!\d{4}\.)�齿惣蝘烐�"],
-        "3680.摰嗥蒈": [r"Gudeng\s*\((?:3680\.TW|3680\.TWO|摰嗥蒈).*?\)", r"Gudeng", r"3680\.TW", r"3680\.TWO", r"(?<!\d{4}\.)摰嗥蒈"],
-        "6223.�箇籰": [r"MPI\s*\((?:6223\.TW|6223\.TWO|�箇籰).*?\)", r"MPI", r"6223\.TW", r"6223\.TWO", r"(?<!\d{4}\.)�箇籰"],
-        "8027.�行�": [r"Teh_hsin\s*\((?:8027\.TW|8027\.TWO|�行�).*?\)", r"Teh_hsin", r"8027\.TW", r"8027\.TWO", r"(?<!\d{4}\.)�行�"],
-    }
-    
-    for unified_name, patterns in mappings.items():
-        for pattern in patterns:
-            if pattern.isalpha() and not pattern.startswith("(?<"):
-                regex_str = r"\b" + pattern + r"\b"
-            else:
-                regex_str = pattern
-            text = re.sub(regex_str, unified_name, text, flags=re.IGNORECASE)
-            
-    # 皜���删��砍憫�踵�撠舘稲���銴��瑽页�憒� 3131.撘睃� (3131.撘睃�) �𡝗糓 3131.撘睃� - 3131.撘睃�
-    text = re.sub(r"(\d{4}\.[\u4e00-\u9fa5]+)\s*\(\s*\1\s*-\s*\1\s*\)", r"\1", text)
-    text = re.sub(r"(\d{4}\.[\u4e00-\u9fa5]+)\s*\(\s*\1\s*\)", r"\1", text)
-    text = re.sub(r"(\d{4}\.[\u4e00-\u9fa5]+)\s*-\s*\1", r"\1", text)
-    return text
 
 def run_hotspot_scan(sector: str, as_of_date: str = ""):
     print(f"==================================================")
-    print(f"[*] �笔� 12-18 �𧢲�撣�聦�梢��鞱�憭� Agent 蝟餌絞")
-    print(f"�格��踹�: {sector}")
+    print(f"[*] 啟動 12-18 個月市場熱點預見多 Agent 系統")
+    print(f"目標板塊: {sector}")
     if as_of_date:
-        print(f"璅⊥挱甇瑕蟮���暺�: {as_of_date}")
-    print(f"�嗅����: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"模擬歷史時間點: {as_of_date}")
+    print(f"當前時間: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"==================================================")
     
     initial_state: MarketHotspotState = {
@@ -464,24 +435,21 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
         "as_of_date": as_of_date
     }
     
-    # �瑁����𧢲�
+    # 執行狀態機
     final_output = app.invoke(initial_state)
     
-    # 撠���𡏭撓�箏� reports �桅�
+    # 將結果輸出到 reports 目錄
     os.makedirs("reports", exist_ok=True)
     today_str = datetime.date.today().strftime("%Y-%m-%d")
     report_filename = f"reports/{today_str}-{sector}-feasibility-report.md"
     
-    # 蝯曹��∠巨�滨迂
-    unified_report = unify_stock_names(final_output["feasibility_report_draft"])
-    
     with open(report_filename, "w", encoding="utf-8") as f:
-        f.write(unified_report)
+        f.write(final_output["feasibility_report_draft"])
         
-    print(f"\n[OK] 隞餃��𣂼�摰峕�嚗�𥼚�𠰴歇�脣���: {report_filename}")
-    print(f"��蝯����: {final_output['validation_status']} | 餈凋誨甈⊥彍: {final_output['iteration_count']}")
+    print(f"\n[OK] 任務成功完成！報告已儲存至: {report_filename}")
+    print(f"最終狀態: {final_output['validation_status']} | 迭代次數: {final_output['iteration_count']}")
 
-    # �嗅祟�仿�𡁻����撠�鰵�箇𣶹銋卝�屸��梯�暺��撱箏�㗇����滚��� watchlist 銝行凒�啣��潸��萘�
+    # 當審查通過時，將新出現之「非共識黃金建倉標的」加入 watchlist 並更新價格與勝率
     if final_output["validation_status"] == "PASS":
         try:
             import performance_tracker
@@ -492,10 +460,10 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
             
             for cid, data in raw_rev.items():
                 if data.get("is_golden_accumulation_target", False):
-                    # �鞱身雿輻鍂璅⊥挱�豢���洵 9 �𧢲��寞聢
+                    # 預設使用模擬數據的第 9 個月價格
                     entry_price = float(data.get("current_projected", [100.0] * 12)[8])
                     
-                    # �𡑒岫隞� yfinance �匧�隞𠰴予���啁�撖行𤣰�文�
+                    # 嘗試以 yfinance 拉取今天最新真實收盤價
                     try:
                         ticker = yf.Ticker(cid)
                         hist = ticker.history(period="1d")
@@ -512,24 +480,24 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
                         entry_date=as_of_date
                     )
             
-            # �湔鰵�滚鱓銝剜��㗇���� K 蝺朞��𧼮𥼚���銝衣��鞟絞閮�𥼚��
+            # 更新名單中所有標的的 K 線與回報率，並生成統計報告
             performance_tracker.update_watchlist_daily_prices(as_of_date=as_of_date)
             performance_tracker.generate_performance_report()
             
         except Exception as e:
-            print(f"[�𩤃� 霅血�] �芸��湔鰵蝮暹�餈質馱�滚鱓�粹𥲤: {e}")
+            print(f"[⚠️ 警告] 自動更新績效追蹤名單出錯: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="撣�聦�梢��鞱���� Agent 蝟餌絞")
-    parser.add_argument("--sector", type=str, default="CPO_Optical_Transceiver", help="�格��踹��滨迂")
-    parser.add_argument("--as-of-date", type=str, default="", help="甇瑕蟮璅⊥挱���暺� (YYYY-MM-DD)")
+    parser = argparse.ArgumentParser(description="市場熱點預見與多 Agent 系統")
+    parser.add_argument("--sector", type=str, default="CPO_Optical_Transceiver", help="目標板塊名稱")
+    parser.add_argument("--as-of-date", type=str, default="", help="歷史模擬時間點 (YYYY-MM-DD)")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--daily-update", action="store_true", help="��嘑銵峕��亥��寡蕭頩方�閫�撖笔��格凒��")
-    group.add_argument("--weekly-report", action="store_true", help="�瑁�摰峕㟲瘥誯�勗� Agent �勗��𥪜ế�����")
+    group.add_argument("--daily-update", action="store_true", help="僅執行每日股價追蹤與觀察名單更新")
+    group.add_argument("--weekly-report", action="store_true", help="執行完整每週多 Agent 報告研判與生成")
     args = parser.parse_args()
     
     if args.daily_update:
         run_daily_price_update()
     else:
-        # �鞱身�𡝗�摰� --weekly-report ����脰�摰峕㟲����𥪜ế
+        # 預設或指定 --weekly-report 時，進行完整掃描研判
         run_hotspot_scan(args.sector, as_of_date=args.as_of_date)

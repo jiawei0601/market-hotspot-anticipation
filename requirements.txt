@@ -1,7 +1,6 @@
 pandas
 pandas-ta
 yfinance
-langchain-openai
 langchain-google-genai
 langgraph
 pydantic>=2.0

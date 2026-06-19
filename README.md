@@ -23,7 +23,7 @@
 .
 ├── .github/
 │   └── workflows/
-│       └── weekly_research_scheduler.yml  # 每週一自動化運行排程 (Cron + DST 檢查 + Keep-alive)
+│       └── daily_market_pipeline.yml  # 每日自動化運行排程 (Cron + Keep-alive)
 ├── docs/
 │   ├── adr/
 │   │   ├── 0001-record-architecture-decisions.md
@@ -63,7 +63,7 @@
      ```bash
      export GEMINI_API_KEY="your-api-key-here"
      ```
-   > **備註**：若未檢測到 `GEMINI_API_KEY`，系統會自動嘗試呼叫本地執行的 Ollama (localhost:11434, 運行 gemma4)；若本地無服務，將自動降級至系統內建的高精度本地規則生成模版，以防排程中斷。
+   > **備註**：必須設定 GEMINI_API_KEY，否則主分析流程會在呼叫 LLM 時報錯。系統不整合 Ollama；惟各 Agent 節點在 LLM 呼叫失敗時，內建規則式模版作為降級產出，確保排程不中斷。
 
 ### 3.2 執行熱點分析
 執行 `main_agent.py` 並指定目標板塊（例如 `CPO_Optical_Transceiver`）：
@@ -72,6 +72,8 @@ python main_agent.py --sector CPO_Optical_Transceiver
 ```
 執行後，系統將運行 LangGraph 狀態機，三位專家將進行評估、Writer 撰寫報告、Critic 進行結構數據檢核（若缺失將自動回溯重構）。最終，產出的報告將被寫入 `reports/` 目錄，檔名格式為：
 `reports/YYYY-MM-DD-<板塊名稱>-feasibility-report.md`。
+
+> **註**：TWSE 開放 API 僅提供『最新月份』營收快照，無歷史回溯。因此歷史回測（指定過去的 as_of_date）在 Point-in-Time 檢查下一律改用模擬營收，真實營收整合僅對當期 live 執行生效。回測勝率屬模擬數據，僅供方法論驗證參考。
 
 ### 3.3 執行單元測試
 本專案使用 `unittest` 框架驗證數據正確性與狀態機流暢度：
@@ -83,10 +85,8 @@ python -m unittest discover -s tests -p "test_*.py"
 
 ## 4. DevOps 自動化排程
 
-系統在 `.github/workflows/weekly_research_scheduler.yml` 中定義了每週一自動運行的流水線，具備以下上線保障機制：
-- **美東時區守護 (DST Guard)**：動態檢查紐約時間，判斷當前是夏令時 (EDT) 還是冬令時 (EST)，自動報告與美股收盤後的時差對齊性。
-- **防止 Action 停用 (Keep-Alive)**：GitHub 會在 Repo 超過 60 天無 commit 時停用 Cron 排程。為此，Workflow 執行完畢後會將最新報告自動 commit 並 push 回 Repo 預設分支，附帶 `[skip ci]` 標記，維持 Repo 活性。
-- **DeadMan Watchdog**：在工作流開始與結束時，透過 `curl` 向 `deadmancheck.io` 發送 ping 請求，確保若流程掛死或執行失敗，管理員能第一時間收到警報。
+系統在 `.github/workflows/daily_market_pipeline.yml` 中定義了自動運行的流水線，具備以下上線保障機制：
+- **防止 Action 停用 (Keep-Alive)**：GitHub 會在 Repo 超過 60 天無 commit 時停用 Cron 排程。為此，工作流執行後會將 reports/、watchlist.json、docs/ 的變更自動 commit 並 push 回 main（commit 訊息含 [skip ci]），藉此維持 repo 活性。
 
 ---
 

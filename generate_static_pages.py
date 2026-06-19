@@ -10,6 +10,7 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         :root {{
@@ -290,7 +291,7 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
         // 讀取 Raw Markdown 字串並使用 marked 渲染
         const rawMarkdown = `{markdown_content}`;
         const container = document.getElementById('content');
-        container.innerHTML = marked.parse(rawMarkdown);
+        container.innerHTML = DOMPurify.sanitize(marked.parse(rawMarkdown));
         
         // UI/UX 動態排版後處理：將表格內特定文本包裝為漂亮的 Badge
         const tables = container.querySelectorAll('table');

@@ -396,8 +396,6 @@ class MarketInformationMonitor:
                 }
             ]
 
-        self.real_revenue_cache = None
-
     def get_high_frequency_pricing(self, sector: str, as_of_date: Optional[str] = None) -> Dict[str, Any]:
         """
         模擬/獲取高頻報價趨勢。支援 as_of_date 進行歷史回測截斷。
@@ -631,12 +629,17 @@ class MarketInformationMonitor:
                 yoy_curve.append(round(yoy, 2))
                 
             # 模擬設備商或上游特用材料的「訂單 Backlog YoY」
+            # 決定性亂數種子：同一 (個股, 時間點) 必得相同模擬結果，確保回測可重現
+            import hashlib
+            _seed_basis = f"{cid}_{as_of_date or 'live'}"
+            _seed = int(hashlib.md5(_seed_basis.encode()).hexdigest(), 16) % (2**32)
+            _rng = np.random.default_rng(_seed)
             backlog_yoy_curve = []
             for idx in range(12):
                 if idx < 6:
                     backlog_yoy = yoy_curve[idx + 6] * 1.3
                 else:
-                    backlog_yoy = (100 - (idx - 6) * 10) * (1 + np.random.normal(0, 0.05))
+                    backlog_yoy = (100 - (idx - 6) * 10) * (1 + _rng.normal(0, 0.05))
                 backlog_yoy_curve.append(round(max(backlog_yoy, 5.0), 2))
                 
             future_yoy = yoy_curve[-3:]

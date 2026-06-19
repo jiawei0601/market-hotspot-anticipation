@@ -33,7 +33,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          uv pip install --system pandas numpy pandas-ta yfinance requests langgraph langchain-openai langchain-google-genai pydantic fastapi uvicorn apscheduler
+          uv pip install --system pandas numpy pandas-ta yfinance requests langgraph langchain-google-genai pydantic fastapi uvicorn apscheduler
 
       - name: Determine Run Mode and Execute
         env:
@@ -56,6 +56,11 @@ jobs:
             python main_agent.py --weekly-report
           fi
 
+      - name: Generate Static HTML Pages for GitHub Pages
+        run: |
+          # 將 reports/ 的 Markdown 報告編譯為 docs/ 靜態 HTML，供 GitHub Pages 託管
+          python generate_static_pages.py
+
       - name: Staging and Auto-Commit and Push Back to GitHub
         run: |
           git config --global user.name "github-actions[bot]"
@@ -67,7 +72,10 @@ jobs:
           if [[ -n "$(git status --porcelain)" ]]; then
             echo "偵測到檔案變更，開始推送..."
             git commit -m "Auto-Update: Market Data & Portfolio States [skip ci]"
-            git pull --rebase origin main || echo "Git pull rebase 失敗，繼續推送。"
+            if ! git pull --rebase origin main; then
+              echo "::error::Git rebase 失敗，為避免覆蓋遠端提交，中止本次自動推送。"
+              exit 1
+            fi
             git push --force-with-lease origin main
             echo "已成功同步並推送到 GitHub 倉庫！"
           else

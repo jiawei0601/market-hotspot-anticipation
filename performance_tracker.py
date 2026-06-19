@@ -185,21 +185,25 @@ def generate_performance_report() -> str:
     # 計算統計指標
     total_targets = len(watchlist)
     wins = 0
+    realized_wins = 0
     total_current_return = 0.0
     total_max_return = 0.0
     total_max_drawdown = 0.0
-    
+
     # 定義成功獲利目標為 15.0%
     target_win_threshold = 15.0
-    
+
     for item in watchlist:
-        if item["max_return_pct"] >= target_win_threshold:
+        if item.get("max_return_pct", 0.0) >= target_win_threshold:
             wins += 1
-        total_current_return += item["current_return_pct"]
-        total_max_return += item["max_return_pct"]
-        total_max_drawdown += item["min_return_pct"]
-        
+        if item.get("current_return_pct", 0.0) >= target_win_threshold:
+            realized_wins += 1
+        total_current_return += item.get("current_return_pct", 0.0)
+        total_max_return += item.get("max_return_pct", 0.0)
+        total_max_drawdown += item.get("min_return_pct", 0.0)
+
     win_rate = (wins / total_targets) * 100 if total_targets > 0 else 0.0
+    realized_win_rate = (realized_wins / total_targets) * 100 if total_targets > 0 else 0.0
     avg_current_return = total_current_return / total_targets
     avg_max_return = total_max_return / total_targets
     avg_max_drawdown = total_max_drawdown / total_targets # 平均最大跌幅
@@ -218,7 +222,8 @@ def generate_performance_report() -> str:
 | 指標名稱 | 統計結果 | 說明 |
 | :--- | :--- | :--- |
 | **追蹤標的總數** | **{total_targets} 支** | 系統主動甄選之非共識黃金建倉標的 |
-| **系統勝率 (Win Rate)** | **{win_rate:.1f}%** | 最大漲幅達標 $\ge {target_win_threshold}\%$ 的標的比率 |
+| **最大潛在漲幅達標率 (MFE)** | **{win_rate:.1f}%** | 曾觸及最大漲幅 $\ge {target_win_threshold}\%$ 的比率（非實現報酬，會高估真實勝率） |
+| **實現報酬勝率 (Realized)** | **{realized_win_rate:.1f}%** | 以「當前實現報酬」$\ge {target_win_threshold}\%$ 計算的比率 |
 | **平均當前回報率** | **{avg_current_return:+.1f}%** | 若買入持有至今的等權重平均收益率 |
 | **平均最大潛在漲幅** | **{avg_max_return:+.1f}%** | 推薦後平均最大波段漲幅 |
 | **平均最大波段回撤** | **{avg_max_drawdown:.1f}%** | 推薦後曾遭遇的平均最大跌幅 |

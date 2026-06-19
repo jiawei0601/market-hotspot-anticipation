@@ -284,7 +284,9 @@ class MonteCarloSimulator:
         total_trades = len(valid_trades)
         
         win_trades = sum(1 for r in valid_trades if r["is_win"])
+        realized_wins = sum(1 for r in valid_trades if r["final_return"] >= 30.0)
         win_rate = (win_trades / total_trades * 100) if total_trades > 0 else 0.0
+        realized_win_rate = (realized_wins / total_trades * 100) if total_trades > 0 else 0.0
         
         avg_max_return = sum(r["max_return"] for r in valid_trades) / total_trades if total_trades > 0 else 0.0
         avg_min_return = sum(r["min_return"] for r in valid_trades) / total_trades if total_trades > 0 else 0.0
@@ -315,8 +317,9 @@ class MonteCarloSimulator:
 | **回測抽樣總數** | {total_samples} 組 |
 | **發出買入訊號期數** | {total_trades} 組 |
 | **空倉觀望期數** | {total_samples - total_trades} 組 |
-| **成功交易次數 (波段漲幅 >= 30%)** | {win_trades} 次 |
-| **蒙地卡羅勝率 (Win Rate)** | **{win_rate:.1f}%** |
+| **MFE 達標次數 (曾觸 ≥30%)** | {win_trades} 次 |
+| **最大潛在漲幅達標率 (MFE)** | **{win_rate:.1f}%** （非實現報酬，會高估） |
+| **實現報酬勝率 (52週期末實現 ≥30%)** | **{realized_win_rate:.1f}%** |
 | **52週平均最大潛在漲幅** | **{avg_max_return:.1f}%** |
 | **52週平均最大回撤 (跌幅)** | **{avg_min_return:.1f}%** |
 | **52週平均最終持有回報** | **{avg_final_return:.1f}%** |
@@ -343,7 +346,9 @@ if __name__ == "__main__":
     parser.add_argument("--start-date", type=str, default="2015-01-01", help="起 (YYYY-MM-DD)")
     parser.add_argument("--end-date", type=str, default="2025-06-01", help="止 (YYYY-MM-DD)")
     parser.add_argument("--samples", type=int, default=100, help="抽樣組數")
+    parser.add_argument("--seed", type=int, default=42, help="隨機種子，確保回測可重現")
     args = parser.parse_args()
-    
+    random.seed(args.seed)
+
     simulator = MonteCarloSimulator(args.start_date, args.end_date, args.samples)
     simulator.run()
