@@ -1,0 +1,75 @@
+name: TWSE Quantitative Daily Ingestion & Weekly Reporting Pipeline
+
+on:
+  schedule:
+    # 1. 每日數據更新與追蹤：台北時間週一至週五 18:00 執行 (UTC 10:00)
+    - cron: '0 10 * * 1-5'
+    # 2. 每週彙整與多 Agent 研判報告：台北時間週一 07:30 執行 (UTC 週日 23:30)
+    - cron: '30 23 * * 0'
+  workflow_dispatch: # 支援手動即時觸發排程
+
+permissions:
+  contents: write # 允許 push 變更
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Code with Complete History
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python Runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Setup Fast Rust Python Installer (uv)
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Dependencies
+        run: |
+          uv pip install --system pandas numpy pandas-ta yfinance requests langgraph langchain-openai langchain-google-genai pydantic fastapi uvicorn apscheduler
+
+      - name: Determine Run Mode and Execute
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          # 根據觸發事件類型與 cron 時間判斷執行模式
+          # UTC 10:00 (18:00 Taipei) -> 每日追蹤
+          # UTC 23:30 (07:30 Taipei) -> 每週報告
+          TRIGGER_CRON="${{ github.event.schedule }}"
+          echo "Trigger Cron: $TRIGGER_CRON"
+          
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "手動觸發：預設執行完整每週報告研判"
+            python main_agent.py --weekly-report
+          elif [ "$TRIGGER_CRON" = "0 10 * * 1-5" ]; then
+            echo "排程觸發：執行每日股價追蹤與觀察名單更新"
+            python main_agent.py --daily-update
+          else
+            echo "排程觸發：執行每週彙整報告產出"
+            python main_agent.py --weekly-report
+          fi
+
+      - name: Staging and Auto-Commit and Push Back to GitHub
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 暫存所有潛在的變更檔案 (包含報告、追蹤清單、靜態 html 等)
+          git add reports/ watchlist.json docs/ || true
+          
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "偵測到檔案變更，開始推送..."
+            git commit -m "Auto-Update: Market Data & Portfolio States [skip ci]"
+            git pull --rebase origin main || echo "Git pull rebase 失敗，繼續推送。"
+            git push --force-with-lease origin main
+            echo "已成功同步並推送到 GitHub 倉庫！"
+          else
+            echo "無任何變更，跳過 Git commit。"
+          fi

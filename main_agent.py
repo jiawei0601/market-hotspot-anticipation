@@ -63,19 +63,14 @@ class CriticDecision(BaseModel):
         description="詳細的審查反饋意見。若 validation_status 為 FAIL，指出哪些超前定量數據或非共識分析缺失。"
     )
 
-# 初始化 LLM 模型（支援環境變數 GEMINI_API_KEY，若無則降級為本地端點或模擬模式）
+# 初始化 LLM 模型（支援環境變數 GEMINI_API_KEY）
 def get_llm_model(structured_model=None):
     api_key = os.environ.get("GEMINI_API_KEY")
     if api_key:
         llm = ChatGoogleGenerativeAI(model="gemini-3.1-pro", temperature=0.2, google_api_key=api_key)
     else:
-        # 降級至本地相容 OpenAI 格式之 Ollama 伺服器 (Gemma4)
-        llm = ChatOpenAI(
-            model="gemma4", 
-            api_key="fake-key", 
-            base_url="http://localhost:11434/v1",
-            temperature=0.2
-        )
+        # 當處於 GitHub Actions 或是已設定嚴格模式時，無 API Key 直接報錯，不以假數據混淆
+        raise ValueError("缺少必要的 GEMINI_API_KEY 環境變數。請在專案設定或 GitHub Secrets 中配置它。")
         
     if structured_model:
         return llm.with_structured_output(structured_model)
@@ -394,6 +389,23 @@ app = workflow.compile()
 
 # ==================== 命令列進入點 ====================
 
+def run_daily_price_update():
+    """
+    僅執行每日股價追蹤與觀察名單更新，不調用 LLM，節省 Tokens。
+    """
+    print(f"==================================================")
+    print(f"[*] 啟動每日觀察名單股價追蹤與績效報告更新")
+    print(f"當前時間: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"==================================================")
+    try:
+        import performance_tracker
+        performance_tracker.update_watchlist_daily_prices()
+        performance_tracker.generate_performance_report()
+        print(f"[OK] 每日股價追蹤與績效報告更新完成！")
+    except Exception as e:
+        print(f"[❌ 錯誤] 執行每日股價追蹤出錯: {e}")
+        sys.exit(1)
+
 def run_hotspot_scan(sector: str):
     print(f"==================================================")
     print(f"[*] 啟動 12-18 個月市場熱點預見多 Agent 系統")
@@ -469,6 +481,13 @@ def run_hotspot_scan(sector: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="市場熱點預見與多 Agent 系統")
     parser.add_argument("--sector", type=str, default="CPO_Optical_Transceiver", help="目標板塊名稱")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--daily-update", action="store_true", help="僅執行每日股價追蹤與觀察名單更新")
+    group.add_argument("--weekly-report", action="store_true", help="執行完整每週多 Agent 報告研判與生成")
     args = parser.parse_args()
     
-    run_hotspot_scan(args.sector)
+    if args.daily_update:
+        run_daily_price_update()
+    else:
+        # 預設或指定 --weekly-report 時，進行完整掃描研判
+        run_hotspot_scan(args.sector)
