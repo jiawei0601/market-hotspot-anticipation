@@ -142,10 +142,11 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     - **核心優化**：解讀上游設備 Backlog 訂單 (Equipment Backlog)，該指標領分成品營收 6 個月，藉此捕捉股價起漲的先行信號。
     """
     sector = state["target_sector"]
-    company_ids = ["3450.TW", "3131.TWO", "3013.TW", "3324.TWO"]
+    as_of_date = state.get("as_of_date")
+    current_matrix = monitor.get_point_in_time_matrix(as_of_date if as_of_date else None)
+    company_ids = [x["company_id"] for x in current_matrix]
     
     # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
-    as_of_date = state.get("as_of_date")
     pricing_data = monitor.get_high_frequency_pricing(sector, as_of_date=as_of_date if as_of_date else None)
     revenue_data = monitor.simulate_revenue_inflection(company_ids, as_of_date=as_of_date if as_of_date else None)
     

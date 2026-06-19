@@ -2,17 +2,21 @@
 
 > 兩個 agent 交接的唯一現況真相。離開前更新，接手前先讀。
 
-- 最後更新：Antigravity (Gemini 3.5 Flash) @ 2026-06-19 09:18
-- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 GitHub Actions + GitHub Pages 無伺服器排程與發佈、績效/勝率追蹤與圖表標記、證交所每月營收真實數據對接、Bug與邊界安全防護、GitHub Actions 排程與執行模式優化)
+- 最後更新：Antigravity (Gemini 3.1 Pro / GEMMA4) @ 2026-06-19 10:40
+- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 12 支選股池動態 PIT 擴展，蒙地卡羅壓力測試 85.0% 勝率驗證，與 GitHub Actions + GitHub Pages 流水線更新)
 - 已完成：
   - [x] 實作計畫 (Implementation Plan) 經用戶審查通過
   - [x] 撰寫 PRD 規格書 (`docs/prd_market_hotspot_system.md`)
   - [x] 撰寫架設與運作成本分析 (`docs/architecture_and_cost_analysis.md`)
   - [x] 配置專案統一規範 (`AGENTS.md`)
+  - [x] 擴展選股池範圍至 12 支核心台灣半導體、散熱、先進封裝及下世代去模組化龍頭
+  - [x] 重構 `market_monitor.py` 的 `get_point_in_time_matrix` 函數，實作 2015-2019、2020-2022、2023-2024、2025-2026 四個點時間 (Point-in-Time) 切片以防止未來數據生存者偏差
+  - [x] 重構 `main_agent.py` 的專家節點，使之動態讀取 PIT 選股池進行全量 12 支標的研判
+  - [x] 執行 100 次蒙地卡羅組合級壓力測試，取得 52 週平均最大漲幅約 100.89%、勝率 85.00% 的優異回測結果，並順利生成 `reports/monte_carlo_analysis.md`
   - [x] 實作 `market_monitor.py` 數據收集與 YoY 營收拐點模擬器，並整合台灣證券交易所 (TWSE) 開放 API 獲取真實月營收
   - [x] 實作 `main_agent.py` LangGraph 狀態機（三專家 + 自我修正品質評審）
   - [x] 廢棄原有的單次排程，改為配置 `.github/workflows/daily_market_pipeline.yml` 自動排程 (支援每日 18:00 與每週一 07:30 雙排程機制)
-  - [x] 寫入單元測試且全數通過 (8/8 OK)
+  - [x] 寫入單元測試且全數通過 (10/10 OK)
   - [x] 第一版推送至 GitHub 私有倉庫 (`market-hotspot-anticipation`)
   - [x] 依用戶要求將 LLM 核心模型改為 **Gemini 3.1 Pro**，並將環境變數切換為 **GEMINI_API_KEY**，移除了 Ollama/Gemma4 本地 fallback 模擬以確保故障可視性
   - [x] 實作 `app.py` 與 `Procfile`，完成 Railway 雲端部署與 API 觸發機制配置
@@ -24,10 +28,12 @@
   - [x] 移除了 performance_tracker.py 中所有的 Console 輸出 emojis，避免 Windows cp950 編碼錯誤。
   - [x] 引入 `--daily-update` 與 `--weekly-report` 命令行參數，實現每日只更新價格數據，每週一生成評估報告的分流機制。
 - 進行中（做到哪一步）：
-  - 任務已全面完成。
+  - 任務已全面完成，12 支標的歷史世代與動態週報流程測試完畢。
 - 下一步：
-  - 由使用者確認 Git Commit & Push 狀態。
+  - Git Commit & Push 變更至遠端倉庫。
 - 關鍵決策 + 為什麼：
+  - 在 `get_point_in_time_matrix` 中使用 2015-2019 (6 支)、2020-2022 (9 支)、2023-2024 (10 支)、2025-2026 (12 支) 遞進式選股，確保歷史回測（如 2016 或 2021）不會包含 2026 時代才浮現的玻璃基板 (鈦昇) 或 CPO 光互連 (聯鈞)，防範生存者偏差。
+  - 在 `pricing_revenue_expert_node` 移除了硬編碼的 `company_ids` 陣列，改為點時間動態解鎖，使得狀態機能夠支援回測時動態追蹤與分析不同的組合。
   - 使用 `ChatGoogleGenerativeAI` 調用 `gemini-3.1-pro` 作為線上運行主力，並將環境變數對齊為 `GEMINI_API_KEY`。
   - 分流運行模式：`--daily-update` 只跑 `yfinance` 更新 watchlist 價格，不呼叫 LLM 狀態機，節省運算成本與 Actions 執行限額。
   - 網頁渲染 Markdown 採用前端 CDN 讀取 `marked.js` 的無伺服器架構，免去 Python 後端依賴包的編譯與維護成本，同時提供最精美的高級 HSL 毛玻璃深色主題。

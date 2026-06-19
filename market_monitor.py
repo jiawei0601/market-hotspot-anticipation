@@ -36,9 +36,10 @@ class MarketInformationMonitor:
     def get_point_in_time_matrix(self, as_of_date: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         核心優化：基於歷史點時間 (Point-in-Time) 回傳當時的供應鏈標的選股池，完全杜絕 Look-ahead Bias。
-        - 2020-2022 年 (Hopper 世代)：此時沒有 Feynman 概念，一詮(2486)尚未切入散熱均熱片，雍智(6683)為主要先進測試載板。
-        - 2023-2024 年 (Blackwell 世代)：液冷雙鴻(3324)與一詮(2486)送樣，弘塑設備大拉貨。
-        - 2025-2026 年 (Vera_Rubin -> Feynman 世代)：全量解鎖 (一詮均熱片放量、鈦昇玻璃基板)。
+        - 2015-2019 年：早期 16nm/7nm 擴產潮與一般 server 世代 (6 支)
+        - 2020-2022 年 (Hopper 世代)：弘塑、辛耘、家登、萬潤、雍智、旺矽、奇鋐、晟銘電、雙鴻 (9 支)
+        - 2023-2024 年 (Blackwell 世代)：弘塑、辛耘、萬潤、家登、雙鴻、奇鋐、一詮、旺矽、雍智、晟銘電 (10 支)
+        - 2025-2026 年 (當前 / Feynman 世代)：全量解鎖 12 支標的
         """
         if as_of_date:
             today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
@@ -53,9 +54,18 @@ class MarketInformationMonitor:
                     "name": "GrandProcess",
                     "segment": "equipment",
                     "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
-                    "consensus_score": 30.0, # 當時尚未廣為人知
+                    "consensus_score": 30.0,
                     "status": "Foundry Equipment Supplier",
                     "timeline": {"design_win": "2015-Q1", "pilot": "2015-Q3", "ramp_up": "2016-Q1"}
+                },
+                {
+                    "company_id": "3680.TWO",  # 家登 (Gudeng)
+                    "name": "Gudeng",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 3.5, "Feynman": 6.0, "Feynman_Next": 8.0},
+                    "consensus_score": 40.0,
+                    "status": "EUV Pod & Carrier Supplier",
+                    "timeline": {"design_win": "2015-Q2", "pilot": "2015-Q4", "ramp_up": "2016-Q2"}
                 },
                 {
                     "company_id": "6683.TWO",  # 雍智科技 (UMT)
@@ -74,22 +84,67 @@ class MarketInformationMonitor:
                     "consensus_score": 85.0,
                     "status": "Server Case Supplier",
                     "timeline": {"design_win": "2015-Q2", "pilot": "2015-Q4", "ramp_up": "2016-Q2"}
+                },
+                {
+                    "company_id": "3017.TW",  # 奇鋐 (AVC)
+                    "name": "AVC",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 5.0, "Feynman_Next": 6.0},
+                    "consensus_score": 55.0,
+                    "status": "3D VC Cooler Manufacturer",
+                    "timeline": {"design_win": "2016-Q1", "pilot": "2016-Q3", "ramp_up": "2017-Q1"}
+                },
+                {
+                    "company_id": "6223.TWO",  # 旺矽 (MPI)
+                    "name": "MPI",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 2.5, "Feynman": 4.0, "Feynman_Next": 5.0},
+                    "consensus_score": 48.0,
+                    "status": "Cantilever Probe Card Supplier",
+                    "timeline": {"design_win": "2015-Q3", "pilot": "2016-Q1", "ramp_up": "2016-Q3"}
                 }
             ]
         # 2020-2022 年底：Hopper 世代
         elif today <= datetime.date(2022, 12, 31):
             return [
                 {
-                    "company_id": "3131.TWO",  # 弘塑 (GrandProcess) - 當時為 TSMC CoWoS 設備主力
+                    "company_id": "3131.TWO",  # 弘塑 (GrandProcess)
                     "name": "GrandProcess",
                     "segment": "equipment",
                     "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 12.0, "Feynman_Next": 15.0},
-                    "consensus_score": 28.0, # 當時低共識
+                    "consensus_score": 28.0,
                     "status": "Early Advanced Packaging Pioneer",
                     "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q4", "ramp_up": "2021-Q2"}
                 },
                 {
-                    "company_id": "6683.TWO",  # 雍智科技 (UMT) - 測試載板
+                    "company_id": "3583.TW",  # 辛耘 (Scientech)
+                    "name": "Scientech",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+                    "consensus_score": 32.0,
+                    "status": "CoWoS Single Wafer Wet Cleaning Equipment",
+                    "timeline": {"design_win": "2020-Q2", "pilot": "2020-Q4", "ramp_up": "2021-Q2"}
+                },
+                {
+                    "company_id": "3680.TWO",  # 家登 (Gudeng)
+                    "name": "Gudeng",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 12.0},
+                    "consensus_score": 55.0,
+                    "status": "EUV Pod Supplier for Foundry",
+                    "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2021-Q1"}
+                },
+                {
+                    "company_id": "6187.TWO",  # 萬潤 (Allring)
+                    "name": "Allring",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 6.0, "Feynman_Next": 8.0},
+                    "consensus_score": 35.0,
+                    "status": "Advanced Packaging Dispensing Supplier",
+                    "timeline": {"design_win": "2021-Q1", "pilot": "2021-Q3", "ramp_up": "2022-Q1"}
+                },
+                {
+                    "company_id": "6683.TWO",  # 雍智科技 (UMT)
                     "name": "UMT",
                     "segment": "package",
                     "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
@@ -98,13 +153,40 @@ class MarketInformationMonitor:
                     "timeline": {"design_win": "2020-Q2", "pilot": "2021-Q1", "ramp_up": "2021-Q3"}
                 },
                 {
-                    "company_id": "3013.TW",  # 晟銘電 (MCT) - 當時以一般伺服器機殼為主，屬於高共識明星
+                    "company_id": "6223.TWO",  # 旺矽 (MPI)
+                    "name": "MPI",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 3.5, "Feynman": 6.0, "Feynman_Next": 8.0},
+                    "consensus_score": 44.0,
+                    "status": "VPC & Cantilever Probe Card Provider",
+                    "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2021-Q1"}
+                },
+                {
+                    "company_id": "3017.TW",  # 奇鋐 (AVC)
+                    "name": "AVC",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+                    "consensus_score": 72.0,
+                    "status": "3D VC Supplier for Server CPU/GPU",
+                    "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2021-Q1"}
+                },
+                {
+                    "company_id": "3013.TW",  # 晟銘電 (MCT)
                     "name": "MCT",
                     "segment": "cooling",
                     "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 4.0, "Feynman_Next": 4.0},
                     "consensus_score": 88.0,
                     "status": "Standard Server Chassis Supplier",
                     "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2020-Q4"}
+                },
+                {
+                    "company_id": "3324.TWO",  # 雙鴻 (Auras)
+                    "name": "Auras",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 6.0, "Feynman_Next": 8.0},
+                    "consensus_score": 48.0,
+                    "status": "Thermal Modules & Air Cooling Solutions",
+                    "timeline": {"design_win": "2020-Q2", "pilot": "2020-Q4", "ramp_up": "2021-Q2"}
                 }
             ]
         # 2023-2024 年：Blackwell 世代
@@ -120,7 +202,34 @@ class MarketInformationMonitor:
                     "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
                 },
                 {
-                    "company_id": "3324.TWO",  # 雙鴻 (Auras) - 液冷水冷板開始送樣
+                    "company_id": "3583.TW",  # 辛耘 (Scientech)
+                    "name": "Scientech",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 10.0, "Feynman_Next": 12.0},
+                    "consensus_score": 30.0,
+                    "status": "CoWoS Cleaning Equipment Ramp-up",
+                    "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+                },
+                {
+                    "company_id": "6187.TWO",  # 萬潤 (Allring)
+                    "name": "Allring",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+                    "consensus_score": 32.0,
+                    "status": "Underfill Dispensing for CoWoS",
+                    "timeline": {"design_win": "2023-Q3", "pilot": "2024-Q1", "ramp_up": "2024-Q3"}
+                },
+                {
+                    "company_id": "3680.TWO",  # 家登 (Gudeng)
+                    "name": "Gudeng",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 11.0, "Feynman_Next": 16.0},
+                    "consensus_score": 75.0,
+                    "status": "EUV Pod Dominant Supplier",
+                    "timeline": {"design_win": "2023-Q1", "pilot": "2023-Q3", "ramp_up": "2024-Q1"}
+                },
+                {
+                    "company_id": "3324.TWO",  # 雙鴻 (Auras)
                     "name": "Auras",
                     "segment": "cooling",
                     "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 10.0, "Feynman_Next": 12.0},
@@ -129,13 +238,49 @@ class MarketInformationMonitor:
                     "timeline": {"design_win": "2023-Q3", "pilot": "2024-Q1", "ramp_up": "2024-Q3"}
                 },
                 {
-                    "company_id": "2486.TW",  # 一詮 (I-Chiun) - 均熱片送樣
+                    "company_id": "3017.TW",  # 奇鋐 (AVC)
+                    "name": "AVC",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 7.0, "Feynman": 12.0, "Feynman_Next": 15.0},
+                    "consensus_score": 80.0,
+                    "status": "3D VC Primary Vendor",
+                    "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+                },
+                {
+                    "company_id": "2486.TW",  # 一詮 (I-Chiun)
                     "name": "I-Chiun",
                     "segment": "cooling",
                     "content_value_by_gen": {"Vera_Rubin": 2.0, "Feynman": 5.0, "Feynman_Next": 8.0},
                     "consensus_score": 38.0,
                     "status": "Thermal Spreaders Sampling",
                     "timeline": {"design_win": "2023-Q4", "pilot": "2024-Q2", "ramp_up": "2024-Q4"}
+                },
+                {
+                    "company_id": "6223.TWO",  # 旺矽 (MPI)
+                    "name": "MPI",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 7.0, "Feynman_Next": 10.0},
+                    "consensus_score": 46.0,
+                    "status": "VPC & High-Temperature Probe Cards",
+                    "timeline": {"design_win": "2023-Q1", "pilot": "2023-Q3", "ramp_up": "2024-Q1"}
+                },
+                {
+                    "company_id": "6683.TWO",  # 雍智科技 (UMT)
+                    "name": "UMT",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 9.0, "Feynman_Next": 12.0},
+                    "consensus_score": 45.0,
+                    "status": "Advanced Packaging Test Socket",
+                    "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+                },
+                {
+                    "company_id": "3013.TW",  # 晟銘電 (MCT)
+                    "name": "MCT",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 7.0, "Feynman_Next": 8.0},
+                    "consensus_score": 75.0,
+                    "status": "Liquid Cooling Chassis Supplier",
+                    "timeline": {"design_win": "2023-Q3", "pilot": "2024-Q1", "ramp_up": "2024-Q3"}
                 }
             ]
         # 2025-2026 年 (現在)：Feynman 世代與玻璃基板
@@ -185,6 +330,69 @@ class MarketInformationMonitor:
                     "consensus_score": 38.0,
                     "status": "Glass Substrate Laser Equipment Supplier",
                     "timeline": {"design_win": "2025-Q3", "pilot": "2026-Q2", "ramp_up": "2026-Q4"}
+                },
+                {
+                    "company_id": "3583.TW",  # 辛耘
+                    "name": "Scientech",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 12.0, "Feynman_Next": 18.0},
+                    "consensus_score": 42.0,
+                    "status": "CoWoS Single Wafer Wet Cleaning Equipment",
+                    "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+                },
+                {
+                    "company_id": "6187.TWO",  # 萬潤
+                    "name": "Allring",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 10.0, "Feynman_Next": 15.0},
+                    "consensus_score": 45.0,
+                    "status": "Advanced Packaging Dispensing & Underfill",
+                    "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+                },
+                {
+                    "company_id": "6683.TWO",  # 雍智科技
+                    "name": "UMT",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 10.0, "Feynman_Next": 12.0},
+                    "consensus_score": 48.0,
+                    "status": "Advanced Packaging Test Socket",
+                    "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+                },
+                {
+                    "company_id": "3017.TW",  # 奇鋐
+                    "name": "AVC",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 15.0, "Feynman_Next": 20.0},
+                    "consensus_score": 88.0,
+                    "status": "3D VC & Liquid Cooling Module Leader",
+                    "timeline": {"design_win": "2025-Q1", "pilot": "2025-Q3", "ramp_up": "2025-Q4"}
+                },
+                {
+                    "company_id": "3680.TWO",  # 家登
+                    "name": "Gudeng",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 7.0, "Feynman": 14.0, "Feynman_Next": 22.0},
+                    "consensus_score": 78.0,
+                    "status": "EUV Pod & Carrier Supplier",
+                    "timeline": {"design_win": "2025-Q1", "pilot": "2025-Q3", "ramp_up": "2025-Q4"}
+                },
+                {
+                    "company_id": "6223.TWO",  # 旺矽
+                    "name": "MPI",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 9.0, "Feynman_Next": 12.0},
+                    "consensus_score": 48.0,
+                    "status": "VPC & Cantilever Probe Card Provider",
+                    "timeline": {"design_win": "2025-Q1", "pilot": "2025-Q3", "ramp_up": "2025-Q4"}
+                },
+                {
+                    "company_id": "3013.TW",  # 晟銘電
+                    "name": "MCT",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 9.0, "Feynman_Next": 12.0},
+                    "consensus_score": 55.0,
+                    "status": "Liquid Cooling Chassis & Racks",
+                    "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
                 }
             ]
 

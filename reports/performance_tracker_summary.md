@@ -9,11 +9,11 @@
 
 | 指標名稱 | 統計結果 | 說明 |
 | :--- | :--- | :--- |
-| **追蹤標的總數** | **2 支** | 系統主動甄選之非共識黃金建倉標的 |
-| **系統勝率 (Win Rate)** | **100.00%** | 最大漲幅達標 $\ge 15.0\%$ 的標的比率 |
-| **平均當前回報率** | **+109.65%** | 若買入持有至今的等權重平均收益率 |
-| **平均最大潛在漲幅** | **+112.44%** | 推薦後平均最大波段漲幅 |
-| **平均最大波段回撤** | **101.70%** | 推薦後曾遭遇的平均最大跌幅 |
+| **追蹤標的總數** | **8 支** | 系統主動甄選之非共識黃金建倉標的 |
+| **系統勝率 (Win Rate)** | **25.00%** | 最大漲幅達標 $\ge 15.0\%$ 的標的比率 |
+| **平均當前回報率** | **+27.41%** | 若買入持有至今的等權重平均收益率 |
+| **平均最大潛在漲幅** | **+29.51%** | 推薦後平均最大波段漲幅 |
+| **平均最大波段回撤** | **23.24%** | 推薦後曾遭遇的平均最大跌幅 |
 
 ---
 
@@ -23,6 +23,12 @@
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **3131.TWO**<br>GrandProcess | CPO_Optical_Transceiver | 2026-06-18 | 1405.0 | 3520.0 | **+150.53%** | **+153.74%** | 137.01% | 🟢 追蹤中 |
 | **3324.TWO**<br>Auras | CPO_Optical_Transceiver | 2026-06-18 | 634.0 | 1070.0 | **+68.77%** | **+71.14%** | 66.40% | 🟢 追蹤中 |
+| **8027.TWO**<br>Teh_hsin | CPO_Optical_Transceiver | 2026-06-19 | 241.0 | 241.0 | **+0.00%** | **+3.73%** | -0.41% | 🟢 追蹤中 |
+| **3583.TW**<br>Scientech | CPO_Optical_Transceiver | 2026-06-19 | 889.0 | 889.0 | **+0.00%** | **+0.67%** | -7.42% | 🟢 追蹤中 |
+| **6187.TWO**<br>Allring | CPO_Optical_Transceiver | 2026-06-19 | 1235.0 | 1235.0 | **+0.00%** | **+0.81%** | -6.48% | 🟢 追蹤中 |
+| **6683.TWO**<br>UMT | CPO_Optical_Transceiver | 2026-06-19 | 1650.0 | 1650.0 | **+0.00%** | **+1.82%** | -1.82% | 🟢 追蹤中 |
+| **6223.TWO**<br>MPI | CPO_Optical_Transceiver | 2026-06-19 | 6415.0 | 6415.0 | **+0.00%** | **+2.42%** | -1.40% | 🟢 追蹤中 |
+| **3013.TW**<br>MCT | CPO_Optical_Transceiver | 2026-06-19 | 113.0 | 113.0 | **+0.00%** | **+1.77%** | 0.00% | 🟢 追蹤中 |
 
 ---
 
@@ -33,6 +39,24 @@
 
 ### 📈 Auras (3324.TWO) 走勢與進場點
 <div id="chart_3324_TWO" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>
+
+### 📈 Teh_hsin (8027.TWO) 走勢與進場點
+<div id="chart_8027_TWO" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>
+
+### 📈 Scientech (3583.TW) 走勢與進場點
+<div id="chart_3583_TW" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>
+
+### 📈 Allring (6187.TWO) 走勢與進場點
+<div id="chart_6187_TWO" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>
+
+### 📈 UMT (6683.TWO) 走勢與進場點
+<div id="chart_6683_TWO" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>
+
+### 📈 MPI (6223.TWO) 走勢與進場點
+<div id="chart_6223_TWO" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>
+
+### 📈 MCT (3013.TW) 走勢與進場點
+<div id="chart_3013_TW" class="stock-chart" style="margin: 20px 0; height: 260px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); padding: 16px;"></div>
 
 ---
 
