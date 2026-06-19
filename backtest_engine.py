@@ -163,7 +163,7 @@ class BacktestEngine:
         
         report_content = f"""# 歷史無未來數據偏誤回測系統報告 (Point-in-Time)
 
-> ⚠️ **示意模式（非證據）**：本回測的進場篩選訊號（Consensus／Content Value／Backlog）目前為專家先驗或合成數據，非真 Point-in-Time 資料；價格雖為真實歷史，但「真價格 × 合成訊號」屬循環論證。**此處勝率不可作為策略證據**，待真 PIT 存檔（ADR 0004）到位後改讀真實資料。
+> **資料說明（Stage 2）**：進場篩選訊號（Backlog YoY／Consensus）已改用真實 PIT 月快照（`data/snapshots/`），月營收 YoY 為真實申報資料（日粒度 PIT 截斷）。⚠️ 剩餘限制：① 股價來自 yfinance，下市股不可見（倖存者偏差）；② Consensus 目前僅含外資持股%（股價部分待整合）。**勝率為參考指標，非無偏差策略證據。**
 
 本報告記錄了自 {self.start_date} 至 {self.end_date} 期間，系統以**週**為單位進行模擬回測的結果。
 All 買入決策與技術指標計算皆採用當時點之前的歷史截斷數據，杜絕任何 Look-ahead Bias。

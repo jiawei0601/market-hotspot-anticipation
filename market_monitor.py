@@ -1,8 +1,7 @@
 import os
-import pandas as pd
-import numpy as np
 import datetime
 from typing import Dict, List, Any, Optional
+import numpy as np
 import pit_store
 
 # 非共識黃金建倉標的的 pre-registered 先驗門檻（見 CONTEXT.md / ADR 0003）——禁止用回測 tune
@@ -12,29 +11,40 @@ DOWNSTREAM_YOY_MAX = 15.0  # 下游當月營收 YoY 上限：< 此值才算「�
 
 _PRIORS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "priors", "content_value.json")
 
+
+def _strip_suffix(company_id: str) -> str:
+    """去除 .TW / .TWO 後綴，取得 PIT 快照使用的純數字代碼。"""
+    for sfx in (".TWO", ".TW"):
+        if company_id.endswith(sfx):
+            return company_id[: -len(sfx)]
+    return company_id
+
+
 class MarketInformationMonitor:
     """
-    12-18 個月至 18-24 個月超前中期投資核心資訊監控與模擬引擎。
-    優化三大痛點：
-    1. 能見度拉長至 18-24 個月 (Feynman -> Feynman_Next) 以防追高已反映標的。
-    2. 引入上游設備商 Backlog 訂單指標 (領先下游營收 2 個季度 / 6-9 個月)。
-    3. 引入「預期差與共識度過濾器 (Consensus Score)」，專注於低共識、高預期差的非共識標的。
+    12-18 個月至 18-24 個月超前中期投資核心資訊監控與量化資料引擎。
+
+    Stage 2（當前）: 三個自有訊號均以真實 PIT 月快照（data/snapshots/）驅動：
+    - Backlog Lead = segment=equipment 公司真實月營收 YoY 中位數
+    - Consensus    = 外資持股% 歷史百分位 + 橫斷面同儕排名等權混合
+    - 個股 YoY 曲線 = 真實 PIT 月營收 yoy_pct，未來 3 個月為投影
     """
+
     def __init__(self):
-        # 18-24 個月超前世代 (Feynman_Next) 的物理規格限制與價值演進
         _priors = pit_store.load_content_value_priors(_PRIORS_PATH)
         self.generation_specs = _priors["generation_specs"]
         self._eras = _priors["eras"]
-
         self.real_revenue_cache = None
+
+    # ==================== 供應鏈矩陣 ====================
 
     def get_point_in_time_matrix(self, as_of_date: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        核心優化：基於歷史點時間 (Point-in-Time) 回傳當時的供應鏈標的選股池，完全杜絕 Look-ahead Bias。
-        - 2015-2019 年：早期 16nm/7nm 擴產潮與一般 server 世代 (6 支)
-        - 2020-2022 年 (Hopper 世代)：弘塑、辛耘、家登、萬潤、雍智、旺矽、奇鋐、晟銘電、雙鴻 (9 支)
-        - 2023-2024 年 (Blackwell 世代)：弘塑、辛耘、萬潤、家登、雙鴻、奇鋐、一詮、旺矽、雍智、晟銘電 (10 支)
-        - 2025-2026 年 (當前 / Feynman 世代)：全量解鎖 12 支標的
+        依 as_of_date 回傳當時的供應鏈標的選股池（PIT，杜絕 look-ahead bias）。
+        - 2015-2019：早期世代（6 支）
+        - 2020-2022：Hopper 世代（9 支）
+        - 2023-2024：Blackwell 世代（10 支）
+        - 2025-2026：Feynman 世代（12 支）
         """
         if as_of_date:
             today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
@@ -47,17 +57,16 @@ class MarketInformationMonitor:
                 return era["companies"]
         return self._eras[-1]["companies"]
 
+    # ==================== 高頻報價（仍為合成模擬，非真實資料）====================
+
     def get_high_frequency_pricing(self, sector: str, as_of_date: Optional[str] = None) -> Dict[str, Any]:
-        """
-        模擬/獲取高頻報價趨勢。支援 as_of_date 進行歷史回測截斷。
-        """
+        """合成高頻報價趨勢；支援 as_of_date 截斷。"""
         if as_of_date:
             today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
         else:
             today = datetime.date.today()
-            
+
         dates = [today - datetime.timedelta(weeks=i) for i in range(12)][::-1]
-        
         base_price = 150.0
         prices = []
         for idx in range(12):
@@ -68,49 +77,48 @@ class MarketInformationMonitor:
             else:
                 price = base_price + 0.8 + (idx - 9) * 3.5
             prices.append(round(price, 2))
-            
+
         weekly_data = [{"date": d.strftime("%Y-%m-%d"), "price": p} for d, p in zip(dates, prices)]
         recent_change = (prices[-1] - prices[-4]) / prices[-4] * 100
         trend = "rising" if recent_change > 1.5 else ("declining" if recent_change < -1.5 else "stable")
-        
+
         return {
             "sector": sector,
             "metric_name": "Next-Gen Package Equipment Material Index",
             "trend": trend,
             "weekly_change_pct": round(recent_change, 2),
             "data_points": weekly_data,
-            "catalyst_triggered": trend == "rising"
+            "catalyst_triggered": trend == "rising",
         }
 
-    def get_supply_chain_schedule(self, current_gen: str, next_gen: str, as_of_date: Optional[str] = None) -> Dict[str, Any]:
-        """
-        推演架構演進下的供應鏈洗牌，包含 18-24 個月超前世代 (Feynman_Next) 的替代風險。
-        """
+    # ==================== 供應鏈洗牌時程 ====================
+
+    def get_supply_chain_schedule(self, current_gen: str, next_gen: str,
+                                  as_of_date: Optional[str] = None) -> Dict[str, Any]:
+        """推演世代更迭下的供應鏈洗牌，含 Feynman_Next 替代風險。"""
         analysis = []
         bottlenecks = []
-        
+
         matrix = self.get_point_in_time_matrix(as_of_date)
         for item in matrix:
             val_current = item["content_value_by_gen"].get(current_gen, 0.0)
-            val_next = item["content_value_by_gen"].get(next_gen, 0.0)
-            val_future = item["content_value_by_gen"].get("Feynman_Next", 0.0)
-            
-            if val_current > 0:
-                change_pct = (val_next - val_current) / val_current * 100
-            else:
-                change_pct = 999.0
-                
-            if val_next > 0:
-                future_change_pct = (val_future - val_next) / val_next * 100
-            else:
-                future_change_pct = 999.0
-                
+            val_next    = item["content_value_by_gen"].get(next_gen, 0.0)
+            val_future  = item["content_value_by_gen"].get("Feynman_Next", 0.0)
+
+            change_pct        = (val_next - val_current) / val_current * 100 if val_current > 0 else 999.0
+            future_change_pct = (val_future - val_next)  / val_next    * 100 if val_next    > 0 else 999.0
+
             substitution_risk = "LOW"
             if val_future < val_next * 0.7:
                 substitution_risk = "HIGH (Content Value Erosion / Substitution)"
             elif val_future > val_next * 1.4:
                 substitution_risk = "NONE (Content Value Expanding)"
-                
+
+            # 動態共識度（有資料用真實，否則 fallback 靜態先驗）
+            consensus = self._compute_consensus(item["company_id"], as_of_date)
+            if consensus is None:
+                consensus = item["consensus_score"]
+
             analysis.append({
                 "company_id": item["company_id"],
                 "name": item["name"],
@@ -120,190 +128,263 @@ class MarketInformationMonitor:
                 "content_value_future": val_future,
                 "change_pct": round(change_pct, 2),
                 "future_change_pct": round(future_change_pct, 2),
-                "consensus_score": item["consensus_score"],
+                "consensus_score": consensus,
                 "status": item["status"],
                 "timeline": item["timeline"],
                 "substitution_risk_future": substitution_risk,
             })
-            
+
             if item["segment"] in ["equipment", "package"]:
                 bottlenecks.append(f"{item['name']} ({item['segment']})")
-                
+
         return {
             "current_generation": current_gen,
             "next_generation": next_gen,
             "future_generation": "Feynman_Next",
             "bottlenecks": bottlenecks,
-            "timeline_matrix": analysis
+            "timeline_matrix": analysis,
         }
 
+    # ==================== TWSE 最新月營收（保留供測試 / fallback）====================
+
     def fetch_real_monthly_revenue(self) -> Dict[str, Dict[str, Any]]:
-        """
-        從台灣證券交易所 (TWSE) 下載最新月份上市與公開發行/上櫃公司營收匯總資料。
-        """
+        """從 TWSE 開放 API 下載最新月份上市/上櫃公司營收匯總（僅當月快照）。"""
         if self.real_revenue_cache is not None:
             return self.real_revenue_cache
-            
+
         import urllib.request
         import json
-        
+
         urls = [
-            "https://openapi.twse.com.tw/v1/opendata/t187ap05_L", # 上市公司
-            "https://openapi.twse.com.tw/v1/opendata/t187ap05_P"  # 上櫃/公發公司
+            "https://openapi.twse.com.tw/v1/opendata/t187ap05_L",
+            "https://openapi.twse.com.tw/v1/opendata/t187ap05_P",
         ]
-        
         revenue_map = {}
-        
         for url in urls:
             try:
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
                 with urllib.request.urlopen(req, timeout=10) as r:
-                    data = json.loads(r.read().decode('utf-8'))
-                    
+                    data = json.loads(r.read().decode("utf-8"))
                 for row in data:
                     company_code = row.get("公司代號", "").strip()
                     if not company_code:
                         continue
-                        
-                    # 讀取當月營收 (單位: 千元 -> 轉為億元)
-                    raw_rev = row.get("營業收入-當月營收", "0")
                     try:
                         revenue_yoy = float(row.get("營業收入-去年同月增減(%)", "0.0"))
                     except ValueError:
                         revenue_yoy = 0.0
-                        
                     try:
-                        rev_val = float(raw_rev) / 100000.0 # 轉為億元
+                        rev_val = float(row.get("營業收入-當月營收", "0")) / 100000.0
                     except ValueError:
                         rev_val = 0.0
-                        
-                    date_ym = row.get("資料年月", "").strip()
-                    
                     revenue_map[company_code] = {
                         "revenue_billion": round(rev_val, 2),
                         "yoy_pct": round(revenue_yoy, 2),
-                        "date_ym": date_ym,
-                        "company_name": row.get("公司名稱", "").strip()
+                        "date_ym": row.get("資料年月", "").strip(),
+                        "company_name": row.get("公司名稱", "").strip(),
                     }
             except Exception as e:
-                # 僅印出警告，讓系統能繼續執行，達到 Robustness
                 print(f"[WARN] Cannot fetch real revenue from {url}: {e}")
-                
+
         self.real_revenue_cache = revenue_map
         return revenue_map
 
-    def simulate_revenue_inflection(self, company_ids: List[str], as_of_date: Optional[str] = None) -> Dict[str, Any]:
+    # ==================== PIT 快照輔助函式 ====================
+
+    def _read_company_revenue_history(self, company_id: str,
+                                      as_of_date_str: Optional[str],
+                                      n_snapshots: int = 14) -> list:
         """
-        營收 YoY 拐點與設備訂單 Backlog 領先指標模擬器。
-        - 支援 as_of_date 參數進行歷史點時間 (Point-in-Time) 數據截斷。
-        - 設備訂單 (Backlog) 領先下游成品營收 2 個季度 (6個月)。
+        從 data/snapshots/ 讀取最近 n_snapshots 個月快照，回傳按 period 排序的唯一營收記錄。
+        日粒度 PIT：只納入 announce_date <= as_of_date_str 的記錄。
+        每筆: {'period': 'YYYY-MM', 'revenue_billion': float, 'yoy_pct': float|None}
+        """
+        sid = _strip_suffix(company_id)
+        as_of_cutoff = as_of_date_str or datetime.date.today().strftime("%Y-%m-%d")
+        as_of_ym = as_of_cutoff[:7]
+
+        periods: Dict[str, dict] = {}
+        year, month = int(as_of_ym[:4]), int(as_of_ym[5:7])
+        for _ in range(n_snapshots):
+            ym = f"{year:04d}-{month:02d}"
+            snap = pit_store.read_snapshot("revenue", f"{ym}-28")
+            if snap and sid in snap:
+                rec = snap[sid]
+                period = rec.get("period", "")
+                announce_date = rec.get("announce_date", "")
+                if (period and period not in periods
+                        and announce_date and announce_date <= as_of_cutoff):
+                    periods[period] = {
+                        "period": period,
+                        "revenue_billion": rec.get("revenue_billion", 0.0),
+                        "yoy_pct": rec.get("yoy_pct"),
+                    }
+            month -= 1
+            if month == 0:
+                month = 12
+                year -= 1
+
+        return sorted(periods.values(), key=lambda r: r["period"])
+
+    def get_backlog_lead(self, as_of_date: Optional[str] = None) -> float:
+        """
+        板塊 segment=equipment 公司真實月營收 YoY 中位數（日粒度 PIT 正確）。
+        此為 ADR 0006 定義的 Equipment Backlog Lead 訊號（誠實限制：是「動能代理」而非真訂單）。
+        資料不足時回傳 0.0。
+        """
+        matrix = self.get_point_in_time_matrix(as_of_date)
+        equipment_cids = [it["company_id"] for it in matrix if it["segment"] == "equipment"]
+
+        yoy_values = []
+        for cid in equipment_cids:
+            # 用 _read_company_revenue_history 保證日粒度 PIT 正確（announce_date 過濾）
+            hist = self._read_company_revenue_history(cid, as_of_date, n_snapshots=3)
+            if hist and hist[-1].get("yoy_pct") is not None:
+                yoy_values.append(hist[-1]["yoy_pct"])
+
+        if not yoy_values:
+            return 0.0
+        return round(float(np.median(yoy_values)), 2)
+
+    def _compute_consensus(self, company_id: str,
+                           as_of_date: Optional[str] = None) -> Optional[float]:
+        """
+        從外資持股% PIT 快照計算共識度（0-100）。
+        公式（ADR 0006）：(自身 12M 歷史百分位 + 橫斷面同儕排名) / 2。
+        注意：股價部分當前版本略過（yfinance 倖存者偏差問題未解）——僅用持股%。
+        資料不足（< 6 個月）時回傳 None，呼叫端應 fallback 至靜態先驗。
+        """
+        sid = _strip_suffix(company_id)
+        as_of_str = as_of_date or datetime.date.today().strftime("%Y-%m-%d")
+        as_of_ym = as_of_str[:7]
+
+        # 最近 12 個月持股快照（新→舊）
+        history_ratios: list = []
+        year, month = int(as_of_ym[:4]), int(as_of_ym[5:7])
+        for _ in range(12):
+            ym = f"{year:04d}-{month:02d}"
+            snap = pit_store.read_snapshot("holdings", f"{ym}-28")
+            if snap and sid in snap:
+                ratio = snap[sid].get("foreign_ratio")
+                if ratio is not None:
+                    history_ratios.append(ratio)
+            month -= 1
+            if month == 0:
+                month = 12
+                year -= 1
+
+        if len(history_ratios) < 6:
+            return None
+
+        current_ratio = history_ratios[0]  # 最新（newest-first）
+
+        # (a) 自身 12M 歷史百分位：當前值在近 12M 中的排名
+        own_pct = sum(1 for v in history_ratios if v <= current_ratio) / len(history_ratios) * 100
+
+        # (b) 橫斷面同儕排名
+        latest_snap = pit_store.read_snapshot("holdings", f"{as_of_ym}-28")
+        peer_ratios: list = []
+        if latest_snap:
+            for it in self.get_point_in_time_matrix(as_of_date):
+                p_sid = _strip_suffix(it["company_id"])
+                rec = latest_snap.get(p_sid)
+                if rec and rec.get("foreign_ratio") is not None:
+                    peer_ratios.append(rec["foreign_ratio"])
+
+        peer_rank = (sum(1 for r in peer_ratios if r <= current_ratio) / len(peer_ratios) * 100
+                     if peer_ratios else own_pct)
+
+        return round((own_pct + peer_rank) / 2, 1)
+
+    # ==================== 核心訊號：真實 PIT 營收拐點 ====================
+
+    def simulate_revenue_inflection(self, company_ids: List[str],
+                                    as_of_date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        個股月營收 YoY 拐點與設備 Backlog 領先訊號。
+
+        Stage 2 改動：
+        - 歷史 YoY 曲線（索引 0-8）= 真實 PIT 快照 yoy_pct（非 sin 合成）
+        - 未來 3 個月（索引 9-11）= 投影（以末尾 YoY × 加速係數）
+        - Backlog Lead = 板塊 equipment 公司真實 YoY 中位數（非隨機合成）
+        - Consensus = 外資持股% 歷史百分位 + 同儕排名（fallback 至靜態先驗）
+        真實資料不足（< 3 筆）時 fallback 合成，並標記 has_real_data=False。
         """
         results = {}
-        if as_of_date:
-            today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
-        else:
-            today = datetime.date.today()
-        
-        # 獲取真實營收資料庫 (有自動 fallback 保障)
-        real_rev_data = self.fetch_real_monthly_revenue()
-        
+        today = (datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
+                 if as_of_date else datetime.date.today())
+
+        # 板塊 equipment 真實 Backlog Lead（一次算好，所有個股共用）
+        sector_backlog_yoy = self.get_backlog_lead(as_of_date)
+        equipment_lead_active_global = sector_backlog_yoy > BACKLOG_LEAD_MIN
+
         matrix = self.get_point_in_time_matrix(as_of_date)
+
         for cid in company_ids:
             item = next((x for x in matrix if x["company_id"] == cid), None)
             if not item:
                 continue
-                
-            name = item["name"]
-            segment = item["segment"]
-            
-            # 1. 基礎模擬生成
-            base_monthly = 600.0 if segment != "equipment" else 250.0
-            last_year_rev = [round(base_monthly * (1 + np.sin(i/3)*0.1 - 0.20), 1) for i in range(12)]
-            current_year_rev = [round(base_monthly * (1 + np.sin(i/3)*0.08 - 0.15), 1) for i in range(9)]
-            
-            # 2. 嘗試結合 TWSE 真實數據 (以個股代碼如 3450 去配對)
-            clean_code = cid.replace(".TW", "").replace(".TWO", "").strip()
-            real_info = real_rev_data.get(clean_code)
-            
-            has_real = False
-            real_date_ym = ""
-            real_rev_val = 0.0
-            real_yoy_pct = 0.0
-            
-            # Point-in-time 檢驗：回測時間點必須「遲於」營收的申報日（通常為次月 10 日）
-            if real_info:
-                # 假設資料年月為 "112/08"，轉為西元 "2023-08"
-                raw_ym = real_info["date_ym"]
-                try:
-                    # 處理 "112/08" 民國格式
-                    if "/" in raw_ym:
-                        parts = raw_ym.split("/")
-                        year = int(parts[0]) + 1911
-                        month = int(parts[1])
-                    else:
-                        year = int(raw_ym[:4])
-                        month = int(raw_ym[4:6])
-                        
-                    # 申報截止日為次月 10 日
-                    report_deadline = datetime.date(year, month, 10) + datetime.timedelta(days=31)
-                    # 次月 10 日之後，該營收才屬於 Point-in-Time 可見資訊
-                    is_published = today >= datetime.date(report_deadline.year, report_deadline.month, 10)
-                except Exception:
-                    is_published = not as_of_date # 無法解析時，若為回測則保守視為不可見
-                
-                if is_published:
-                    has_real = True
-                    real_date_ym = real_info["date_ym"]
-                    real_rev_val = real_info["revenue_billion"]
-                    real_yoy_pct = real_info["yoy_pct"]
-                    
-                    # 替換最新月份營收 (第 9 個月) 為真實數據
-                    current_year_rev[-1] = real_rev_val
-                    # 利用數學逆推
-                    denom = 1.0 + (real_yoy_pct / 100.0)
-                    if denom > 0.01:
-                        last_year_rev[8] = round(real_rev_val / denom, 2)
-                    else:
-                        last_year_rev[8] = round(real_rev_val * 2.0, 2)
-            
-            # 3. 模擬未來 3 個月出貨放量 (以最新月份營收為基期)
-            last_actual_rev = current_year_rev[-1]
-            scale_factors = [1.05, 1.15, 1.35] if segment != "equipment" else [1.10, 1.25, 1.50]
-            future_simulation = [round(last_actual_rev * f, 1) for f in scale_factors]
-            all_current_year = current_year_rev + future_simulation
-            
-            # 4. 計算成品營收 YoY
-            yoy_curve = []
-            for idx in range(12):
-                denom = last_year_rev[idx]
-                yoy = ((all_current_year[idx] - denom) / denom * 100) if denom > 0 else 0.0
-                yoy_curve.append(round(yoy, 2))
-                
-            # 模擬設備商或上游特用材料的「訂單 Backlog YoY」
-            # 決定性亂數種子：同一 (個股, 時間點) 必得相同模擬結果，確保回測可重現
-            import hashlib
-            _seed_basis = f"{cid}_{as_of_date or 'live'}"
-            _seed = int(hashlib.md5(_seed_basis.encode()).hexdigest(), 16) % (2**32)
-            _rng = np.random.default_rng(_seed)
-            backlog_yoy_curve = []
-            for idx in range(12):
-                if idx < 6:
-                    backlog_yoy = yoy_curve[idx + 6] * 1.3
-                else:
-                    backlog_yoy = (100 - (idx - 6) * 10) * (1 + _rng.normal(0, 0.05))
-                backlog_yoy_curve.append(round(max(backlog_yoy, 5.0), 2))
-                
+            name, segment = item["name"], item["segment"]
+
+            rev_hist = self._read_company_revenue_history(cid, as_of_date, n_snapshots=14)
+            has_real = len(rev_hist) >= 3
+
+            if has_real:
+                yoy_recs = [r for r in rev_hist if r["yoy_pct"] is not None]
+                real_yoy_9 = [r["yoy_pct"] for r in yoy_recs[-9:]]
+                while len(real_yoy_9) < 9:
+                    real_yoy_9.insert(0, 0.0)
+
+                last_actual_rev   = rev_hist[-1]["revenue_billion"]
+                latest_real_period = rev_hist[-1]["period"]
+                latest_real_yoy   = yoy_recs[-1]["yoy_pct"] if yoy_recs else 0.0
+
+                current_year_revs = [r["revenue_billion"] for r in rev_hist[-9:]]
+                while len(current_year_revs) < 9:
+                    current_year_revs.insert(0, 0.0)
+            else:
+                import hashlib
+                _seed = int(hashlib.md5(f"{cid}_{as_of_date or 'live'}".encode()).hexdigest(), 16) % (2**32)
+                _rng = np.random.default_rng(_seed)
+                base = 600.0 if segment != "equipment" else 250.0
+                ly = [round(base * (1 + np.sin(i / 3) * 0.1 - 0.20), 1) for i in range(12)]
+                cy = [round(base * (1 + np.sin(i / 3) * 0.08 - 0.15), 1) for i in range(9)]
+                real_yoy_9 = [round((c - l) / l * 100, 2) if l > 0 else 0.0
+                              for c, l in zip(cy, ly[:9])]
+                last_actual_rev    = cy[-1]
+                latest_real_period = ""
+                latest_real_yoy    = real_yoy_9[-1] if real_yoy_9 else 0.0
+                current_year_revs  = cy
+
+            # 未來 3 個月投影
+            scales = [1.05, 1.15, 1.35] if segment != "equipment" else [1.10, 1.25, 1.50]
+            future_rev = [round(last_actual_rev * s, 1) for s in scales]
+            all_current_year = list(current_year_revs) + future_rev  # 12 values
+
+            last_yoy = real_yoy_9[-1]
+            future_yoy_proj = [round(last_yoy * s, 2) for s in scales]
+            yoy_curve = real_yoy_9 + future_yoy_proj  # 12 values
+
+            # 歷史基期（逆推）
+            historical_base = []
+            for i in range(9):
+                rev = all_current_year[i]
+                y   = real_yoy_9[i]
+                denom = 1 + y / 100
+                historical_base.append(round(rev / denom, 1) if denom > 0.01 else round(rev * 0.8, 1))
+            historical_base += [round(all_current_year[i] * 0.75, 1) for i in range(9, 12)]
+
             future_yoy = yoy_curve[-3:]
             inflection_expected = future_yoy[-1] > future_yoy[0] and future_yoy[-1] > 20.0
-            
-            # 設備訂單是否已率先觸發爆發
-            equipment_lead_active = backlog_yoy_curve[8] > BACKLOG_LEAD_MIN
-            
-            # 尋找營收最大 YoY 拐點
+
             max_yoy_idx = int(np.argmax(yoy_curve[-3:])) + 9
             peak_yoy_val = yoy_curve[max_yoy_idx]
             peak_month = (today + datetime.timedelta(days=30 * (max_yoy_idx - 8))).strftime("%Y-%m")
-            
+
+            consensus = self._compute_consensus(cid, as_of_date)
+            if consensus is None:
+                consensus = item["consensus_score"]
+
             results[cid] = {
                 "name": name,
                 "segment": segment,
@@ -312,32 +393,42 @@ class MarketInformationMonitor:
                 "projected_peak_yoy_pct": peak_yoy_val,
                 "last_month_yoy": yoy_curve[8],
                 "future_3m_yoy": future_yoy,
-                "consensus_score": item["consensus_score"],
-                
-                # 真實數據整合欄位
+                "consensus_score": consensus,
                 "has_real_data": has_real,
-                "real_date_ym": real_date_ym,
-                "real_revenue_billion": real_rev_val if has_real else None,
-                "real_yoy_pct": real_yoy_pct if has_real else None,
-                
-                # 設備訂單
-                "equipment_lead_active": equipment_lead_active,
-                "current_backlog_yoy_pct": backlog_yoy_curve[8],
-                "backlog_yoy_curve_3m": backlog_yoy_curve[-3:],
-                
-                # 判定：是否為「低共識 + 設備 Backlog 暴增 + 下游營收在谷底」
-                "is_golden_accumulation_target": (item["consensus_score"] < CONSENSUS_MAX and equipment_lead_active and yoy_curve[8] < DOWNSTREAM_YOY_MAX),
-                
-                # 歷史與預測
-                "historical_base": last_year_rev,
-                "current_projected": all_current_year
+                "real_date_ym": latest_real_period,
+                "real_revenue_billion": last_actual_rev if has_real else None,
+                "real_yoy_pct": latest_real_yoy if has_real else None,
+                "equipment_lead_active": equipment_lead_active_global,
+                "current_backlog_yoy_pct": sector_backlog_yoy,
+                "backlog_yoy_curve_3m": [sector_backlog_yoy] * 3,
+                "is_golden_accumulation_target": (
+                    consensus < CONSENSUS_MAX
+                    and equipment_lead_active_global
+                    and yoy_curve[8] < DOWNSTREAM_YOY_MAX
+                ),
+                "historical_base": historical_base,
+                "current_projected": all_current_year,
             }
-            
+
         return results
+
 
 if __name__ == "__main__":
     monitor = MarketInformationMonitor()
-    print("=== 1. 超前供應鏈洗牌時程與下世代替代風險 ===")
-    print(monitor.get_supply_chain_schedule("Vera_Rubin", "Feynman"))
-    print("\n=== 2. 營收基期與設備 Backlog 領先指標 ===")
-    print(monitor.simulate_revenue_inflection(["3450.TW", "3131.TW", "3324.TW"]))
+    print("=== 供應鏈洗牌（Vera_Rubin → Feynman）===")
+    sched = monitor.get_supply_chain_schedule("Vera_Rubin", "Feynman")
+    for item in sched["timeline_matrix"][:3]:
+        print(f"  {item['name']}: CV {item['content_value_current']}→{item['content_value_next']}, "
+              f"Consensus={item['consensus_score']}")
+
+    print("\n=== Backlog Lead ===")
+    print(f"  Equipment YoY 中位數: {monitor.get_backlog_lead()}")
+
+    print("\n=== 營收拐點（前 3 支）===")
+    matrix = monitor.get_point_in_time_matrix()
+    cids = [it["company_id"] for it in matrix[:3]]
+    res = monitor.simulate_revenue_inflection(cids)
+    for cid, data in res.items():
+        print(f"  {data['name']}({cid}): has_real={data['has_real_data']}, "
+              f"last_yoy={data['last_month_yoy']}, backlog={data['current_backlog_yoy_pct']}, "
+              f"consensus={data['consensus_score']}, golden={data['is_golden_accumulation_target']}")
