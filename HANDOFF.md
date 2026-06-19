@@ -22,6 +22,7 @@
 1. commit / push（待人類確認；本次未自動提交）。
 2. 觸發 `daily_market_pipeline`（或手動 `python generate_static_pages.py`）以刷新 `reports/` 與 `docs/`——**產出物本次刻意未進 commit，保持 diff 乾淨**。
 3. 以新指標重跑 `python backtest_engine.py` 與 `python monte_carlo_analyzer.py --seed 42` 重生回測 .md（需網路）。
+4. **【已決策、未實作】`market_monitor.py` 走 A→B（真量化引擎）**：見新增 [`CONTEXT.md`](CONTEXT.md)、[ADR 0003](docs/adr/0003-market-monitor-synthetic-to-pit-engine.md)、[ADR 0004](docs/adr/0004-market-monitor-pit-data-architecture.md)。實作待辦：建 `data/` append-only 月快照（營收/外資持股/股價）＋歷史營收回填、Consensus 改公開資料代理、Backlog 改上游營收 YoY、黃金標的門檻抽具名常數、回測引擎改讀存檔。**鐵律：快照不可變、門檻/權重先驗固定不回測 tune。**
 
 ## 關鍵決策 + 為什麼
 - **還原而非逐字修 main_agent.py**：f28c9a4 整檔 mojibake，無法可靠逐字修；`7e5b917` 為最後可編譯版本，binary-exact 還原最安全。
