@@ -388,26 +388,51 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
             raw_rev = pricing_rev_analysis.get("raw_revenue", {})
             
             for cid, data in raw_rev.items():
-                if data.get("is_golden_accumulation_target", False):
-                    # 預設使用模擬數據的第 9 個月價格
-                    entry_price = float(data.get("current_projected", [100.0] * 12)[8])
-                    
-                    # 嘗試以 yfinance 拉取今天最新真實收盤價
+                # 黃金建倉條件：低共識 + 真實 YoY 已爆發（取代舊版 is_golden_accumulation_target flag）
+                consensus = monitor._compute_consensus(cid, as_of_date if as_of_date else None)
+                yoy = data.get("last_month_yoy", 0.0) or 0.0
+                is_golden = (
+                    consensus is not None and
+                    consensus < 70.0 and        # 低共識（略寬於 CONSENSUS_MAX=60，容許邊緣標的）
+                    data.get("has_real_data", False) and
+                    abs(yoy) > 30.0             # 真實 YoY 已有顯著動能
+                )
+                if not is_golden:
+                    continue
+
+                entry_price = None
+
+                # 以 yfinance 拉取今天最新真實收盤價
+                try:
+                    ticker = yf.Ticker(cid)
+                    hist = ticker.history(period="1d")
+                    if not hist.empty:
+                        entry_price = float(hist["Close"].iloc[-1])
+                except Exception:
+                    pass
+
+                # fallback：讀最新 PIT 股價快照
+                if entry_price is None:
                     try:
-                        ticker = yf.Ticker(cid)
-                        hist = ticker.history(period="1d")
-                        if not hist.empty:
-                            entry_price = float(hist["Close"].iloc[-1])
+                        import pit_store, datetime as _dt
+                        snap = pit_store.read_snapshot("prices", _dt.date.today().strftime("%Y-%m-%d"))
+                        pure_cid = cid.split(".")[0]
+                        if snap and pure_cid in snap:
+                            entry_price = float(snap[pure_cid]["close"])
                     except Exception:
                         pass
-                        
-                    performance_tracker.add_to_watchlist(
-                        company_id=cid,
-                        name=data.get("name", cid),
-                        entry_price=entry_price,
-                        sector=sector,
-                        entry_date=as_of_date
-                    )
+
+                if entry_price is None:
+                    print(f"[WARN] 無法取得 {cid} 進場價，跳過加入 watchlist")
+                    continue
+
+                performance_tracker.add_to_watchlist(
+                    company_id=cid,
+                    name=data.get("name", cid),
+                    entry_price=entry_price,
+                    sector=sector,
+                    entry_date=as_of_date
+                )
             
             # 更新名單中所有標的的 K 線與回報率，並生成統計報告
             performance_tracker.update_watchlist_daily_prices(as_of_date=as_of_date)
