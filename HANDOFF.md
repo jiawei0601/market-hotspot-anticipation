@@ -29,11 +29,14 @@
 - **回測示意抬頭**（`backtest_engine.py`/`monte_carlo_analyzer.py`）：兩份報告強掛「⚠️ 示意：非真 PIT、勝率非證據」。
 - 驗證：全檔 py_compile OK、`pytest` 10 passed、無 mojibake。
 
-### ⏳ Stage 2 待辦（需真實外部資料源＋網路迭代，非一次性填碼）
-- `market_monitor.py` 改**讀 `pit_store.load_content_value_priors()`** 取代 hardcoded 矩陣（行為先保持等價，再逐步換真資料）。
-- **Consensus** 改外資持股%+股價分位代理運算；**Backlog** 改上游 `segment=equipment` 真月營收 YoY；以上需 `pit_store` 月快照累積或歷史回填。
+### ✅ Stage 2 已完成（2026-06-19，續，commit fdae62f）
+- `market_monitor.py` 已改**讀 `pit_store.load_content_value_priors()`**，移除 ~360 行 hardcoded 矩陣（行為等價：era 計數 6/9/10/12、邊界一致、10 tests 綠）。雙重真相來源消除。
+- `CHINESE_MAPPING` 已集中到新 `constants.py`（3 檔改 import，移除重複）。
+
+### ⏳ Stage 2 待辦（需真實外部資料源＋開放決策，**建議先 grill 再建**）
+- **Consensus** 改外資持股%+股價分位代理運算；**Backlog** 改上游 `segment=equipment` 真月營收 YoY；以上需 `pit_store` 月快照累積或歷史回填。⚠️ 開放決策：外資持股端點、Consensus 加權公式、回填深度——先 grill。
 - **歷史月營收回填**（公開月營收歸檔）讓營收訊號可做真回測；回測引擎改讀真 PIT 後移除示意抬頭。
-- 次要結構債：yfinance 價格**倖存者偏差**（下市股消失）；兩回測引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導（脆弱）；`CHINESE_MAPPING` 在 3 檔重複，應集中。
+- 次要結構債：yfinance 價格**倖存者偏差**（下市股消失）；兩回測引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導（脆弱、待改為傳參）。
 - **鐵律**：快照不可變、門檻/權重先驗固定不回測 tune。
 
 ## 關鍵決策 + 為什麼
