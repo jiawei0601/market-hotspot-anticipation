@@ -22,9 +22,19 @@
 1. commit / push（待人類確認；本次未自動提交）。
 2. 觸發 `daily_market_pipeline`（或手動 `python generate_static_pages.py`）以刷新 `reports/` 與 `docs/`——**產出物本次刻意未進 commit，保持 diff 乾淨**。
 3. 以新指標重跑 `python backtest_engine.py` 與 `python monte_carlo_analyzer.py --seed 42` 重生回測 .md（需網路）。
-4. **【已決策、未實作】`market_monitor.py` 走 A→B（真量化引擎）**：見新增 [`CONTEXT.md`](CONTEXT.md)、[ADR 0003](docs/adr/0003-market-monitor-synthetic-to-pit-engine.md)、[ADR 0004](docs/adr/0004-market-monitor-pit-data-architecture.md)。實作待辦：建 `data/` append-only 月快照（營收/外資持股/股價）＋歷史營收回填、Consensus 改公開資料代理、Backlog 改上游營收 YoY、黃金標的門檻抽具名常數、回測引擎改讀存檔。**鐵律：快照不可變、門檻/權重先驗固定不回測 tune。**
-5. **【已決策、未實作】Agent 層「不捏造、失敗即顯」契約**：見 [ADR 0005](docs/adr/0005-agent-layer-no-fabrication-fail-loud.md)。實作待辦：移除 5 個節點所有硬編碼 fallback；Critic 例外改 raise（不再 auto-PASS）；LLM 呼叫加有限重試+退避；`run_hotspot_scan` 須 `validation_status=="PASS"` 才發布，跑滿迭代仍 FAIL 即失敗不寫 `reports/`。順手：補 `media_story_expert_node` 漏吃的 `critic_feedback`、分析路徑 `temperature=0`、model id 抽 env `GEMINI_MODEL`。
-6. **【已決策、未實作】回測引擎在真 PIT 存檔到位前＝示意模式**（ADR 0003 的操作化，不另開 ADR）：`backtest_engine.py` / `monte_carlo_analyzer.py` 現為「真價格 × 合成/後見之明訊號」的循環論證，勝率**非證據**。實作待辦：每份回測報告強制掛「⚠️ 示意：訊號為先驗/合成、非真 PIT，勝率不可作證據」抬頭；存檔落地後改讀真 PIT 並移除標示。次要結構問題（一併處理）：yfinance 價格本身有**倖存者偏差**（下市股消失）；兩引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導檔案（脆弱、非執行緒安全）；`CHINESE_MAPPING` 在 3 檔重複，應集中。
+### ✅ Stage 1 已實作（2026-06-19，Claude Code）
+- **ADR 0005「不捏造、失敗即顯」全套**（`main_agent.py`）：移除 5 節點所有硬編碼 fallback；Critic 例外改 raise（不再 auto-PASS）；新增 `_invoke_with_retry`（3 次退避重試）；`run_hotspot_scan` 僅在 `validation_status=="PASS"` 才寫 `reports/`，否則 `[FAIL]`+`sys.exit(1)`；補 `media_story_expert_node` 的 `critic_feedback`；`temperature=0`；model 抽 env `GEMINI_MODEL`。
+- **ADR 0004 存儲層基礎**（新 `pit_store.py` + `data/`）：append-only 不可變月快照（`write_monthly_snapshot` 重複寫即 `SnapshotExistsError`）、PIT 讀取（`read_snapshot`）、`load_content_value_priors`；現有矩陣已逐字搬成 `data/priors/content_value.json`（generation_specs + 4 個 eras=6/9/10/12 家）；`data/README.md` 載明不可變鐵律。**純新增、現有程式碼尚未 import 它。**
+- **黃金標的門檻抽具名常數**（`market_monitor.py`）：`CONSENSUS_MAX=60`/`BACKLOG_LEAD_MIN=50`/`DOWNSTREAM_YOY_MAX=15`（行為不變）。
+- **回測示意抬頭**（`backtest_engine.py`/`monte_carlo_analyzer.py`）：兩份報告強掛「⚠️ 示意：非真 PIT、勝率非證據」。
+- 驗證：全檔 py_compile OK、`pytest` 10 passed、無 mojibake。
+
+### ⏳ Stage 2 待辦（需真實外部資料源＋網路迭代，非一次性填碼）
+- `market_monitor.py` 改**讀 `pit_store.load_content_value_priors()`** 取代 hardcoded 矩陣（行為先保持等價，再逐步換真資料）。
+- **Consensus** 改外資持股%+股價分位代理運算；**Backlog** 改上游 `segment=equipment` 真月營收 YoY；以上需 `pit_store` 月快照累積或歷史回填。
+- **歷史月營收回填**（公開月營收歸檔）讓營收訊號可做真回測；回測引擎改讀真 PIT 後移除示意抬頭。
+- 次要結構債：yfinance 價格**倖存者偏差**（下市股消失）；兩回測引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導（脆弱）；`CHINESE_MAPPING` 在 3 檔重複，應集中。
+- **鐵律**：快照不可變、門檻/權重先驗固定不回測 tune。
 
 ## 關鍵決策 + 為什麼
 - **還原而非逐字修 main_agent.py**：f28c9a4 整檔 mojibake，無法可靠逐字修；`7e5b917` 為最後可編譯版本，binary-exact 還原最安全。

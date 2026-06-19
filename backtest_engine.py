@@ -179,6 +179,8 @@ class BacktestEngine:
         
         report_content = f"""# 歷史無未來數據偏誤回測系統報告 (Point-in-Time)
 
+> ⚠️ **示意模式（非證據）**：本回測的進場篩選訊號（Consensus／Content Value／Backlog）目前為專家先驗或合成數據，非真 Point-in-Time 資料；價格雖為真實歷史，但「真價格 × 合成訊號」屬循環論證。**此處勝率不可作為策略證據**，待真 PIT 存檔（ADR 0004）到位後改讀真實資料。
+
 本報告記錄了自 {self.start_date} 至 {self.end_date} 期間，系統以**週**為單位進行模擬回測的結果。
 All 買入決策與技術指標計算皆採用當時點之前的歷史截斷數據，杜絕任何 Look-ahead Bias。
 

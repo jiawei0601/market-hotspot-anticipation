@@ -3,6 +3,11 @@ import numpy as np
 import datetime
 from typing import Dict, List, Any, Optional
 
+# 非共識黃金建倉標的的 pre-registered 先驗門檻（見 CONTEXT.md / ADR 0003）——禁止用回測 tune
+CONSENSUS_MAX = 60.0       # 共識度上限：< 此值才算「逆勢/未擁擠」
+BACKLOG_LEAD_MIN = 50.0    # 設備 Backlog 領先門檻：> 此值才算「領先已動」
+DOWNSTREAM_YOY_MAX = 15.0  # 下游當月營收 YoY 上限：< 此值才算「基本面未現/拐點前」
+
 class MarketInformationMonitor:
     """
     12-18 個月至 18-24 個月超前中期投資核心資訊監控與模擬引擎。
@@ -646,7 +651,7 @@ class MarketInformationMonitor:
             inflection_expected = future_yoy[-1] > future_yoy[0] and future_yoy[-1] > 20.0
             
             # 設備訂單是否已率先觸發爆發
-            equipment_lead_active = backlog_yoy_curve[8] > 50.0
+            equipment_lead_active = backlog_yoy_curve[8] > BACKLOG_LEAD_MIN
             
             # 尋找營收最大 YoY 拐點
             max_yoy_idx = int(np.argmax(yoy_curve[-3:])) + 9
@@ -675,7 +680,7 @@ class MarketInformationMonitor:
                 "backlog_yoy_curve_3m": backlog_yoy_curve[-3:],
                 
                 # 判定：是否為「低共識 + 設備 Backlog 暴增 + 下游營收在谷底」
-                "is_golden_accumulation_target": (item["consensus_score"] < 60.0 and equipment_lead_active and yoy_curve[8] < 15.0),
+                "is_golden_accumulation_target": (item["consensus_score"] < CONSENSUS_MAX and equipment_lead_active and yoy_curve[8] < DOWNSTREAM_YOY_MAX),
                 
                 # 歷史與預測
                 "historical_base": last_year_rev,

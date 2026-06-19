@@ -1,0 +1,374 @@
+{
+  "generation_specs": {
+    "Vera_Rubin": {
+      "cooling": {"type": "Full Liquid Cooling", "content_value_pct": 8.0, "status": "Mature"},
+      "transmission": {"type": "Active Copper / Early CPO", "content_value_pct": 5.0, "status": "Ramping up"},
+      "package": {"type": "CoWoS-L", "content_value_pct": 12.0, "status": "Shortage"}
+    },
+    "Feynman": {
+      "cooling": {"type": "Advanced Immersion Cooling", "content_value_pct": 12.0, "status": "Ramp-up Peak"},
+      "transmission": {"type": "Silicon Photonics (CPO)", "content_value_pct": 15.0, "status": "Ramp-up Peak"},
+      "package": {"type": "3D IC / SoIC", "content_value_pct": 18.0, "status": "Shortage"}
+    },
+    "Feynman_Next": {
+      "cooling": {"type": "Direct-to-Chip (DTC) Liquid", "content_value_pct": 14.0, "status": "Spec Def"},
+      "transmission": {"type": "Direct Optical I/O (Silicon Photonics integrated into compute die)", "content_value_pct": 8.0, "status": "Spec Def"},
+      "package": {"type": "Hybrid Bonding / 2.5D/3D Hybrid Packaging", "content_value_pct": 25.0, "status": "Early Design"}
+    }
+  },
+  "eras": [
+    {
+      "until": "2019-12-31",
+      "companies": [
+        {
+          "company_id": "3131.TWO",
+          "name": "GrandProcess",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+          "consensus_score": 30.0,
+          "status": "Foundry Equipment Supplier",
+          "timeline": {"design_win": "2015-Q1", "pilot": "2015-Q3", "ramp_up": "2016-Q1"}
+        },
+        {
+          "company_id": "3680.TWO",
+          "name": "Gudeng",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 3.5, "Feynman": 6.0, "Feynman_Next": 8.0},
+          "consensus_score": 40.0,
+          "status": "EUV Pod & Carrier Supplier",
+          "timeline": {"design_win": "2015-Q2", "pilot": "2015-Q4", "ramp_up": "2016-Q2"}
+        },
+        {
+          "company_id": "6683.TWO",
+          "name": "UMT",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 5.0, "Feynman_Next": 6.0},
+          "consensus_score": 45.0,
+          "status": "Semiconductor Test Socket Provider",
+          "timeline": {"design_win": "2017-Q1", "pilot": "2017-Q3", "ramp_up": "2018-Q1"}
+        },
+        {
+          "company_id": "3013.TW",
+          "name": "MCT",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 2.0, "Feynman": 2.0, "Feynman_Next": 3.0},
+          "consensus_score": 85.0,
+          "status": "Server Case Supplier",
+          "timeline": {"design_win": "2015-Q2", "pilot": "2015-Q4", "ramp_up": "2016-Q2"}
+        },
+        {
+          "company_id": "3017.TW",
+          "name": "AVC",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 5.0, "Feynman_Next": 6.0},
+          "consensus_score": 55.0,
+          "status": "3D VC Cooler Manufacturer",
+          "timeline": {"design_win": "2016-Q1", "pilot": "2016-Q3", "ramp_up": "2017-Q1"}
+        },
+        {
+          "company_id": "6223.TWO",
+          "name": "MPI",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 2.5, "Feynman": 4.0, "Feynman_Next": 5.0},
+          "consensus_score": 48.0,
+          "status": "Cantilever Probe Card Supplier",
+          "timeline": {"design_win": "2015-Q3", "pilot": "2016-Q1", "ramp_up": "2016-Q3"}
+        }
+      ]
+    },
+    {
+      "until": "2022-12-31",
+      "companies": [
+        {
+          "company_id": "3131.TWO",
+          "name": "GrandProcess",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 12.0, "Feynman_Next": 15.0},
+          "consensus_score": 28.0,
+          "status": "Early Advanced Packaging Pioneer",
+          "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q4", "ramp_up": "2021-Q2"}
+        },
+        {
+          "company_id": "3583.TW",
+          "name": "Scientech",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+          "consensus_score": 32.0,
+          "status": "CoWoS Single Wafer Wet Cleaning Equipment",
+          "timeline": {"design_win": "2020-Q2", "pilot": "2020-Q4", "ramp_up": "2021-Q2"}
+        },
+        {
+          "company_id": "3680.TWO",
+          "name": "Gudeng",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 12.0},
+          "consensus_score": 55.0,
+          "status": "EUV Pod Supplier for Foundry",
+          "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2021-Q1"}
+        },
+        {
+          "company_id": "6187.TWO",
+          "name": "Allring",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 6.0, "Feynman_Next": 8.0},
+          "consensus_score": 35.0,
+          "status": "Advanced Packaging Dispensing Supplier",
+          "timeline": {"design_win": "2021-Q1", "pilot": "2021-Q3", "ramp_up": "2022-Q1"}
+        },
+        {
+          "company_id": "6683.TWO",
+          "name": "UMT",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+          "consensus_score": 42.0,
+          "status": "IC Testing Interface Provider",
+          "timeline": {"design_win": "2020-Q2", "pilot": "2021-Q1", "ramp_up": "2021-Q3"}
+        },
+        {
+          "company_id": "6223.TWO",
+          "name": "MPI",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 3.5, "Feynman": 6.0, "Feynman_Next": 8.0},
+          "consensus_score": 44.0,
+          "status": "VPC & Cantilever Probe Card Provider",
+          "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2021-Q1"}
+        },
+        {
+          "company_id": "3017.TW",
+          "name": "AVC",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+          "consensus_score": 72.0,
+          "status": "3D VC Supplier for Server CPU/GPU",
+          "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2021-Q1"}
+        },
+        {
+          "company_id": "3013.TW",
+          "name": "MCT",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 4.0, "Feynman_Next": 4.0},
+          "consensus_score": 88.0,
+          "status": "Standard Server Chassis Supplier",
+          "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2020-Q4"}
+        },
+        {
+          "company_id": "3324.TWO",
+          "name": "Auras",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 6.0, "Feynman_Next": 8.0},
+          "consensus_score": 48.0,
+          "status": "Thermal Modules & Air Cooling Solutions",
+          "timeline": {"design_win": "2020-Q2", "pilot": "2020-Q4", "ramp_up": "2021-Q2"}
+        }
+      ]
+    },
+    {
+      "until": "2024-12-31",
+      "companies": [
+        {
+          "company_id": "3131.TWO",
+          "name": "GrandProcess",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 10.0, "Feynman": 18.0, "Feynman_Next": 20.0},
+          "consensus_score": 45.0,
+          "status": "Ramping up CoWoS Equipment",
+          "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+        },
+        {
+          "company_id": "3583.TW",
+          "name": "Scientech",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 10.0, "Feynman_Next": 12.0},
+          "consensus_score": 30.0,
+          "status": "CoWoS Cleaning Equipment Ramp-up",
+          "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+        },
+        {
+          "company_id": "6187.TWO",
+          "name": "Allring",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+          "consensus_score": 32.0,
+          "status": "Underfill Dispensing for CoWoS",
+          "timeline": {"design_win": "2023-Q3", "pilot": "2024-Q1", "ramp_up": "2024-Q3"}
+        },
+        {
+          "company_id": "3680.TWO",
+          "name": "Gudeng",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 11.0, "Feynman_Next": 16.0},
+          "consensus_score": 75.0,
+          "status": "EUV Pod Dominant Supplier",
+          "timeline": {"design_win": "2023-Q1", "pilot": "2023-Q3", "ramp_up": "2024-Q1"}
+        },
+        {
+          "company_id": "3324.TWO",
+          "name": "Auras",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 10.0, "Feynman_Next": 12.0},
+          "consensus_score": 50.0,
+          "status": "Co-developing Liquid Cooling plate",
+          "timeline": {"design_win": "2023-Q3", "pilot": "2024-Q1", "ramp_up": "2024-Q3"}
+        },
+        {
+          "company_id": "3017.TW",
+          "name": "AVC",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 7.0, "Feynman": 12.0, "Feynman_Next": 15.0},
+          "consensus_score": 80.0,
+          "status": "3D VC Primary Vendor",
+          "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+        },
+        {
+          "company_id": "2486.TW",
+          "name": "I-Chiun",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 2.0, "Feynman": 5.0, "Feynman_Next": 8.0},
+          "consensus_score": 38.0,
+          "status": "Thermal Spreaders Sampling",
+          "timeline": {"design_win": "2023-Q4", "pilot": "2024-Q2", "ramp_up": "2024-Q4"}
+        },
+        {
+          "company_id": "6223.TWO",
+          "name": "MPI",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 4.0, "Feynman": 7.0, "Feynman_Next": 10.0},
+          "consensus_score": 46.0,
+          "status": "VPC & High-Temperature Probe Cards",
+          "timeline": {"design_win": "2023-Q1", "pilot": "2023-Q3", "ramp_up": "2024-Q1"}
+        },
+        {
+          "company_id": "6683.TWO",
+          "name": "UMT",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 9.0, "Feynman_Next": 12.0},
+          "consensus_score": 45.0,
+          "status": "Advanced Packaging Test Socket",
+          "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+        },
+        {
+          "company_id": "3013.TW",
+          "name": "MCT",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 7.0, "Feynman_Next": 8.0},
+          "consensus_score": 75.0,
+          "status": "Liquid Cooling Chassis Supplier",
+          "timeline": {"design_win": "2023-Q3", "pilot": "2024-Q1", "ramp_up": "2024-Q3"}
+        }
+      ]
+    },
+    {
+      "until": null,
+      "companies": [
+        {
+          "company_id": "3450.TW",
+          "name": "FOCI",
+          "segment": "transmission",
+          "content_value_by_gen": {"Vera_Rubin": 4.5, "Feynman": 14.0, "Feynman_Next": 8.0},
+          "consensus_score": 92.0,
+          "status": "Consensus Winner for Feynman CPO",
+          "timeline": {"design_win": "2025-Q1", "pilot": "2026-Q1", "ramp_up": "2026-Q3"}
+        },
+        {
+          "company_id": "3131.TWO",
+          "name": "GrandProcess",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 10.0, "Feynman": 18.0, "Feynman_Next": 26.0},
+          "consensus_score": 35.0,
+          "status": "Entering Feynman_Next Spec Definition",
+          "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+        },
+        {
+          "company_id": "3324.TWO",
+          "name": "Auras",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 12.0, "Feynman_Next": 18.0},
+          "consensus_score": 52.0,
+          "status": "Co-developing Feynman_Next DTC cooling",
+          "timeline": {"design_win": "2025-Q3", "pilot": "2026-Q2", "ramp_up": "2026-Q4"}
+        },
+        {
+          "company_id": "2486.TW",
+          "name": "I-Chiun",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 12.0, "Feynman_Next": 15.0},
+          "consensus_score": 45.0,
+          "status": "Advanced Heat Spreaders Ramp-up",
+          "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+        },
+        {
+          "company_id": "8027.TWO",
+          "name": "Teh_hsin",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 1.0, "Feynman": 8.0, "Feynman_Next": 18.0},
+          "consensus_score": 38.0,
+          "status": "Glass Substrate Laser Equipment Supplier",
+          "timeline": {"design_win": "2025-Q3", "pilot": "2026-Q2", "ramp_up": "2026-Q4"}
+        },
+        {
+          "company_id": "3583.TW",
+          "name": "Scientech",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 12.0, "Feynman_Next": 18.0},
+          "consensus_score": 42.0,
+          "status": "CoWoS Single Wafer Wet Cleaning Equipment",
+          "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+        },
+        {
+          "company_id": "6187.TWO",
+          "name": "Allring",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 10.0, "Feynman_Next": 15.0},
+          "consensus_score": 45.0,
+          "status": "Advanced Packaging Dispensing & Underfill",
+          "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+        },
+        {
+          "company_id": "6683.TWO",
+          "name": "UMT",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 10.0, "Feynman_Next": 12.0},
+          "consensus_score": 48.0,
+          "status": "Advanced Packaging Test Socket",
+          "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+        },
+        {
+          "company_id": "3017.TW",
+          "name": "AVC",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 15.0, "Feynman_Next": 20.0},
+          "consensus_score": 88.0,
+          "status": "3D VC & Liquid Cooling Module Leader",
+          "timeline": {"design_win": "2025-Q1", "pilot": "2025-Q3", "ramp_up": "2025-Q4"}
+        },
+        {
+          "company_id": "3680.TWO",
+          "name": "Gudeng",
+          "segment": "equipment",
+          "content_value_by_gen": {"Vera_Rubin": 7.0, "Feynman": 14.0, "Feynman_Next": 22.0},
+          "consensus_score": 78.0,
+          "status": "EUV Pod & Carrier Supplier",
+          "timeline": {"design_win": "2025-Q1", "pilot": "2025-Q3", "ramp_up": "2025-Q4"}
+        },
+        {
+          "company_id": "6223.TWO",
+          "name": "MPI",
+          "segment": "package",
+          "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 9.0, "Feynman_Next": 12.0},
+          "consensus_score": 48.0,
+          "status": "VPC & Cantilever Probe Card Provider",
+          "timeline": {"design_win": "2025-Q1", "pilot": "2025-Q3", "ramp_up": "2025-Q4"}
+        },
+        {
+          "company_id": "3013.TW",
+          "name": "MCT",
+          "segment": "cooling",
+          "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 9.0, "Feynman_Next": 12.0},
+          "consensus_score": 55.0,
+          "status": "Liquid Cooling Chassis & Racks",
+          "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+        }
+      ]
+    }
+  ]
+}
