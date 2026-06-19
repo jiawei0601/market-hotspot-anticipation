@@ -1,0 +1,86 @@
+{
+  "2486": {
+    "stock_id": "2486",
+    "period": "2023-03",
+    "revenue_billion": 4.0981,
+    "announce_date": "2023-04-10",
+    "yoy_pct": -17.83
+  },
+  "3013": {
+    "stock_id": "3013",
+    "period": "2023-03",
+    "revenue_billion": 5.4475,
+    "announce_date": "2023-04-10",
+    "yoy_pct": 28.05
+  },
+  "3017": {
+    "stock_id": "3017",
+    "period": "2023-03",
+    "revenue_billion": 47.6585,
+    "announce_date": "2023-04-10",
+    "yoy_pct": 13.68
+  },
+  "3131": {
+    "stock_id": "3131",
+    "period": "2023-03",
+    "revenue_billion": 3.1545,
+    "announce_date": "2023-04-10",
+    "yoy_pct": 9.3
+  },
+  "3324": {
+    "stock_id": "3324",
+    "period": "2023-03",
+    "revenue_billion": 13.6532,
+    "announce_date": "2023-04-10",
+    "yoy_pct": 2.42
+  },
+  "3450": {
+    "stock_id": "3450",
+    "period": "2023-03",
+    "revenue_billion": 4.3008,
+    "announce_date": "2023-04-10",
+    "yoy_pct": -21.31
+  },
+  "3583": {
+    "stock_id": "3583",
+    "period": "2023-03",
+    "revenue_billion": 5.8851,
+    "announce_date": "2023-04-10",
+    "yoy_pct": 51.65
+  },
+  "3680": {
+    "stock_id": "3680",
+    "period": "2023-03",
+    "revenue_billion": 6.9808,
+    "announce_date": "2023-04-10",
+    "yoy_pct": 70.28
+  },
+  "6187": {
+    "stock_id": "6187",
+    "period": "2023-03",
+    "revenue_billion": 0.8095,
+    "announce_date": "2023-04-10",
+    "yoy_pct": -69.69
+  },
+  "6223": {
+    "stock_id": "6223",
+    "period": "2023-03",
+    "revenue_billion": 6.1948,
+    "announce_date": "2023-04-10",
+    "yoy_pct": 0.72
+  },
+  "6683": {
+    "stock_id": "6683",
+    "period": "2023-03",
+    "revenue_billion": 1.3172,
+    "announce_date": "2023-04-10",
+    "yoy_pct": -4.25
+  },
+  "8027": {
+    "stock_id": "8027",
+    "period": "2023-03",
+    "revenue_billion": 1.9331,
+    "announce_date": "2023-04-10",
+    "yoy_pct": -56.35
+  }
+}

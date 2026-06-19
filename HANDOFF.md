@@ -45,7 +45,7 @@
   - ⚠️ FinMind 免費**有限流** → 回填要溫和（逐檔/快取、加 sleep），勿一次打爆。
 - 建置進度：
   - ✅ **①ingestion 層完成**（`ingest.py`，2026-06-19）：FinMind→正規化（營收含 YoY＋公布日 PIT 規則、外資持股%）→組 PIT 月快照→`pit_store` 不可變寫入。已用真資料端到端驗證（2024-02 快照正確回傳 2024-01 期營收＝PIT 截斷正確；不可變重跑全 skipped）。`pit_store.read_snapshot` 已能讀 revenue/holdings，無需另改。
-  - ⏳ **②全量回填**：對 12 檔 universe、2015→今逐月寫 `data/snapshots/`（≈276 檔，git-as-DB）。指令：`ingest.backfill(company_ids, months, start_date="2015-01-01")`。長網路作業、append-only 可續跑；會是一個大檔數 commit。
+  - ✅ **②全量回填完成**（2026-06-19）：12 檔 universe × 2015-01..2026-06＝**276 個 PIT 快照**（`data/snapshots/YYYY-MM/{revenue,holdings}.json`，1.2M，0 errors）。已抽查正確（2021-06 營收快照回傳 2021-05 期＝PIT 正確）。重跑指令見 `ingest.backfill(...)`（append-only、可續跑）。
   - ⏳ **③market_monitor 接真資料**：Backlog=板塊 equipment 真營收 YoY 聚合、Consensus=12M百分位+同儕排名混合、`simulate_revenue_inflection` 改用真營收。
   - ⏳ **④回測引擎讀真 PIT、移除示意抬頭**　⏳ **⑤補測試**。
 - 次要結構債：yfinance 價格**倖存者偏差**（下市股消失）；兩回測引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導（脆弱、待改為傳參）。

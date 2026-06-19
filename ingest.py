@@ -129,10 +129,17 @@ def backfill(company_ids: list, months: list, root: str = pit_store.SNAPSHOT_ROO
     回傳 {'written': [...paths], 'skipped': [...已存在月份]}。對 FinMind 溫和（每檔間 sleep）。
     """
     rev_by_sid, hold_by_sid = {}, {}
+    errors = []
     for cid in company_ids:
-        rev_by_sid[cid] = fetch_month_revenue(cid, start_date, token=token)
+        try:
+            rev_by_sid[cid] = fetch_month_revenue(cid, start_date, token=token)
+        except Exception as e:  # 單檔失敗不中止整批（FinMind 限流/缺資料）
+            errors.append(f"revenue {cid}: {e}")
         time.sleep(sleep)
-        hold_by_sid[cid] = fetch_foreign_holding(cid, start_date, token=token)
+        try:
+            hold_by_sid[cid] = fetch_foreign_holding(cid, start_date, token=token)
+        except Exception as e:
+            errors.append(f"holdings {cid}: {e}")
         time.sleep(sleep)
 
     written, skipped = [], []
@@ -145,7 +152,7 @@ def backfill(company_ids: list, months: list, root: str = pit_store.SNAPSHOT_ROO
                 written.append(pit_store.write_monthly_snapshot(kind, snap, year_month=ym, root=root))
             except pit_store.SnapshotExistsError:
                 skipped.append(f"{ym}/{kind}")
-    return {"written": written, "skipped": skipped}
+    return {"written": written, "skipped": skipped, "errors": errors}
 
 
 if __name__ == "__main__":
