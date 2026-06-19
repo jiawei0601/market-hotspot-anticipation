@@ -1,6 +1,6 @@
 # ADR 0002: 市場熱點預見系統架構決策
 
-狀態：已採納
+狀態：部分被取代（DevOps/金鑰部分已過期；架構方向見 ADR 0003、0004，Agent 行為見 ADR 0005）
 
 ## 脈絡
 我們需要設計並實作一個能預見未來 12-18 個月市場熱點的系統。根據優秀投資人的中期投資思維，此系統不能單純依賴傳統技術分析（如日 K 線動量），而必須深入科技業供應鏈物理規格升級（例如散熱、CPO 傳輸）、Design Win 放量時程、高頻報價止跌信號，以及營收 YoY 拐點。此任務需要整合多元化的定量與定性數據，並產出高品質的繁體中文學術級分析報告。
@@ -24,9 +24,7 @@
    - 模擬或抓取台灣供應鏈（台股）實體月營收，作為推算 YoY 拐點的基準。
 
 4. **DevOps 自動化與防護**：
-   - 於 GitHub Actions 中設定每週一自動排程。
-   - 採用動態 Bash 腳本動態判定 `America/New_York` 夏冬令時，以防排程時間偏移。
-   - 整合 `deadmancheck.io` webhook，提供執行心跳 (Heartbeat) 監控。
+   - 於 GitHub Actions (`.github/workflows/daily_market_pipeline.yml`) 設定兩段排程：每日（台北 Mon–Fri 18:00）股價追蹤，每週（台北 Mon 07:30）多 Agent 報告。
    - 執行完畢後強制 commit 最新報告推回 repo 預設分支，並附帶 `[skip ci]`，保持 Repo 活躍（避免 GitHub 60 天無 commit 暫停 Action 排程的限制）。
 
 ## 後果
@@ -36,4 +34,6 @@
   - **低維護成本**：GitHub Actions 免費額度支持，運作成本低廉。
 - **折衷與代價**：
   - **運行延遲**：相較於純數值回測，由於需要多次 LLM 調用與 Critic 自我修正循環，單次執行時間預期在 1-2 分鐘內。
-  - **API 依賴**：強烈依賴 `OPENAI_API_KEY`，需要配置安全憑證。
+  - **API 依賴**：強烈依賴 `GEMINI_API_KEY`，需要配置安全憑證。
+
+> 補註：本 ADR 描述的「無 API key 時以本地樣板產出」行為已由 [ADR 0005](0005-agent-layer-no-fabrication-fail-loud.md) 廢止——LLM 失敗即報錯，不得捏造假數據。

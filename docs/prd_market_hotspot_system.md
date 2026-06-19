@@ -8,6 +8,8 @@
 ### 1.2 產品定位
 本系統是一套**基於大師中期投資思維的自動化市場熱點預見與多 Agent 研判系統**。透過自動收集高頻產業數據、模擬營收 YoY 拐點，並利用 LangGraph 狀態機進行供應鏈洗牌推演與自我修正，最終產出學術級的中期市場可行性研究報告，協助決策者在新聞爆發前搶先佈局。
 
+> **現況與方向（2026-06）**：本系統運行需 `GEMINI_API_KEY`（非 OpenAI）。LLM 呼叫失敗即報錯、不捏造假數據（見 [ADR 0005](adr/0005-agent-layer-no-fabrication-fail-loud.md)）。資料引擎 `market_monitor.py` 正由合成腳手架轉為可稽核 PIT 量化引擎（見 [ADR 0003](adr/0003-market-monitor-synthetic-to-pit-engine.md)、[ADR 0004](adr/0004-market-monitor-pit-data-architecture.md)、[CONTEXT.md](../CONTEXT.md)）。回測在真 PIT 存檔到位前為示意模式，勝率非證據。
+
 ### 1.3 核心商業目標
 - **領先市場 12-18 個月**：預判產品架構升級（如 NVIDIA Blackwell $\rightarrow$ Vera Rubin $\rightarrow$ Feynman）對供應鏈的「內含價值 (Content Value)」洗牌效應。
 - **捕捉營收拐點**：在營收 YoY 拐點出現前 2-3 個月發出預警。
@@ -65,6 +67,7 @@ class MarketHotspotState(TypedDict):
     target_sector: str                  # 目標行業/技術板塊 (例如: "CPO_Optical_Transceiver")
     current_generation: str             # 當前主流架構 (例如: "Vera_Rubin")
     next_generation: str                # 下一代架構 (例如: "Feynman")
+    future_generation: str              # 下下一代架構 (例如: "Feynman_Next")
     
     # 專家產出資料
     supply_chain_analysis: Dict[str, Any]  # 內含價值變動與替代風險
@@ -76,6 +79,7 @@ class MarketHotspotState(TypedDict):
     critic_feedback: str                # 評審反饋意見
     iteration_count: int                # 當前自我修正迭代次數
     validation_status: str              # 審查狀態: "PASS" 或 "FAIL"
+    as_of_date: str                     # 回測基準點時間 (可選，預設空字串表示最新)
 ```
 
 ### 3.2 數據監控器介面 (`MarketInformationMonitor`)
@@ -105,12 +109,8 @@ class MarketInformationMonitor:
 ## 4. 自動化與 DevOps 規格
 
 ### 4.1 每週排程自動化
-- **觸發時間**：每週一 UTC 02:30（避開整點尖峰）。
-- **紐約時區守護**：在 Linux/Bash 環境中以 `TZ="America/New_York"` 檢查當前美東時間，若遇到冬夏令時切換，自動校準與美股關閉後 12-18 小時的對齊性。
+- **觸發時間**：兩段 cron——每日台北 Mon–Fri 18:00（UTC `0 10 * * 1-5`）股價追蹤；每週台北 Mon 07:30（UTC `30 23 * * 0`）多 Agent 報告。
 - **Keep-Alive 維持**：當掃描完成並產出最新 Markdown 報告於 `/reports` 後，使用 Git 自動 commit 並強制 push 至預設分支，附帶 `[skip ci]`，保持 Repo 活躍度，防止 GitHub 停用 Cron。
-- **DeadMan Watchdog**：
-  - 開始步驟發送：`curl -FSs --retry 3 https://deadmancheck.io/ping/<START_TOKEN>`
-  - 成功步驟發送：`curl -FSs --retry 3 https://deadmancheck.io/ping/<DONE_TOKEN>`
 
 ---
 
