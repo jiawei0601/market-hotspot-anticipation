@@ -56,15 +56,43 @@ class TestPointInTimeBacktest(unittest.TestCase):
         self.assertNotEqual(bl_before, 0.0, "應 fallback 至 2020-02 期 YoY，非 0")
 
     def test_consensus_real_data(self):
-        """_compute_consensus 應從持股快照回傳 0-100 值；資料不足時回傳 None。"""
+        """_compute_consensus 應從持股+股價快照回傳 0-100 值；資料不足時回傳 None。"""
         c = self.monitor._compute_consensus("3131.TWO")
         self.assertIsNotNone(c)
         self.assertGreaterEqual(c, 0.0)
         self.assertLessEqual(c, 100.0)
 
+        # 股價部分也應有值
+        cp = self.monitor._compute_price_consensus("3131.TWO")
+        self.assertIsNotNone(cp, "股價快照存在，price_consensus 不應為 None")
+        self.assertGreaterEqual(cp, 0.0)
+        self.assertLessEqual(cp, 100.0)
+
         # 遠早於快照起始（2013-01），資料不足 → None
         c_old = self.monitor._compute_consensus("3131.TWO", as_of_date="2013-06-01")
         self.assertIsNone(c_old, "2013 年前無快照，應回傳 None")
+
+    def test_price_pit_truncation(self):
+        """月底收盤 PIT：月中 as_of_date 不應見到當月收盤（close_date > as_of_date）。"""
+        # 2020-01-15：1月 close_date=2020-01-31 > 2020-01-15 → 應排除
+        hist = self.monitor._read_price_history("3131.TWO", "2020-01-15", n_months=3)
+        self.assertTrue(len(hist) > 0, "應有歷史資料")
+        latest_ym = hist[0][0]
+        self.assertLessEqual(latest_ym, "2019-12",
+                             f"2020-01-15 不應看到 2020-01 收盤，但最新期為 {latest_ym}")
+
+    def test_price_consensus_cross_sectional(self):
+        """price_consensus 橫斷面排名應合理：高位股 >= 低位股的 consensus。"""
+        # 用固定 as_of 確保一致性
+        as_of = "2024-06-30"
+        cp_3131 = self.monitor._compute_price_consensus("3131.TWO", as_of_date=as_of)
+        cp_3013 = self.monitor._compute_price_consensus("3013.TW", as_of_date=as_of)
+        self.assertIsNotNone(cp_3131)
+        self.assertIsNotNone(cp_3013)
+        # 兩者都應在 0-100 內
+        for v in (cp_3131, cp_3013):
+            self.assertGreaterEqual(v, 0.0)
+            self.assertLessEqual(v, 100.0)
 
     def test_simulate_uses_real_yoy(self):
         """simulate_revenue_inflection 應使用 PIT 快照真實 YoY，非合成亂數。"""

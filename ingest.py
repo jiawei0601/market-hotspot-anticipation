@@ -5,9 +5,12 @@
 
 設計原則（見 ADR 0003/0004/0006、CONTEXT.md）：
 - 網路與儲存分離：本檔負責抓取/正規化；寫入一律走 `pit_store.write_monthly_snapshot`。
-- PIT 正確：營收可見日＝FinMind `create_time`（公布日），無則套「次月 10 日」規則；
-  外資持股以資料日期為可見日。組月快照時只納入「可見日 <= 該月月底」者。
+- PIT 正確：
+  - 營收可見日＝FinMind `create_time`（公布日），無則套「次月 10 日」規則；
+  - 外資持股以資料日期為可見日；
+  - 股價以月底最後交易日為可見日（close_date = 該月最後一個日曆日）。
 - FinMind 免費有限流 → 逐檔抓取之間 sleep。
+- 股價使用 yfinance 月 K（interval="1mo"），Close = 該月最後交易日收盤價。
 """
 import os
 import json
@@ -17,6 +20,23 @@ import urllib.request
 import urllib.parse
 
 import pit_store
+
+# ==================== 全 universe 的 yfinance ticker 對照表 ====================
+# key = 純數字股票代碼（與 data/snapshots/ 一致），value = yfinance ticker
+YFINANCE_TICKERS: dict[str, str] = {
+    "3131": "3131.TWO",
+    "3680": "3680.TWO",
+    "6683": "6683.TWO",
+    "6187": "6187.TWO",
+    "6223": "6223.TWO",
+    "3013": "3013.TW",
+    "3017": "3017.TW",
+    "3583": "3583.TW",
+    "3324": "3324.TWO",
+    "2486": "2486.TW",
+    "3450": "3450.TW",
+    "8027": "8027.TWO",
+}
 
 FINMIND_URL = "https://api.finmindtrade.com/api/v4/data"
 
@@ -152,6 +172,98 @@ def backfill(company_ids: list, months: list, root: str = pit_store.SNAPSHOT_ROO
                 written.append(pit_store.write_monthly_snapshot(kind, snap, year_month=ym, root=root))
             except pit_store.SnapshotExistsError:
                 skipped.append(f"{ym}/{kind}")
+    return {"written": written, "skipped": skipped, "errors": errors}
+
+
+# ==================== 股價（yfinance）抓取與快照 ====================
+
+def _month_last_day(year_month: str) -> str:
+    """回傳 'YYYY-MM' 對應的最後一個日曆日 'YYYY-MM-DD'。"""
+    y, m = int(year_month[:4]), int(year_month[5:7])
+    ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
+    return (datetime.date(ny, nm, 1) - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+
+def fetch_month_prices(company_id: str, start_date: str = "2015-01-01") -> list:
+    """以 yfinance 抓取月 K 收盤價（interval='1mo'），回傳正規化列表：
+    [{stock_id, year_month 'YYYY-MM', close float, close_date 'YYYY-MM-DD'}]
+
+    close_date = 該月最後一個日曆日（作為 PIT 可見日截斷點）。
+    company_id 格式：純 4 位代碼（如 '3131'），透過 YFINANCE_TICKERS 對照。
+    """
+    try:
+        import yfinance as yf
+    except ImportError as e:
+        raise RuntimeError("需要安裝 yfinance：pip install yfinance") from e
+
+    ticker_sym = YFINANCE_TICKERS.get(company_id)
+    if ticker_sym is None:
+        raise ValueError(f"無 yfinance ticker 對照：{company_id}；請更新 YFINANCE_TICKERS")
+
+    end = (datetime.date.today() + datetime.timedelta(days=45)).strftime("%Y-%m-%d")
+    hist = yf.Ticker(ticker_sym).history(start=start_date, end=end, interval="1mo")
+
+    if hist.empty:
+        raise RuntimeError(f"yfinance {ticker_sym} 無資料（start={start_date}）")
+
+    out = []
+    for idx, row in hist.iterrows():
+        ym = idx.strftime("%Y-%m")
+        close_date = _month_last_day(ym)
+        out.append({
+            "stock_id": company_id,
+            "year_month": ym,
+            "close": round(float(row["Close"]), 2),
+            "close_date": close_date,
+        })
+    return out
+
+
+def build_price_snapshot(price_by_sid: dict, year_month: str) -> dict:
+    """某月的 PIT 股價快照：每檔取 year_month 相符的月 K 收盤。
+    PIT 可見日 = close_date（月底），呼叫端以 close_date <= as_of_date 篩選。
+    """
+    snap = {}
+    for sid, recs in price_by_sid.items():
+        match = [r for r in recs if r["year_month"] == year_month]
+        if match:
+            r = match[-1]
+            snap[sid] = {"close": r["close"], "close_date": r["close_date"]}
+    return snap
+
+
+def backfill_prices(
+    company_ids: list,
+    months: list,
+    root: str = pit_store.SNAPSHOT_ROOT,
+    start_date: str = "2015-01-01",
+    sleep: float = 0.3,
+) -> dict:
+    """抓取 company_ids（純數字代碼）的月 K，為 months 各組裝並寫入不可變月快照。
+    回傳 {'written': [...paths], 'skipped': [...已存在月份], 'errors': [...失敗]}.
+    yfinance 呼叫量小（每檔一次），不需強限流；sleep 為防禦性間隔。
+    """
+    price_by_sid: dict = {}
+    errors: list = []
+    for cid in company_ids:
+        try:
+            price_by_sid[cid] = fetch_month_prices(cid, start_date)
+        except Exception as e:
+            errors.append(f"prices {cid}: {e}")
+        time.sleep(sleep)
+
+    written, skipped = [], []
+    for ym in months:
+        snap = build_price_snapshot(price_by_sid, ym)
+        if not snap:
+            continue
+        try:
+            written.append(
+                pit_store.write_monthly_snapshot("prices", snap, year_month=ym, root=root)
+            )
+        except pit_store.SnapshotExistsError:
+            skipped.append(f"{ym}/prices")
+
     return {"written": written, "skipped": skipped, "errors": errors}
 
 

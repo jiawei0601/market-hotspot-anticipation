@@ -246,19 +246,79 @@ class MarketInformationMonitor:
             return 0.0
         return round(float(np.median(yoy_values)), 2)
 
+    def _read_price_history(self, company_id: str, as_of_date_str: Optional[str],
+                            n_months: int = 13) -> list:
+        """
+        從 PIT 股價快照讀取最近 n_months 個月收盤價。
+        PIT 規則：close_date（月底）<= as_of_date_str 才可見。
+        回傳 [(year_month 'YYYY-MM', close float), ...] 由新到舊。
+        """
+        sid = _strip_suffix(company_id)
+        as_of_cutoff = as_of_date_str or datetime.date.today().strftime("%Y-%m-%d")
+        as_of_ym = as_of_cutoff[:7]
+
+        result: dict = {}
+        year, month = int(as_of_ym[:4]), int(as_of_ym[5:7])
+        for _ in range(n_months + 1):
+            ym = f"{year:04d}-{month:02d}"
+            snap = pit_store.read_snapshot("prices", f"{ym}-28")
+            if snap and sid in snap:
+                rec = snap[sid]
+                close_date = rec.get("close_date", "")
+                if close_date and close_date <= as_of_cutoff and ym not in result:
+                    result[ym] = rec["close"]
+            month -= 1
+            if month == 0:
+                month = 12
+                year -= 1
+
+        return sorted(result.items(), key=lambda x: x[0], reverse=True)
+
+    def _compute_price_consensus(self, company_id: str,
+                                 as_of_date: Optional[str] = None) -> Optional[float]:
+        """
+        股價 Consensus 部分（0-100）：
+        (a) 自身 12M 歷史百分位（當前收盤在近 12M 的位置；高=接近年高=擁擠）
+        (b) 橫斷面同儕排名：各同儕計算各自 own 12M percentile，再對本公司排名
+            （比較「相對年高位置」，避免跨股直接比較絕對股價無意義）
+        資料不足（< 6 個月）時回傳 None。
+        """
+        own_history = self._read_price_history(company_id, as_of_date, n_months=13)
+        if len(own_history) < 6:
+            return None
+
+        closes = [c for _, c in own_history]
+        current_close = closes[0]
+        own_pct = sum(1 for c in closes if c <= current_close) / len(closes) * 100
+
+        peer_own_pcts = [own_pct]
+        for it in self.get_point_in_time_matrix(as_of_date):
+            p_cid = it["company_id"]
+            if _strip_suffix(p_cid) == _strip_suffix(company_id):
+                continue
+            p_hist = self._read_price_history(p_cid, as_of_date, n_months=13)
+            if len(p_hist) < 3:
+                continue
+            p_closes = [c for _, c in p_hist]
+            p_cur = p_closes[0]
+            p_pct = sum(1 for c in p_closes if c <= p_cur) / len(p_closes) * 100
+            peer_own_pcts.append(p_pct)
+
+        peer_rank = sum(1 for p in peer_own_pcts if p <= own_pct) / len(peer_own_pcts) * 100
+        return round((own_pct + peer_rank) / 2, 1)
+
     def _compute_consensus(self, company_id: str,
                            as_of_date: Optional[str] = None) -> Optional[float]:
         """
-        從外資持股% PIT 快照計算共識度（0-100）。
-        公式（ADR 0006）：(自身 12M 歷史百分位 + 橫斷面同儕排名) / 2。
-        注意：股價部分當前版本略過（yfinance 倖存者偏差問題未解）——僅用持股%。
-        資料不足（< 6 個月）時回傳 None，呼叫端應 fallback 至靜態先驗。
+        完整 Consensus Score（0-100）：持股% + 股價兩個子訊號等權混合。
+        各子訊號 = (自身 12M 歷史百分位 + 橫斷面同儕排名) / 2（ADR 0006）。
+        若股價快照不可得，退化為僅持股%；若兩者皆不足，回傳 None（呼叫端 fallback 靜態先驗）。
         """
         sid = _strip_suffix(company_id)
         as_of_str = as_of_date or datetime.date.today().strftime("%Y-%m-%d")
         as_of_ym = as_of_str[:7]
 
-        # 最近 12 個月持股快照（新→舊）
+        # ---- 持股% 部分 ----
         history_ratios: list = []
         year, month = int(as_of_ym[:4]), int(as_of_ym[5:7])
         for _ in range(12):
@@ -276,12 +336,9 @@ class MarketInformationMonitor:
         if len(history_ratios) < 6:
             return None
 
-        current_ratio = history_ratios[0]  # 最新（newest-first）
+        current_ratio = history_ratios[0]
+        own_hold_pct = sum(1 for v in history_ratios if v <= current_ratio) / len(history_ratios) * 100
 
-        # (a) 自身 12M 歷史百分位：當前值在近 12M 中的排名
-        own_pct = sum(1 for v in history_ratios if v <= current_ratio) / len(history_ratios) * 100
-
-        # (b) 橫斷面同儕排名
         latest_snap = pit_store.read_snapshot("holdings", f"{as_of_ym}-28")
         peer_ratios: list = []
         if latest_snap:
@@ -291,10 +348,17 @@ class MarketInformationMonitor:
                 if rec and rec.get("foreign_ratio") is not None:
                     peer_ratios.append(rec["foreign_ratio"])
 
-        peer_rank = (sum(1 for r in peer_ratios if r <= current_ratio) / len(peer_ratios) * 100
-                     if peer_ratios else own_pct)
+        hold_peer_rank = (sum(1 for r in peer_ratios if r <= current_ratio) / len(peer_ratios) * 100
+                          if peer_ratios else own_hold_pct)
 
-        return round((own_pct + peer_rank) / 2, 1)
+        holdings_consensus = (own_hold_pct + hold_peer_rank) / 2
+
+        # ---- 股價部分（有快照就加入；無則僅用持股%）----
+        price_consensus = self._compute_price_consensus(company_id, as_of_date)
+
+        if price_consensus is not None:
+            return round((holdings_consensus + price_consensus) / 2, 1)
+        return round(holdings_consensus, 1)
 
     # ==================== 核心訊號：真實 PIT 營收拐點 ====================
 
