@@ -5,26 +5,11 @@ import glob
 from typing import Dict, List, Any
 import yfinance as yf
 
+from constants import CHINESE_MAPPING
+
 # 設定資料儲存路徑 (使用 Git 追蹤的 JSON 實現無伺服器持久化)
 WATCHLIST_FILE = "watchlist.json"
 PERFORMANCE_REPORT = "reports/performance_tracker_summary.md"
-
-CHINESE_MAPPING = {
-    "3131.TWO": "3131.弘塑",
-    "3131.TW": "3131.弘塑",
-    "3583.TW": "3583.辛耘",
-    "6187.TWO": "6187.萬潤",
-    "6683.TWO": "6683.雍智科技",
-    "3324.TWO": "3324.雙鴻",
-    "3017.TW": "3017.奇鋐",
-    "2486.TW": "2486.一詮",
-    "3680.TWO": "3680.家登",
-    "3680.TW": "3680.家登",
-    "6223.TWO": "6223.旺矽",
-    "8027.TWO": "8027.鈦昇",
-    "3450.TW": "3450.聯鈞",
-    "3013.TW": "3013.晟銘電"
-}
 
 def load_watchlist() -> List[Dict[str, Any]]:
     if os.path.exists(WATCHLIST_FILE):
