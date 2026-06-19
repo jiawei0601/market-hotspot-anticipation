@@ -27,7 +27,7 @@ def save_watchlist(watchlist: List[Dict[str, Any]]):
     except Exception as e:
         print(f"[ERROR] 儲存 watchlist.json 失敗: {e}")
 
-def add_to_watchlist(company_id: str, name: str, entry_price: float, sector: str):
+def add_to_watchlist(company_id: str, name: str, entry_price: float, sector: str, entry_date: str = ""):
     """
     將新出現的標的加入觀察名單 (Watchlist)
     """
@@ -38,11 +38,12 @@ def add_to_watchlist(company_id: str, name: str, entry_price: float, sector: str
         print(f"標的 {name} ({company_id}) 已在觀察名單中，跳過。")
         return
         
+    date_str = entry_date if entry_date else datetime.date.today().strftime("%Y-%m-%d")
     new_target = {
         "company_id": company_id,
         "name": name,
         "sector": sector,
-        "entry_date": datetime.date.today().strftime("%Y-%m-%d"),
+        "entry_date": date_str,
         "entry_price": round(entry_price, 2),
         "current_price": round(entry_price, 2),
         "max_price_since": round(entry_price, 2),
@@ -56,19 +57,20 @@ def add_to_watchlist(company_id: str, name: str, entry_price: float, sector: str
     
     watchlist.append(new_target)
     save_watchlist(watchlist)
-    print(f"[OK] 成功將新標的 {name} ({company_id}) 加入觀察追蹤名單，進場基準價: {entry_price}")
+    print(f"[OK] 成功將新標的 {name} ({company_id}) 加入觀察追蹤名單，進場基準價: {entry_price}，日期: {date_str}")
 
-def update_watchlist_daily_prices():
+def update_watchlist_daily_prices(as_of_date: str = ""):
     """
     透過 yfinance 獲取每日 K 線數據，更新名單中所有標的自進場日以來的最高/最低/當前股價。
+    - 支援 as_of_date 進行點時間 (Point-in-Time) 數據截斷，避免未來數據偏誤。
     """
     watchlist = load_watchlist()
     if not watchlist:
         print("觀察名單為空，無需更新價格。")
         return
         
-    print(f"====== 開始每日 K 線數據追蹤與更新 (共 {len(watchlist)} 支標的) ======")
-    today_str = datetime.date.today().strftime("%Y-%m-%d")
+    print(f"====== 開始 K 線數據追蹤與更新 (共 {len(watchlist)} 支標的) ======")
+    today_limit = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date() if as_of_date else datetime.date.today()
     
     for item in watchlist:
         if item["status"] != "tracking":
@@ -81,12 +83,14 @@ def update_watchlist_daily_prices():
         print(f"正在更新 {item['name']} ({cid})，進場日期: {entry_date_str}...")
         
         try:
-            # 計算前推 3 個月的 start_date，確保有足夠的歷史 K 線，並解決剛加入當天 yfinance 無資料問題
+            # 計算前推 3 個月的 start_date，確保有足夠的歷史 K 線
             entry_date = datetime.datetime.strptime(entry_date_str, "%Y-%m-%d").date()
             start_date = (entry_date - datetime.timedelta(days=90)).strftime("%Y-%m-%d")
-            end_date = (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
             
-            df = yf.download(cid, start=start_date, end=end_date, progress=False)
+            # 限制終止日，防止讀取未來價格
+            end_date_limit = (today_limit + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+            
+            df = yf.download(cid, start=start_date, end=end_date_limit, progress=False)
             
             if df.empty:
                 print(f"[WARN] 無法取得 {cid} 自 {start_date} 至今的 K 線數據。")

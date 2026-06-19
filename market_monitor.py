@@ -31,52 +31,174 @@ class MarketInformationMonitor:
             }
         }
         
-        # 供應商價值矩陣 (包含設備商、新興材料商，以及在 Feynman_Next 的洗牌效應)
-        self.supply_chain_matrix = [
-            {
-                "company_id": "3450.TW",  # 聯鈞 (FOCI)
-                "name": "FOCI",
-                "segment": "transmission",
-                "content_value_by_gen": {"Vera_Rubin": 4.5, "Feynman": 14.0, "Feynman_Next": 8.0},
-                "consensus_score": 92.0,
-                "status": "Consensus Winner for Feynman CPO",
-                "timeline": {"design_win": "2025-Q1", "pilot": "2026-Q1", "ramp_up": "2026-Q3"}
-            },
-            {
-                "company_id": "3131.TWO",  # 弘塑 (GrandProcess)
-                "name": "GrandProcess",
-                "segment": "equipment",
-                "content_value_by_gen": {"Vera_Rubin": 10.0, "Feynman": 18.0, "Feynman_Next": 26.0},
-                "consensus_score": 35.0,
-                "status": "Entering Feynman_Next Spec Definition",
-                "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
-            },
-            {
-                "company_id": "3013.TW",  # 晟銘電 (MCT)
-                "name": "MCT",
-                "segment": "cooling",
-                "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 9.5, "Feynman_Next": 4.0},
-                "consensus_score": 85.0,
-                "status": "Mature Rubin/Feynman Supplier",
-                "timeline": {"design_win": "2025-Q1", "pilot": "2026-Q1", "ramp_up": "2026-Q3"}
-            },
-            {
-                "company_id": "3324.TWO",  # 雙鴻 (Auras)
-                "name": "Auras",
-                "segment": "cooling",
-                "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 12.0, "Feynman_Next": 18.0},
-                "consensus_score": 52.0,
-                "status": "Co-developing Feynman_Next DTC cooling",
-                "timeline": {"design_win": "2025-Q3", "pilot": "2026-Q2", "ramp_up": "2026-Q4"}
-            }
-        ]
         self.real_revenue_cache = None
 
-    def get_high_frequency_pricing(self, sector: str) -> Dict[str, Any]:
+    def get_point_in_time_matrix(self, as_of_date: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        模擬/獲取高頻報價趨勢。
+        核心優化：基於歷史點時間 (Point-in-Time) 回傳當時的供應鏈標的選股池，完全杜絕 Look-ahead Bias。
+        - 2020-2022 年 (Hopper 世代)：此時沒有 Feynman 概念，一詮(2486)尚未切入散熱均熱片，雍智(6683)為主要先進測試載板。
+        - 2023-2024 年 (Blackwell 世代)：液冷雙鴻(3324)與一詮(2486)送樣，弘塑設備大拉貨。
+        - 2025-2026 年 (Vera_Rubin -> Feynman 世代)：全量解鎖 (一詮均熱片放量、鈦昇玻璃基板)。
         """
-        today = datetime.date.today()
+        if as_of_date:
+            today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
+        else:
+            today = datetime.date.today()
+            
+        # 2015-2019 年底：早期 16nm/7nm 擴產潮與一般 server 世代
+        if today <= datetime.date(2019, 12, 31):
+            return [
+                {
+                    "company_id": "3131.TWO",  # 弘塑 (GrandProcess)
+                    "name": "GrandProcess",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+                    "consensus_score": 30.0, # 當時尚未廣為人知
+                    "status": "Foundry Equipment Supplier",
+                    "timeline": {"design_win": "2015-Q1", "pilot": "2015-Q3", "ramp_up": "2016-Q1"}
+                },
+                {
+                    "company_id": "6683.TWO",  # 雍智科技 (UMT)
+                    "name": "UMT",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 5.0, "Feynman_Next": 6.0},
+                    "consensus_score": 45.0,
+                    "status": "Semiconductor Test Socket Provider",
+                    "timeline": {"design_win": "2017-Q1", "pilot": "2017-Q3", "ramp_up": "2018-Q1"}
+                },
+                {
+                    "company_id": "3013.TW",  # 晟銘電 (MCT)
+                    "name": "MCT",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 2.0, "Feynman": 2.0, "Feynman_Next": 3.0},
+                    "consensus_score": 85.0,
+                    "status": "Server Case Supplier",
+                    "timeline": {"design_win": "2015-Q2", "pilot": "2015-Q4", "ramp_up": "2016-Q2"}
+                }
+            ]
+        # 2020-2022 年底：Hopper 世代
+        elif today <= datetime.date(2022, 12, 31):
+            return [
+                {
+                    "company_id": "3131.TWO",  # 弘塑 (GrandProcess) - 當時為 TSMC CoWoS 設備主力
+                    "name": "GrandProcess",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 12.0, "Feynman_Next": 15.0},
+                    "consensus_score": 28.0, # 當時低共識
+                    "status": "Early Advanced Packaging Pioneer",
+                    "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q4", "ramp_up": "2021-Q2"}
+                },
+                {
+                    "company_id": "6683.TWO",  # 雍智科技 (UMT) - 測試載板
+                    "name": "UMT",
+                    "segment": "package",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 8.0, "Feynman_Next": 10.0},
+                    "consensus_score": 42.0,
+                    "status": "IC Testing Interface Provider",
+                    "timeline": {"design_win": "2020-Q2", "pilot": "2021-Q1", "ramp_up": "2021-Q3"}
+                },
+                {
+                    "company_id": "3013.TW",  # 晟銘電 (MCT) - 當時以一般伺服器機殼為主，屬於高共識明星
+                    "name": "MCT",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 3.0, "Feynman": 4.0, "Feynman_Next": 4.0},
+                    "consensus_score": 88.0,
+                    "status": "Standard Server Chassis Supplier",
+                    "timeline": {"design_win": "2020-Q1", "pilot": "2020-Q3", "ramp_up": "2020-Q4"}
+                }
+            ]
+        # 2023-2024 年：Blackwell 世代
+        elif today <= datetime.date(2024, 12, 31):
+            return [
+                {
+                    "company_id": "3131.TWO",
+                    "name": "GrandProcess",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 10.0, "Feynman": 18.0, "Feynman_Next": 20.0},
+                    "consensus_score": 45.0,
+                    "status": "Ramping up CoWoS Equipment",
+                    "timeline": {"design_win": "2023-Q2", "pilot": "2023-Q4", "ramp_up": "2024-Q2"}
+                },
+                {
+                    "company_id": "3324.TWO",  # 雙鴻 (Auras) - 液冷水冷板開始送樣
+                    "name": "Auras",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 6.0, "Feynman": 10.0, "Feynman_Next": 12.0},
+                    "consensus_score": 50.0,
+                    "status": "Co-developing Liquid Cooling plate",
+                    "timeline": {"design_win": "2023-Q3", "pilot": "2024-Q1", "ramp_up": "2024-Q3"}
+                },
+                {
+                    "company_id": "2486.TW",  # 一詮 (I-Chiun) - 均熱片送樣
+                    "name": "I-Chiun",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 2.0, "Feynman": 5.0, "Feynman_Next": 8.0},
+                    "consensus_score": 38.0,
+                    "status": "Thermal Spreaders Sampling",
+                    "timeline": {"design_win": "2023-Q4", "pilot": "2024-Q2", "ramp_up": "2024-Q4"}
+                }
+            ]
+        # 2025-2026 年 (現在)：Feynman 世代與玻璃基板
+        else:
+            return [
+                {
+                    "company_id": "3450.TW",  # 聯鈞
+                    "name": "FOCI",
+                    "segment": "transmission",
+                    "content_value_by_gen": {"Vera_Rubin": 4.5, "Feynman": 14.0, "Feynman_Next": 8.0},
+                    "consensus_score": 92.0,
+                    "status": "Consensus Winner for Feynman CPO",
+                    "timeline": {"design_win": "2025-Q1", "pilot": "2026-Q1", "ramp_up": "2026-Q3"}
+                },
+                {
+                    "company_id": "3131.TWO",  # 弘塑
+                    "name": "GrandProcess",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 10.0, "Feynman": 18.0, "Feynman_Next": 26.0},
+                    "consensus_score": 35.0,
+                    "status": "Entering Feynman_Next Spec Definition",
+                    "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+                },
+                {
+                    "company_id": "3324.TWO",  # 雙鴻
+                    "name": "Auras",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 8.0, "Feynman": 12.0, "Feynman_Next": 18.0},
+                    "consensus_score": 52.0,
+                    "status": "Co-developing Feynman_Next DTC cooling",
+                    "timeline": {"design_win": "2025-Q3", "pilot": "2026-Q2", "ramp_up": "2026-Q4"}
+                },
+                {
+                    "company_id": "2486.TW",  # 一詮 - 高階均熱片放量
+                    "name": "I-Chiun",
+                    "segment": "cooling",
+                    "content_value_by_gen": {"Vera_Rubin": 5.0, "Feynman": 12.0, "Feynman_Next": 15.0},
+                    "consensus_score": 45.0,
+                    "status": "Advanced Heat Spreaders Ramp-up",
+                    "timeline": {"design_win": "2025-Q2", "pilot": "2025-Q4", "ramp_up": "2026-Q2"}
+                },
+                {
+                    "company_id": "8027.TWO",  # 鈦昇 - 雷射玻璃基板 TGV 核心設備
+                    "name": "Teh_hsin",
+                    "segment": "equipment",
+                    "content_value_by_gen": {"Vera_Rubin": 1.0, "Feynman": 8.0, "Feynman_Next": 18.0},
+                    "consensus_score": 38.0,
+                    "status": "Glass Substrate Laser Equipment Supplier",
+                    "timeline": {"design_win": "2025-Q3", "pilot": "2026-Q2", "ramp_up": "2026-Q4"}
+                }
+            ]
+
+        self.real_revenue_cache = None
+
+    def get_high_frequency_pricing(self, sector: str, as_of_date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        模擬/獲取高頻報價趨勢。支援 as_of_date 進行歷史回測截斷。
+        """
+        if as_of_date:
+            today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
+        else:
+            today = datetime.date.today()
+            
         dates = [today - datetime.timedelta(weeks=i) for i in range(12)][::-1]
         
         base_price = 150.0
@@ -103,14 +225,15 @@ class MarketInformationMonitor:
             "catalyst_triggered": trend == "rising"
         }
 
-    def get_supply_chain_schedule(self, current_gen: str, next_gen: str) -> Dict[str, Any]:
+    def get_supply_chain_schedule(self, current_gen: str, next_gen: str, as_of_date: Optional[str] = None) -> Dict[str, Any]:
         """
         推演架構演進下的供應鏈洗牌，包含 18-24 個月超前世代 (Feynman_Next) 的替代風險。
         """
         analysis = []
         bottlenecks = []
         
-        for item in self.supply_chain_matrix:
+        matrix = self.get_point_in_time_matrix(as_of_date)
+        for item in matrix:
             val_current = item["content_value_by_gen"].get(current_gen, 0.0)
             val_next = item["content_value_by_gen"].get(next_gen, 0.0)
             val_future = item["content_value_by_gen"].get("Feynman_Next", 0.0)
@@ -212,21 +335,24 @@ class MarketInformationMonitor:
         self.real_revenue_cache = revenue_map
         return revenue_map
 
-    def simulate_revenue_inflection(self, company_ids: List[str]) -> Dict[str, Any]:
+    def simulate_revenue_inflection(self, company_ids: List[str], as_of_date: Optional[str] = None) -> Dict[str, Any]:
         """
         營收 YoY 拐點與設備訂單 Backlog 領先指標模擬器。
-        - 嘗試從 TWSE OpenAPI 讀取最新的真實月度營收與真實 YoY 數據。
+        - 支援 as_of_date 參數進行歷史點時間 (Point-in-Time) 數據截斷。
         - 設備訂單 (Backlog) 領先下游成品營收 2 個季度 (6個月)。
-        - 系統透過對比「設備訂單 YoY」與「成品營收 YoY」來捕捉最前瞻的起漲拐點。
         """
         results = {}
-        today = datetime.date.today()
+        if as_of_date:
+            today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
+        else:
+            today = datetime.date.today()
         
         # 獲取真實營收資料庫 (有自動 fallback 保障)
         real_rev_data = self.fetch_real_monthly_revenue()
         
+        matrix = self.get_point_in_time_matrix(as_of_date)
         for cid in company_ids:
-            item = next((x for x in self.supply_chain_matrix if x["company_id"] == cid), None)
+            item = next((x for x in matrix if x["company_id"] == cid), None)
             if not item:
                 continue
                 
@@ -247,24 +373,43 @@ class MarketInformationMonitor:
             real_rev_val = 0.0
             real_yoy_pct = 0.0
             
+            # Point-in-time 檢驗：回測時間點必須「遲於」營收的申報日（通常為次月 10 日）
             if real_info:
-                has_real = True
-                real_date_ym = real_info["date_ym"]
-                real_rev_val = real_info["revenue_billion"]
-                real_yoy_pct = real_info["yoy_pct"]
+                # 假設資料年月為 "112/08"，轉為西元 "2023-08"
+                raw_ym = real_info["date_ym"]
+                try:
+                    # 處理 "112/08" 民國格式
+                    if "/" in raw_ym:
+                        parts = raw_ym.split("/")
+                        year = int(parts[0]) + 1911
+                        month = int(parts[1])
+                    else:
+                        year = int(raw_ym[:4])
+                        month = int(raw_ym[4:6])
+                        
+                    # 申報截止日為次月 10 日
+                    report_deadline = datetime.date(year, month, 10) + datetime.timedelta(days=31)
+                    # 次月 10 日之後，該營收才屬於 Point-in-Time 可見資訊
+                    is_published = today >= datetime.date(report_deadline.year, report_deadline.month, 10)
+                except Exception:
+                    is_published = not as_of_date # 無法解析時，若為回測則保守視為不可見
                 
-                # 替換最新月份營收 (第 9 個月) 為真實數據
-                current_year_rev[-1] = real_rev_val
-                # 利用數學逆推：將去年同月基期設定為與真實 YoY 對齊的數值
-                # yoy = (curr - prev) / prev * 100 => prev = curr / (1 + yoy/100)
-                denom = 1.0 + (real_yoy_pct / 100.0)
-                if denom > 0.01:  # 限制最大 YoY 跌幅在 -99% 以內，防範除零與極端基期爆發
-                    last_year_rev[8] = round(real_rev_val / denom, 2)
-                else:
-                    # 極端情況下 (YoY 幾近腰斬或歸零)，採用模擬的歷史比例逆推
-                    last_year_rev[8] = round(real_rev_val * 2.0, 2)
+                if is_published:
+                    has_real = True
+                    real_date_ym = real_info["date_ym"]
+                    real_rev_val = real_info["revenue_billion"]
+                    real_yoy_pct = real_info["yoy_pct"]
+                    
+                    # 替換最新月份營收 (第 9 個月) 為真實數據
+                    current_year_rev[-1] = real_rev_val
+                    # 利用數學逆推
+                    denom = 1.0 + (real_yoy_pct / 100.0)
+                    if denom > 0.01:
+                        last_year_rev[8] = round(real_rev_val / denom, 2)
+                    else:
+                        last_year_rev[8] = round(real_rev_val * 2.0, 2)
             
-            # 3. 模擬未來 3 個月出貨放量 (以最新月份營收為基期，設備商放量預期較陡)
+            # 3. 模擬未來 3 個月出貨放量 (以最新月份營收為基期)
             last_actual_rev = current_year_rev[-1]
             scale_factors = [1.05, 1.15, 1.35] if segment != "equipment" else [1.10, 1.25, 1.50]
             future_simulation = [round(last_actual_rev * f, 1) for f in scale_factors]
@@ -277,8 +422,7 @@ class MarketInformationMonitor:
                 yoy = ((all_current_year[idx] - denom) / denom * 100) if denom > 0 else 0.0
                 yoy_curve.append(round(yoy, 2))
                 
-            # 💡 核心優化：模擬設備商或上游特用材料的「訂單 Backlog YoY」
-            # 設備訂單比下游營收領先 2 個季度 (6個月) 爆發。
+            # 模擬設備商或上游特用材料的「訂單 Backlog YoY」
             backlog_yoy_curve = []
             for idx in range(12):
                 if idx < 6:
@@ -314,15 +458,15 @@ class MarketInformationMonitor:
                 "real_revenue_billion": real_rev_val if has_real else None,
                 "real_yoy_pct": real_yoy_pct if has_real else None,
                 
-                # 設備訂單 (超前指標)
+                # 設備訂單
                 "equipment_lead_active": equipment_lead_active,
                 "current_backlog_yoy_pct": backlog_yoy_curve[8],
                 "backlog_yoy_curve_3m": backlog_yoy_curve[-3:],
                 
-                # 第二層思考判定：是否為「低共識 + 設備 Backlog 暴增 + 下游營收在谷底」的黃金潛伏標的
+                # 判定：是否為「低共識 + 設備 Backlog 暴增 + 下游營收在谷底」
                 "is_golden_accumulation_target": (item["consensus_score"] < 60.0 and equipment_lead_active and yoy_curve[8] < 15.0),
                 
-                # 歷史與預測的月營收曲線數據
+                # 歷史與預測
                 "historical_base": last_year_rev,
                 "current_projected": all_current_year
             }

@@ -45,7 +45,7 @@ class TestMarketInformationMonitor(unittest.TestCase):
 
     def test_simulate_revenue_inflection(self):
         """測試營收基期與 YoY 拐點預測"""
-        company_ids = ["3450.TW", "3013.TW"]
+        company_ids = ["3450.TW", "3324.TWO"]
         result = self.monitor.simulate_revenue_inflection(company_ids)
         
         for cid in company_ids:

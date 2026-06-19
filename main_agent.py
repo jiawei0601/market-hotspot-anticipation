@@ -51,6 +51,7 @@ class MarketHotspotState(TypedDict):
     critic_feedback: str                # 評審反饋
     iteration_count: int                # 自我修正迭代次數
     validation_status: str              # 審查狀態: "PASS" 或 "FAIL"
+    as_of_date: str                     # 回測基準點時間 (可選，預設空字串表示最新)
 
 # 2. Pydantic 結構化 Critic 輸出定義 - 強制審查超前指標
 class CriticDecision(BaseModel):
@@ -91,8 +92,9 @@ def supply_chain_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     next_gen = state.get("next_generation", "Feynman")
     future_gen = "Feynman_Next"
     
-    # 呼叫數據監控引擎
-    raw_schedule = monitor.get_supply_chain_schedule(current_gen, next_gen)
+    # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
+    as_of_date = state.get("as_of_date")
+    raw_schedule = monitor.get_supply_chain_schedule(current_gen, next_gen, as_of_date=as_of_date if as_of_date else None)
     
     prompt = (
         f"你是一個資深半導體與科技硬體供應鏈專家。\n"
@@ -142,9 +144,10 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     sector = state["target_sector"]
     company_ids = ["3450.TW", "3131.TWO", "3013.TW", "3324.TWO"]
     
-    # 呼叫數據監控引擎
-    pricing_data = monitor.get_high_frequency_pricing(sector)
-    revenue_data = monitor.simulate_revenue_inflection(company_ids)
+    # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
+    as_of_date = state.get("as_of_date")
+    pricing_data = monitor.get_high_frequency_pricing(sector, as_of_date=as_of_date if as_of_date else None)
+    revenue_data = monitor.simulate_revenue_inflection(company_ids, as_of_date=as_of_date if as_of_date else None)
     
     prompt = (
         f"你是一個量化金融與產業營收分析專家。\n"
@@ -406,10 +409,12 @@ def run_daily_price_update():
         print(f"[❌ 錯誤] 執行每日股價追蹤出錯: {e}")
         sys.exit(1)
 
-def run_hotspot_scan(sector: str):
+def run_hotspot_scan(sector: str, as_of_date: str = ""):
     print(f"==================================================")
     print(f"[*] 啟動 12-18 個月市場熱點預見多 Agent 系統")
     print(f"目標板塊: {sector}")
+    if as_of_date:
+        print(f"模擬歷史時間點: {as_of_date}")
     print(f"當前時間: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"==================================================")
     
@@ -424,7 +429,8 @@ def run_hotspot_scan(sector: str):
         "feasibility_report_draft": "",
         "critic_feedback": "",
         "iteration_count": 0,
-        "validation_status": ""
+        "validation_status": "",
+        "as_of_date": as_of_date
     }
     
     # 執行狀態機
@@ -468,11 +474,12 @@ def run_hotspot_scan(sector: str):
                         company_id=cid,
                         name=data.get("name", cid),
                         entry_price=entry_price,
-                        sector=sector
+                        sector=sector,
+                        entry_date=as_of_date
                     )
             
             # 更新名單中所有標的的 K 線與回報率，並生成統計報告
-            performance_tracker.update_watchlist_daily_prices()
+            performance_tracker.update_watchlist_daily_prices(as_of_date=as_of_date)
             performance_tracker.generate_performance_report()
             
         except Exception as e:
@@ -481,6 +488,7 @@ def run_hotspot_scan(sector: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="市場熱點預見與多 Agent 系統")
     parser.add_argument("--sector", type=str, default="CPO_Optical_Transceiver", help="目標板塊名稱")
+    parser.add_argument("--as-of-date", type=str, default="", help="歷史模擬時間點 (YYYY-MM-DD)")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--daily-update", action="store_true", help="僅執行每日股價追蹤與觀察名單更新")
     group.add_argument("--weekly-report", action="store_true", help="執行完整每週多 Agent 報告研判與生成")
@@ -490,4 +498,4 @@ if __name__ == "__main__":
         run_daily_price_update()
     else:
         # 預設或指定 --weekly-report 時，進行完整掃描研判
-        run_hotspot_scan(args.sector)
+        run_hotspot_scan(args.sector, as_of_date=args.as_of_date)
