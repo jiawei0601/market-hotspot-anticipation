@@ -2,35 +2,25 @@
 
 > 兩個 agent 交接的唯一現況真相。離開前更新，接手前先讀。
 
-- 最後更新：Antigravity (Gemini 3.1 Pro / GEMMA4) @ 2026-06-19 10:40
-- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 12 支選股池動態 PIT 擴展，蒙地卡羅壓力測試 85.0% 勝率驗證，與 GitHub Actions + GitHub Pages 流水線更新)
+- 最後更新：Antigravity (Gemini 3.1 Pro / GEMMA4) @ 2026-06-19 11:12
+- 目前任務 / 目標：建立 12-18 個月市場熱點預見與資訊自動收集系統 (已完成 12 支選股池動態 PIT 擴展，蒙地卡羅壓力測試勝率驗證，季度再平衡回測格式優化，與極致毛玻璃 UI/UX 改版)
 - 已完成：
   - [x] 實作計畫 (Implementation Plan) 經用戶審查通過
   - [x] 撰寫 PRD 規格書 (`docs/prd_market_hotspot_system.md`)
   - [x] 撰寫架設與運作成本分析 (`docs/architecture_and_cost_analysis.md`)
   - [x] 配置專案統一規範 (`AGENTS.md`)
   - [x] 擴展選股池範圍至 12 支核心台灣半導體、散熱、先進封裝及下世代去模組化龍頭
-  - [x] 重構 `market_monitor.py` 的 `get_point_in_time_matrix` 函數，實作 2015-2019、2020-2022、2023-2024、2025-2026 四個點時間 (Point-in-Time) 切片以防止未來數據生存者偏差
-  - [x] 重構 `main_agent.py` 的專家節點，使之動態讀取 PIT 選股池進行全量 12 支標的研判
-  - [x] 執行 100 次蒙地卡羅組合級壓力測試，取得 52 週平均最大漲幅約 100.89%、勝率 85.00% 的優異回測結果，並順利生成 `reports/monte_carlo_analysis.md`
-  - [x] 實作 `market_monitor.py` 數據收集與 YoY 營收拐點模擬器，並整合台灣證券交易所 (TWSE) 開放 API 獲取真實月營收
-  - [x] 實作 `main_agent.py` LangGraph 狀態機（三專家 + 自我修正品質評審）
-  - [x] 廢棄原有的單次排程，改為配置 `.github/workflows/daily_market_pipeline.yml` 自動排程 (支援每日 18:00 與每週一 07:30 雙排程機制)
-  - [x] 寫入單元測試且全數通過 (10/10 OK)
-  - [x] 第一版推送至 GitHub 私有倉庫 (`market-hotspot-anticipation`)
-  - [x] 依用戶要求將 LLM 核心模型改為 **Gemini 3.1 Pro**，並將環境變數切換為 **GEMINI_API_KEY**，移除了 Ollama/Gemma4 本地 fallback 模擬以確保故障可視性
-  - [x] 實作 `app.py` 與 `Procfile`，完成 Railway 雲端部署與 API 觸發機制配置
-  - [x] 實作 `performance_tracker.py` 並對接狀態機與 API，實現觀察名單 (`watchlist.json`) 每日 K 線股價追蹤與系統勝率評估報告
-  - [x] 實作 `/latest-report` 與 `/latest-performance` 網頁固定連結，以精美毛玻璃深色模式直接渲染最新 Markdown 報告
-  - [x] 實作 `generate_static_pages.py` 並整合至 GitHub Actions 流水線，實現每週自動將報告編譯並部署至 GitHub Pages
-  - [x] 根據 Double Review 結果，修復 yfinance 收盤價 NaN 問題與營收 YoY 逆推之極端值防護
-  - [x] 將 K 線觀察資料取得時間加長至「往前三個月」，並在 ApexCharts K 線圖上清晰標記列入觀察的時間點與股價。
-  - [x] 移除了 performance_tracker.py 中所有的 Console 輸出 emojis，避免 Windows cp950 編碼錯誤。
-  - [x] 引入 `--daily-update` 與 `--weekly-report` 命令行參數，實現每日只更新價格數據，每週一生成評估報告的分流機制。
+  - [x] 重構 `market_monitor.py` 的 `get_point_in_time_matrix` 函數，實作點時間 (Point-in-Time) 切片以防止未來數據生存者偏差
+  - [x] 根據用戶要求對回測與觀察名單網頁進行排版：金額全部四捨五入顯示到整數，百分比限制精確顯示至小數點後第一位 (`.1f%`)
+  - [x] 將標的名稱格式全面優化為 `1234.中文名稱` (如 `3131.弘塑`)，並應用於季度再平衡回測、蒙地卡羅、系統績效追蹤中
+  - [x] 呼叫 UI/UX 工程師對網頁進行極致美化，升級為 radial-gradient 背景、現代字型系統、毛玻璃玻璃擬態容器 (Glassmorphism) 與呼吸狀態指示燈 (Pulsing Dot)
+  - [x] 實作前端 JavaScript 後處理器，動態分析 marked.js 渲染後的表格單元，將特定交易狀態、百分比及股票標籤，無痛轉換為精緻且色彩豐富的 CSS 徽章 (Badges) 與等寬字型 (Fira Code)
+  - [x] 更新 `performance_tracker.py` 與 `monte_carlo_analyzer.py` 使其報表百分比與個股格式對齊新格式
+  - [x] 執行 Git Commit 與 Git Push，將所有最新程式碼推送至 GitHub 遠端
 - 進行中（做到哪一步）：
-  - 任務已全面完成，12 支標的歷史世代與動態週報流程測試完畢。
+  - 季度再平衡回測與網頁排版已全面完成且推送。
 - 下一步：
-  - Git Commit & Push 變更至遠端倉庫。
+  - 由 GitHub Pages 自動部署，即可訪問最新格式的季度再平衡回測網頁。
 - 關鍵決策 + 為什麼：
   - 在 `get_point_in_time_matrix` 中使用 2015-2019 (6 支)、2020-2022 (9 支)、2023-2024 (10 支)、2025-2026 (12 支) 遞進式選股，確保歷史回測（如 2016 或 2021）不會包含 2026 時代才浮現的玻璃基板 (鈦昇) 或 CPO 光互連 (聯鈞)，防範生存者偏差。
   - 在 `pricing_revenue_expert_node` 移除了硬編碼的 `company_ids` 陣列，改為點時間動態解鎖，使得狀態機能夠支援回測時動態追蹤與分析不同的組合。
