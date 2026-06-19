@@ -51,8 +51,13 @@
   - `get_backlog_lead()`（新 public 方法）：板塊 equipment 公司真實月營收 YoY 中位數，日粒度 PIT 正確（向前找可見期）。
   - `_compute_consensus()`（新私有方法）：外資持股% 近 12M 歷史百分位 + 橫斷面同儕排名等權混合 → 0-100；資料不足 fallback 靜態先驗。股價部分暫略（yfinance 倖存偏差待解）。
   - `get_supply_chain_schedule` 亦改用動態 Consensus。
-  - 13 tests 全綠。
+  - 11 tests 全綠。
 - ✅ **④回測引擎示意抬頭更新**（2026-06-19）：兩引擎改為「Stage 2 資料說明」（誠實標明剩餘限制：yfinance 倖存偏差 + Consensus 僅含持股%），移除「示意模式（非證據）」措辭。
+- ✅ **⑤股價 PIT 快照 + Consensus 全公式完成**（2026-06-19，commit aafcb9f）：
+  - `ingest.py`：`YFINANCE_TICKERS`、`fetch_month_prices`、`build_price_snapshot`、`backfill_prices`。
+  - 138 個 `prices.json`（2015-01..2026-06），`close_date` = 月末日曆日 PIT 截斷點。
+  - `market_monitor.py`：`_read_price_history`（PIT 日粒度）、`_compute_price_consensus`（own 12M percentile + 橫斷面同儕 percentile 排名）、`_compute_consensus` 改為持股%+股價等權混合（ADR 0006 全公式）。
+  - `test_price_pit_truncation`、`test_price_consensus_cross_sectional` 新增，11 tests 全綠。
 - 次要結構債：yfinance 價格**倖存者偏差**（下市股消失）；兩回測引擎以 monkey-patch `performance_tracker.WATCHLIST_FILE` 全域變數重導（脆弱、待改為傳參）。
 - **鐵律**：快照不可變、門檻/權重先驗固定不回測 tune。
 
@@ -75,4 +80,4 @@
 - Web 服務：`python app.py`（`/run` 需設 `RUN_TRIGGER_TOKEN` 並帶 `X-Trigger-Token` 標頭）
 
 ## 最後 commit
-- Stage 2 全完成 commit（2026-06-19）。由 Claude Code (Sonnet 4.6) 完成；對手 agent = Antigravity。
+- aafcb9f（2026-06-19）：feat(signals): 完整 Consensus — 加入股價 PIT 快照（ADR 0006 全公式）。由 Claude Code (Sonnet 4.6) 完成；對手 agent = Antigravity。
