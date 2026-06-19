@@ -196,7 +196,6 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
             <a href="performance.html" id="nav-perf">系統實盤績效</a>
             <a href="monte_carlo.html" id="nav-mc">蒙地卡羅回測</a>
             <a href="backtest.html" id="nav-bt">季度再平衡回測</a>
-            <a href="advanced_backtest.html" id="nav-abt">進階風控回測</a>
         </div>
     </div>
     <div class="container" id="content">正在渲染報告內容，請稍候...</div>
@@ -209,8 +208,6 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
             document.getElementById('nav-mc').classList.add('active');
         }} else if (path.endsWith('backtest.html')) {{
             document.getElementById('nav-bt').classList.add('active');
-        }} else if (path.endsWith('advanced_backtest.html')) {{
-            document.getElementById('nav-abt').classList.add('active');
         }} else {{
             document.getElementById('nav-rep').classList.add('active');
         }}
@@ -411,26 +408,6 @@ def generate_static_pages():
     with open("docs/backtest.html", "w", encoding="utf-8") as f:
         f.write(bt_html_page)
     print("[OK] Successfully generated docs/backtest.html")
-
-    # 5. 產生 docs/advanced_backtest.html (進階風控回測報告)
-    abt_file = "reports/quarterly_advanced_backtest_report.md"
-    if os.path.exists(abt_file):
-        print(f"[INFO] Reading Advanced Backtest report: {abt_file}")
-        with open(abt_file, "r", encoding="utf-8") as f:
-            abt_content = f.read()
-    else:
-        print("[WARN] No Advanced Backtest report found, using placeholder.")
-        abt_content = "# 進階風控回測報告\n\n尚無回測資料。"
-
-    safe_abt_content = abt_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-    abt_html_page = STATIC_HTML_TEMPLATE.format(
-        title="進階風控回測報告",
-        markdown_content=safe_abt_content,
-        watchlist_data_json="[]"
-    )
-    with open("docs/advanced_backtest.html", "w", encoding="utf-8") as f:
-        f.write(abt_html_page)
-    print("[OK] Successfully generated docs/advanced_backtest.html")
 
 if __name__ == "__main__":
     generate_static_pages()
