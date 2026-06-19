@@ -193,7 +193,10 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="logo">ANTIGRAVITY<span>RESEARCH</span></div>
         <div class="nav-links">
             <a href="index.html" id="nav-rep">每週熱點報告</a>
-            <a href="performance.html" id="nav-perf">系統績效評估</a>
+            <a href="performance.html" id="nav-perf">系統實盤績效</a>
+            <a href="monte_carlo.html" id="nav-mc">蒙地卡羅回測</a>
+            <a href="backtest.html" id="nav-bt">季度再平衡回測</a>
+            <a href="advanced_backtest.html" id="nav-abt">進階風控回測</a>
         </div>
     </div>
     <div class="container" id="content">正在渲染報告內容，請稍候...</div>
@@ -202,6 +205,12 @@ STATIC_HTML_TEMPLATE = """<!DOCTYPE html>
         const path = window.location.pathname;
         if (path.endsWith('performance.html')) {{
             document.getElementById('nav-perf').classList.add('active');
+        }} else if (path.endsWith('monte_carlo.html')) {{
+            document.getElementById('nav-mc').classList.add('active');
+        }} else if (path.endsWith('backtest.html')) {{
+            document.getElementById('nav-bt').classList.add('active');
+        }} else if (path.endsWith('advanced_backtest.html')) {{
+            document.getElementById('nav-abt').classList.add('active');
         }} else {{
             document.getElementById('nav-rep').classList.add('active');
         }}
@@ -304,7 +313,7 @@ def generate_static_pages():
     # 1. 產生 docs/index.html (最新可行性研究報告)
     latest_report_file = None
     if os.path.exists("reports"):
-        report_files = [f for f in glob.glob("reports/*.md") if "performance" not in f and "summary" not in f]
+        report_files = [f for f in glob.glob("reports/*.md") if "performance" not in f and "summary" not in f and "backtest" not in f and "monte_carlo" not in f]
         if report_files:
             latest_report_file = max(report_files, key=os.path.getmtime)
 
@@ -362,6 +371,66 @@ def generate_static_pages():
     with open("docs/performance.html", "w", encoding="utf-8") as f:
         f.write(perf_html_page)
     print("[OK] Successfully generated docs/performance.html")
+
+    # 3. 產生 docs/monte_carlo.html (蒙地卡羅回測報告)
+    mc_file = "reports/monte_carlo_analysis.md"
+    if os.path.exists(mc_file):
+        print(f"[INFO] Reading Monte Carlo report: {mc_file}")
+        with open(mc_file, "r", encoding="utf-8") as f:
+            mc_content = f.read()
+    else:
+        print("[WARN] No Monte Carlo report found, using placeholder.")
+        mc_content = "# 蒙地卡羅回測分析報告\n\n尚無回測資料。"
+
+    safe_mc_content = mc_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+    mc_html_page = STATIC_HTML_TEMPLATE.format(
+        title="蒙地卡羅回測統計報告",
+        markdown_content=safe_mc_content,
+        watchlist_data_json="[]"
+    )
+    with open("docs/monte_carlo.html", "w", encoding="utf-8") as f:
+        f.write(mc_html_page)
+    print("[OK] Successfully generated docs/monte_carlo.html")
+
+    # 4. 產生 docs/backtest.html (季度再平衡回測報告)
+    bt_file = "reports/quarterly_backtest_report.md"
+    if os.path.exists(bt_file):
+        print(f"[INFO] Reading Quarterly Backtest report: {bt_file}")
+        with open(bt_file, "r", encoding="utf-8") as f:
+            bt_content = f.read()
+    else:
+        print("[WARN] No Quarterly Backtest report found, using placeholder.")
+        bt_content = "# 季度再平衡回測報告\n\n尚無回測資料。"
+
+    safe_bt_content = bt_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+    bt_html_page = STATIC_HTML_TEMPLATE.format(
+        title="季度再平衡回測報告",
+        markdown_content=safe_bt_content,
+        watchlist_data_json="[]"
+    )
+    with open("docs/backtest.html", "w", encoding="utf-8") as f:
+        f.write(bt_html_page)
+    print("[OK] Successfully generated docs/backtest.html")
+
+    # 5. 產生 docs/advanced_backtest.html (進階風控回測報告)
+    abt_file = "reports/quarterly_advanced_backtest_report.md"
+    if os.path.exists(abt_file):
+        print(f"[INFO] Reading Advanced Backtest report: {abt_file}")
+        with open(abt_file, "r", encoding="utf-8") as f:
+            abt_content = f.read()
+    else:
+        print("[WARN] No Advanced Backtest report found, using placeholder.")
+        abt_content = "# 進階風控回測報告\n\n尚無回測資料。"
+
+    safe_abt_content = abt_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+    abt_html_page = STATIC_HTML_TEMPLATE.format(
+        title="進階風控回測報告",
+        markdown_content=safe_abt_content,
+        watchlist_data_json="[]"
+    )
+    with open("docs/advanced_backtest.html", "w", encoding="utf-8") as f:
+        f.write(abt_html_page)
+    print("[OK] Successfully generated docs/advanced_backtest.html")
 
 if __name__ == "__main__":
     generate_static_pages()

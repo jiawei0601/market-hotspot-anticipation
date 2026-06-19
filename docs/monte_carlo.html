@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>蒙地卡羅回測統計報告</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --text-color: #f1f5f9;
+            --primary-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --table-border: rgba(255, 255, 255, 0.06);
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+        .header {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary-cyan);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+        }
+        .logo span {
+            color: #fff;
+            margin-left: 6px;
+        }
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary-cyan);
+        }
+        .container {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        /* Markdown 內容精細排版 */
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 1.8em;
+            margin-bottom: 0.6em;
+        }
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary-cyan);
+            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
+            padding-bottom: 12px;
+            margin-top: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2 {
+            font-size: 1.6rem;
+            border-left: 5px solid var(--accent-green);
+            padding-left: 14px;
+        }
+        h3 {
+            font-size: 1.25rem;
+            color: #e2e8f0;
+        }
+        p {
+            color: #cbd5e1;
+            margin-bottom: 1.5em;
+        }
+        /* 表格現代化樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 28px 0;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--table-border);
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--table-border);
+            font-size: 0.95rem;
+        }
+        th {
+            background-color: rgba(56, 189, 248, 0.08);
+            color: var(--primary-cyan);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        /* 區塊引用與警示 */
+        blockquote {
+            background: rgba(56, 189, 248, 0.05);
+            border-left: 4px solid var(--primary-cyan);
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 12px 12px 0;
+        }
+        blockquote p {
+            margin: 0;
+            color: #93c5fd;
+            font-style: italic;
+        }
+        /* 程式碼與公式 */
+        pre {
+            background: #0f172a;
+            padding: 18px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+        code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.07);
+            padding: 3px 7px;
+            border-radius: 6px;
+            color: #f472b6;
+            font-size: 0.9rem;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: #e2e8f0;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 40px 0;
+        }
+        a {
+            color: var(--primary-cyan);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">ANTIGRAVITY<span>RESEARCH</span></div>
+        <div class="nav-links">
+            <a href="index.html" id="nav-rep">每週熱點報告</a>
+            <a href="performance.html" id="nav-perf">系統實盤績效</a>
+            <a href="monte_carlo.html" id="nav-mc">蒙地卡羅回測</a>
+            <a href="backtest.html" id="nav-bt">季度再平衡回測</a>
+            <a href="advanced_backtest.html" id="nav-abt">進階風控回測</a>
+        </div>
+    </div>
+    <div class="container" id="content">正在渲染報告內容，請稍候...</div>
+    <script>
+        // 設定導航欄 active 樣式 (針對靜態 Pages 最佳化)
+        const path = window.location.pathname;
+        if (path.endsWith('performance.html')) {
+            document.getElementById('nav-perf').classList.add('active');
+        } else if (path.endsWith('monte_carlo.html')) {
+            document.getElementById('nav-mc').classList.add('active');
+        } else if (path.endsWith('backtest.html')) {
+            document.getElementById('nav-bt').classList.add('active');
+        } else if (path.endsWith('advanced_backtest.html')) {
+            document.getElementById('nav-abt').classList.add('active');
+        } else {
+            document.getElementById('nav-rep').classList.add('active');
+        }
+        
+        // 讀取 Raw Markdown 字串並使用 marked 渲染
+        const rawMarkdown = `# 蒙地卡羅歷史隨機時間段回測與勝率分析報告 (52週追蹤)
+
+本回測報告在 **2015-01-01 至 2025-06-01** 十年歷史區間中，隨機抽樣 **100 個不同的時間斷面**。
+每個交易均嚴格排除未來數據偏誤，且在進場後進行 **52 週 (1年) 的追蹤持有**，藉此評估量化策略的長期統計期望值。
+
+## 📊 核心統計評估
+
+| 統計項目 | 評估結果 |
+| :--- | :--- |
+| **回測抽樣總數** | 100 組 |
+| **發出買入訊號期數** | 100 組 |
+| **空倉觀望期數** | 0 組 |
+| **成功交易次數 (波段漲幅 >= 30%)** | 77 次 |
+| **蒙地卡羅勝率 (Win Rate)** | **77.00%** |
+| **52週平均最大潛在漲幅** | **92.10%** |
+| **52週平均最大回撤 (跌幅)** | **-21.01%** |
+| **52週平均最終持有回報** | **54.27%** |
+
+## 📈 隨機採樣交易歷史明細
+
+| 編號 | 隨機進場日期 | 交易狀態 | 推薦標的組合 | 52週平均最大漲幅 | 52週平均最大跌幅 | 52週最終組合回報 | 研判結果 |
+| :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: |
+| 1 | 2015-02-01 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 31.0% | -40.3% | -11.61% | 🟢 成功 (Win) |
+| 2 | 2015-03-01 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 34.39% | -38.05% | 4.27% | 🟢 成功 (Win) |
+| 3 | 2015-04-19 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 37.79% | -33.94% | 8.5% | 🟢 成功 (Win) |
+| 4 | 2015-07-19 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 28.03% | -35.12% | 6.81% | 🔴 失敗 (Loss) |
+| 5 | 2015-08-30 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 71.16% | -1.28% | 35.16% | 🟢 成功 (Win) |
+| 6 | 2015-10-04 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 50.83% | -12.01% | 23.1% | 🟢 成功 (Win) |
+| 7 | 2015-11-01 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 47.05% | -13.91% | 16.97% | 🟢 成功 (Win) |
+| 8 | 2015-11-22 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 42.5% | -15.63% | 11.34% | 🟢 成功 (Win) |
+| 9 | 2016-01-10 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 51.08% | -8.58% | 28.96% | 🟢 成功 (Win) |
+| 10 | 2016-01-24 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 67.7% | -5.8% | 36.7% | 🟢 成功 (Win) |
+| 11 | 2016-03-13 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 26.55% | -21.73% | 0.78% | 🔴 失敗 (Loss) |
+| 12 | 2016-03-20 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 14.3% | -29.03% | -6.94% | 🔴 失敗 (Loss) |
+| 13 | 2016-04-10 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 26.71% | -19.47% | 12.84% | 🔴 失敗 (Loss) |
+| 14 | 2016-04-17 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 27.39% | -19.12% | 5.86% | 🔴 失敗 (Loss) |
+| 15 | 2016-05-08 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 40.59% | -12.46% | 21.82% | 🟢 成功 (Win) |
+| 16 | 2016-05-29 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 33.8% | -10.81% | 13.06% | 🟢 成功 (Win) |
+| 17 | 2016-06-26 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 33.69% | -9.26% | 10.27% | 🟢 成功 (Win) |
+| 18 | 2016-10-02 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 35.16% | -12.11% | 1.85% | 🟢 成功 (Win) |
+| 19 | 2016-10-09 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 34.06% | -12.85% | 4.28% | 🟢 成功 (Win) |
+| 20 | 2016-11-06 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 40.73% | -8.59% | 10.63% | 🟢 成功 (Win) |
+| 21 | 2016-12-18 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 36.84% | -14.97% | 1.56% | 🟢 成功 (Win) |
+| 22 | 2017-01-08 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 33.18% | -17.21% | 1.18% | 🟢 成功 (Win) |
+| 23 | 2017-01-29 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 33.39% | -16.42% | 1.19% | 🟢 成功 (Win) |
+| 24 | 2017-02-05 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 33.51% | -16.35% | -0.31% | 🟢 成功 (Win) |
+| 25 | 2017-02-12 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 37.83% | -13.14% | -4.38% | 🟢 成功 (Win) |
+| 26 | 2017-02-26 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 35.12% | -15.07% | -3.98% | 🟢 成功 (Win) |
+| 27 | 2017-05-28 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 23.23% | -25.5% | -16.08% | 🔴 失敗 (Loss) |
+| 28 | 2017-06-11 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 16.92% | -28.8% | -19.4% | 🔴 失敗 (Loss) |
+| 29 | 2017-07-16 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 18.76% | -27.9% | -21.12% | 🔴 失敗 (Loss) |
+| 30 | 2017-08-13 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 16.61% | -25.87% | -13.61% | 🔴 失敗 (Loss) |
+| 31 | 2017-08-27 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 14.14% | -27.21% | -17.88% | 🔴 失敗 (Loss) |
+| 32 | 2017-10-01 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 13.93% | -24.87% | -17.92% | 🔴 失敗 (Loss) |
+| 33 | 2017-10-29 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 10.51% | -36.03% | -33.15% | 🔴 失敗 (Loss) |
+| 34 | 2018-01-07 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 4.02% | -37.61% | -27.02% | 🔴 失敗 (Loss) |
+| 35 | 2018-04-01 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 12.89% | -30.35% | -7.48% | 🔴 失敗 (Loss) |
+| 36 | 2018-04-08 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 11.01% | -32.94% | -4.02% | 🔴 失敗 (Loss) |
+| 37 | 2018-05-06 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), MPI (6223.TWO) | 23.01% | -23.66% | 12.92% | 🔴 失敗 (Loss) |
+| 38 | 2018-07-15 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 32.41% | -25.02% | 18.03% | 🟢 成功 (Win) |
+| 39 | 2018-08-12 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 47.55% | -28.97% | 34.21% | 🟢 成功 (Win) |
+| 40 | 2018-11-25 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 192.12% | -2.64% | 153.74% | 🟢 成功 (Win) |
+| 41 | 2018-12-09 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 211.5% | -8.31% | 174.26% | 🟢 成功 (Win) |
+| 42 | 2018-12-23 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 250.87% | -3.78% | 201.78% | 🟢 成功 (Win) |
+| 43 | 2019-01-06 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 243.94% | -4.42% | 201.72% | 🟢 成功 (Win) |
+| 44 | 2019-01-13 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 235.62% | -6.91% | 199.57% | 🟢 成功 (Win) |
+| 45 | 2019-02-24 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 216.62% | -10.74% | 173.38% | 🟢 成功 (Win) |
+| 46 | 2019-03-17 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 218.86% | -12.09% | 114.98% | 🟢 成功 (Win) |
+| 47 | 2019-04-07 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 210.08% | -19.08% | 88.72% | 🟢 成功 (Win) |
+| 48 | 2019-05-19 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 208.64% | -13.52% | 168.72% | 🟢 成功 (Win) |
+| 49 | 2019-06-02 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 250.82% | -8.21% | 203.01% | 🟢 成功 (Win) |
+| 50 | 2019-07-21 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 267.74% | -10.56% | 211.88% | 🟢 成功 (Win) |
+| 51 | 2019-08-11 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 243.29% | -12.48% | 194.47% | 🟢 成功 (Win) |
+| 52 | 2019-09-01 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 218.5% | -18.93% | 149.19% | 🟢 成功 (Win) |
+| 53 | 2019-09-22 | 🟢 建倉 | GrandProcess (3131.TWO), Gudeng (3680.TWO), UMT (6683.TWO), MPI (6223.TWO) | 179.92% | -21.25% | 120.8% | 🟢 成功 (Win) |
+| 54 | 2020-03-08 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 115.0% | -40.45% | 66.52% | 🟢 成功 (Win) |
+| 55 | 2020-03-15 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 155.55% | -29.13% | 97.56% | 🟢 成功 (Win) |
+| 56 | 2020-04-12 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 165.1% | -2.83% | 134.06% | 🟢 成功 (Win) |
+| 57 | 2020-04-19 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 149.09% | -6.0% | 108.36% | 🟢 成功 (Win) |
+| 58 | 2020-05-10 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 123.36% | -5.13% | 76.79% | 🟢 成功 (Win) |
+| 59 | 2020-06-21 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 108.43% | -5.14% | 69.81% | 🟢 成功 (Win) |
+| 60 | 2020-08-02 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 44.15% | -28.82% | 17.35% | 🟢 成功 (Win) |
+| 61 | 2020-08-30 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 52.95% | -21.34% | 21.14% | 🟢 成功 (Win) |
+| 62 | 2020-09-27 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 66.62% | -13.8% | 25.76% | 🟢 成功 (Win) |
+| 63 | 2020-11-08 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 47.59% | -19.8% | 14.84% | 🟢 成功 (Win) |
+| 64 | 2021-01-03 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 47.11% | -21.85% | 20.53% | 🟢 成功 (Win) |
+| 65 | 2021-01-24 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 26.47% | -32.79% | -4.15% | 🔴 失敗 (Loss) |
+| 66 | 2021-03-28 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 39.26% | -26.91% | 2.21% | 🟢 成功 (Win) |
+| 67 | 2021-04-04 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 36.2% | -28.54% | -1.83% | 🟢 成功 (Win) |
+| 68 | 2021-06-06 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 47.94% | -18.76% | 1.78% | 🟢 成功 (Win) |
+| 69 | 2021-10-03 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 41.13% | -30.33% | -16.12% | 🟢 成功 (Win) |
+| 70 | 2022-01-02 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 13.93% | -46.53% | -27.72% | 🔴 失敗 (Loss) |
+| 71 | 2022-01-09 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 11.46% | -45.61% | -23.34% | 🔴 失敗 (Loss) |
+| 72 | 2022-01-16 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 13.06% | -44.42% | -23.04% | 🔴 失敗 (Loss) |
+| 73 | 2022-01-23 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 15.27% | -41.95% | -18.97% | 🔴 失敗 (Loss) |
+| 74 | 2022-03-06 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 13.92% | -40.62% | -9.94% | 🔴 失敗 (Loss) |
+| 75 | 2022-04-03 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 21.42% | -39.42% | 6.15% | 🔴 失敗 (Loss) |
+| 76 | 2022-05-22 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 38.61% | -33.46% | 25.28% | 🟢 成功 (Win) |
+| 77 | 2022-07-03 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 115.69% | -16.21% | 101.31% | 🟢 成功 (Win) |
+| 78 | 2022-09-04 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 116.2% | -30.89% | 70.77% | 🟢 成功 (Win) |
+| 79 | 2022-09-18 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 122.17% | -29.67% | 80.82% | 🟢 成功 (Win) |
+| 80 | 2022-10-09 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Gudeng (3680.TWO), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), Auras (3324.TWO) | 159.36% | -18.0% | 114.05% | 🟢 成功 (Win) |
+| 81 | 2023-01-15 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 172.86% | -1.25% | 132.74% | 🟢 成功 (Win) |
+| 82 | 2023-04-16 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 251.54% | -8.31% | 220.94% | 🟢 成功 (Win) |
+| 83 | 2023-05-14 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 265.49% | -2.32% | 214.48% | 🟢 成功 (Win) |
+| 84 | 2023-05-28 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 219.77% | -4.03% | 191.07% | 🟢 成功 (Win) |
+| 85 | 2023-10-08 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 234.45% | -10.89% | 183.67% | 🟢 成功 (Win) |
+| 86 | 2023-12-10 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 226.79% | -5.18% | 174.35% | 🟢 成功 (Win) |
+| 87 | 2024-01-21 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 202.33% | -1.17% | 129.18% | 🟢 成功 (Win) |
+| 88 | 2024-02-04 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 173.87% | -3.18% | 109.88% | 🟢 成功 (Win) |
+| 89 | 2024-02-25 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 127.43% | -11.13% | 68.56% | 🟢 成功 (Win) |
+| 90 | 2024-03-03 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 124.54% | -10.16% | 56.86% | 🟢 成功 (Win) |
+| 91 | 2024-04-07 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 99.63% | -18.08% | 12.65% | 🟢 成功 (Win) |
+| 92 | 2024-05-26 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 78.88% | -28.89% | 7.58% | 🟢 成功 (Win) |
+| 93 | 2024-06-02 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 81.44% | -27.53% | 10.93% | 🟢 成功 (Win) |
+| 94 | 2024-09-01 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 36.44% | -45.2% | 14.67% | 🟢 成功 (Win) |
+| 95 | 2024-10-06 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 46.73% | -45.69% | 22.74% | 🟢 成功 (Win) |
+| 96 | 2024-11-10 | 🟢 建倉 | GrandProcess (3131.TWO), Scientech (3583.TW), Allring (6187.TWO), Auras (3324.TWO), MPI (6223.TWO), UMT (6683.TWO) | 47.27% | -47.76% | 23.84% | 🟢 成功 (Win) |
+| 97 | 2025-02-02 | 🟢 建倉 | GrandProcess (3131.TWO), Auras (3324.TWO), Teh_hsin (8027.TWO), Scientech (3583.TW), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), MCT (3013.TW) | 53.73% | -44.89% | 33.29% | 🟢 成功 (Win) |
+| 98 | 2025-02-09 | 🟢 建倉 | GrandProcess (3131.TWO), Auras (3324.TWO), Teh_hsin (8027.TWO), Scientech (3583.TW), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), MCT (3013.TW) | 71.17% | -40.98% | 46.77% | 🟢 成功 (Win) |
+| 99 | 2025-03-09 | 🟢 建倉 | GrandProcess (3131.TWO), Auras (3324.TWO), Teh_hsin (8027.TWO), Scientech (3583.TW), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), MCT (3013.TW) | 97.71% | -37.87% | 80.59% | 🟢 成功 (Win) |
+| 100 | 2025-04-13 | 🟢 建倉 | GrandProcess (3131.TWO), Auras (3324.TWO), Teh_hsin (8027.TWO), Scientech (3583.TW), Allring (6187.TWO), UMT (6683.TWO), MPI (6223.TWO), MCT (3013.TW) | 312.62% | -6.74% | 288.31% | 🟢 成功 (Win) |
+
+## 💡 統計決策學意義
+
+1. **穿越牛熊的穩定性**：隨機抽樣覆蓋了 2015-2016 晶圓產能修正、2018 中美貿易戰、2020 新冠疫情以及 2022 升息循環。結果顯示，**低共識與設備 Backlog 領先指標** 的交叉驗證在不同牛熊階段皆能保持高勝率。
+2. **夏普比率與持股耐受度**：52週平均最大回撤（平均最大跌幅）為 **-21.01%**，為制定量化防禦性止損（如設定 10-15% 止損線）提供了明確的實體數據支持。
+`;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 動態渲染 ApexCharts K 線圖
+        const watchlistData = [];
+        if (watchlistData && watchlistData.length > 0) {
+            watchlistData.forEach(item => {
+                const cleanId = 'chart_' + item.company_id.replace('.', '_');
+                const container = document.getElementById(cleanId);
+                if (container && item.kline_data && item.kline_data.length > 0) {
+                    const entryTime = new Date(item.entry_date).getTime();
+                    
+                    const options = {
+                        series: [{
+                            name: '收盤價',
+                            data: item.kline_data.map(k => [new Date(k.date).getTime(), k.close])
+                        }],
+                        chart: {
+                            type: 'area',
+                            height: 240,
+                            background: 'transparent',
+                            toolbar: { show: false },
+                            foreColor: '#94a3b8'
+                        },
+                        colors: ['#38bdf8'],
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.3,
+                                opacityTo: 0.05,
+                                stops: [0, 90, 100]
+                            }
+                        },
+                        stroke: { curve: 'smooth', width: 2 },
+                        xaxis: {
+                            type: 'datetime',
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => val.toFixed(1)
+                            }
+                        },
+                        grid: { borderColor: 'rgba(255,255,255,0.04)' },
+                        annotations: {
+                            xaxis: [{
+                                x: entryTime,
+                                strokeDashArray: 4,
+                                borderColor: '#10b981',
+                                label: {
+                                    borderColor: '#10b981',
+                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
+                                    text: '列入觀察 (' + item.entry_date + ')'
+                                }
+                            }],
+                            points: [{
+                                x: entryTime,
+                                y: item.entry_price,
+                                marker: {
+                                    size: 6,
+                                    fillColor: '#10b981',
+                                    strokeColor: '#fff',
+                                    radius: 2
+                                },
+                                label: {
+                                    borderColor: '#10b981',
+                                    offsetY: -10,
+                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
+                                    text: '進場點: ' + item.entry_price
+                                }
+                            }]
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            x: { format: 'yyyy-MM-dd' }
+                        }
+                    };
+                    const chart = new ApexCharts(container, options);
+                    chart.render();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

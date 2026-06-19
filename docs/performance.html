@@ -189,7 +189,10 @@
         <div class="logo">ANTIGRAVITY<span>RESEARCH</span></div>
         <div class="nav-links">
             <a href="index.html" id="nav-rep">每週熱點報告</a>
-            <a href="performance.html" id="nav-perf">系統績效評估</a>
+            <a href="performance.html" id="nav-perf">系統實盤績效</a>
+            <a href="monte_carlo.html" id="nav-mc">蒙地卡羅回測</a>
+            <a href="backtest.html" id="nav-bt">季度再平衡回測</a>
+            <a href="advanced_backtest.html" id="nav-abt">進階風控回測</a>
         </div>
     </div>
     <div class="container" id="content">正在渲染報告內容，請稍候...</div>
@@ -198,6 +201,12 @@
         const path = window.location.pathname;
         if (path.endsWith('performance.html')) {
             document.getElementById('nav-perf').classList.add('active');
+        } else if (path.endsWith('monte_carlo.html')) {
+            document.getElementById('nav-mc').classList.add('active');
+        } else if (path.endsWith('backtest.html')) {
+            document.getElementById('nav-bt').classList.add('active');
+        } else if (path.endsWith('advanced_backtest.html')) {
+            document.getElementById('nav-abt').classList.add('active');
         } else {
             document.getElementById('nav-rep').classList.add('active');
         }

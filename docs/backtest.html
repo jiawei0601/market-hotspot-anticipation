@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>季度再平衡回測報告</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --text-color: #f1f5f9;
+            --primary-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --table-border: rgba(255, 255, 255, 0.06);
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+        .header {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary-cyan);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+        }
+        .logo span {
+            color: #fff;
+            margin-left: 6px;
+        }
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary-cyan);
+        }
+        .container {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        /* Markdown 內容精細排版 */
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 1.8em;
+            margin-bottom: 0.6em;
+        }
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary-cyan);
+            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
+            padding-bottom: 12px;
+            margin-top: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2 {
+            font-size: 1.6rem;
+            border-left: 5px solid var(--accent-green);
+            padding-left: 14px;
+        }
+        h3 {
+            font-size: 1.25rem;
+            color: #e2e8f0;
+        }
+        p {
+            color: #cbd5e1;
+            margin-bottom: 1.5em;
+        }
+        /* 表格現代化樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 28px 0;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--table-border);
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--table-border);
+            font-size: 0.95rem;
+        }
+        th {
+            background-color: rgba(56, 189, 248, 0.08);
+            color: var(--primary-cyan);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        /* 區塊引用與警示 */
+        blockquote {
+            background: rgba(56, 189, 248, 0.05);
+            border-left: 4px solid var(--primary-cyan);
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 12px 12px 0;
+        }
+        blockquote p {
+            margin: 0;
+            color: #93c5fd;
+            font-style: italic;
+        }
+        /* 程式碼與公式 */
+        pre {
+            background: #0f172a;
+            padding: 18px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+        code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.07);
+            padding: 3px 7px;
+            border-radius: 6px;
+            color: #f472b6;
+            font-size: 0.9rem;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: #e2e8f0;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 40px 0;
+        }
+        a {
+            color: var(--primary-cyan);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">ANTIGRAVITY<span>RESEARCH</span></div>
+        <div class="nav-links">
+            <a href="index.html" id="nav-rep">每週熱點報告</a>
+            <a href="performance.html" id="nav-perf">系統實盤績效</a>
+            <a href="monte_carlo.html" id="nav-mc">蒙地卡羅回測</a>
+            <a href="backtest.html" id="nav-bt">季度再平衡回測</a>
+            <a href="advanced_backtest.html" id="nav-abt">進階風控回測</a>
+        </div>
+    </div>
+    <div class="container" id="content">正在渲染報告內容，請稍候...</div>
+    <script>
+        // 設定導航欄 active 樣式 (針對靜態 Pages 最佳化)
+        const path = window.location.pathname;
+        if (path.endsWith('performance.html')) {
+            document.getElementById('nav-perf').classList.add('active');
+        } else if (path.endsWith('monte_carlo.html')) {
+            document.getElementById('nav-mc').classList.add('active');
+        } else if (path.endsWith('backtest.html')) {
+            document.getElementById('nav-bt').classList.add('active');
+        } else if (path.endsWith('advanced_backtest.html')) {
+            document.getElementById('nav-abt').classList.add('active');
+        } else {
+            document.getElementById('nav-rep').classList.add('active');
+        }
+        
+        // 讀取 Raw Markdown 字串並使用 marked 渲染
+        const rawMarkdown = `# 12支動態選股池再平衡＋防守停損策略回測報告
+
+本報告評估從 **2015-01-01 至 2026-06-19** 期間，每 **3 個月**（再平衡週期）初動態進行選股與平權重配置，若單一標的在期間內跌幅達 **20%** 則立即觸發停損，現金保留至下一期再投入的操作策略獲利表現。
+
+## 📊 策略績效總結
+
+| 評估項目 | 數值 |
+| :--- | :--- |
+| **回測起始時間** | 2015-01-01 |
+| **回測結束時間** | 2026-06-19 |
+| **再平衡週期** | 每 3 個月 |
+| **停損百分比** | 20% |
+| **起始資金** | TWD 1,000,000.00 |
+| **結束資金** | TWD 23,442,649.23 |
+| **總累積報酬率** | **2244.26%** |
+
+## 📈 交易歷程紀錄
+
+| 週期區段 | 進場基準日 | 起始資金 | 交易狀態 / 標的與回報 | 結束資金 | 期間報酬率 | 累計損益 (TWD) | 累計報酬率 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2015-Q1 | 2015-01-01 | \$1,000,000.00 | GrandProcess (持滿 -10.3%)<br>Gudeng (持滿 -6.2%)<br>MPI (🛑停損 -20.0%) | \$878,358.18 | -12.16% | -121,641.82 | -12.16% |
+| 2015-Q2 | 2015-04-01 | \$878,358.18 | GrandProcess (持滿 +15.5%)<br>Gudeng (🛑停損 -20.0%)<br>MPI (持滿 -10.1%) | \$835,730.37 | -4.85% | -164,269.63 | -16.43% |
+| 2015-Q3 | 2015-07-01 | \$835,730.37 | GrandProcess (持滿 +15.3%)<br>Gudeng (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%) | \$766,819.78 | -8.25% | -233,180.22 | -23.32% |
+| 2015-Q4 | 2015-10-01 | \$766,819.78 | GrandProcess (持滿 +17.9%)<br>Gudeng (持滿 -3.1%)<br>MPI (持滿 +11.1%) | \$833,145.49 | +8.65% | -166,854.51 | -16.69% |
+| 2016-Q1 | 2016-01-01 | \$833,145.49 | GrandProcess (持滿 +18.7%)<br>Gudeng (持滿 +13.4%)<br>MPI (持滿 +28.9%) | \$1,002,488.80 | +20.33% | +2,488.80 | +0.25% |
+| 2016-Q2 | 2016-04-01 | \$1,002,488.80 | GrandProcess (🛑停損 -20.0%)<br>Gudeng (持滿 -3.3%)<br>MPI (持滿 +8.8%) | \$954,056.98 | -4.83% | -45,943.02 | -4.59% |
+| 2016-Q3 | 2016-07-01 | \$954,056.98 | GrandProcess (持滿 -11.7%)<br>Gudeng (持滿 +2.2%)<br>MPI (持滿 +6.2%) | \$943,824.62 | -1.07% | -56,175.38 | -5.62% |
+| 2016-Q4 | 2016-10-01 | \$943,824.62 | GrandProcess (持滿 +1.6%)<br>Gudeng (持滿 +2.2%)<br>MPI (持滿 +0.0%) | \$955,800.73 | +1.27% | -44,199.27 | -4.42% |
+| 2017-Q1 | 2017-01-01 | \$955,800.73 | GrandProcess (持滿 -5.3%)<br>Gudeng (持滿 +15.5%)<br>MPI (持滿 +11.2%) | \$1,023,937.02 | +7.13% | +23,937.02 | +2.39% |
+| 2017-Q2 | 2017-04-01 | \$1,023,937.02 | GrandProcess (持滿 +9.8%)<br>Gudeng (持滿 -10.7%)<br>MPI (持滿 -9.9%) | \$987,084.96 | -3.60% | -12,915.04 | -1.29% |
+| 2017-Q3 | 2017-07-01 | \$987,084.96 | GrandProcess (持滿 +3.4%)<br>Gudeng (持滿 +4.3%)<br>MPI (持滿 -16.5%) | \$958,126.62 | -2.93% | -41,873.38 | -4.19% |
+| 2017-Q4 | 2017-10-01 | \$958,126.62 | GrandProcess (持滿 -10.1%)<br>Gudeng (持滿 +6.7%)<br>MPI (持滿 -7.8%) | \$922,552.57 | -3.71% | -77,447.43 | -7.74% |
+| 2018-Q1 | 2018-01-01 | \$922,552.57 | GrandProcess (持滿 -0.9%)<br>Gudeng (持滿 -10.3%)<br>MPI (持滿 -13.4%) | \$846,883.44 | -8.20% | -153,116.56 | -15.31% |
+| 2018-Q2 | 2018-04-01 | \$846,883.44 | GrandProcess (持滿 -17.1%)<br>Gudeng (持滿 -15.4%)<br>UMT (🛑停損 -20.0%)<br>MPI (持滿 -1.1%) | \$733,243.62 | -13.42% | -266,756.38 | -26.68% |
+| 2018-Q3 | 2018-07-01 | \$733,243.62 | GrandProcess (持滿 -12.2%)<br>Gudeng (持滿 -5.1%)<br>UMT (持滿 -11.6%)<br>MPI (持滿 +3.8%) | \$687,220.29 | -6.28% | -312,779.71 | -31.28% |
+| 2018-Q4 | 2018-10-01 | \$687,220.29 | GrandProcess (🛑停損 -20.0%)<br>Gudeng (持滿 +0.2%)<br>UMT (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%) | \$584,407.85 | -14.96% | -415,592.15 | -41.56% |
+| 2019-Q1 | 2019-01-01 | \$584,407.85 | GrandProcess (持滿 +14.4%)<br>Gudeng (持滿 -5.0%)<br>UMT (持滿 +34.4%)<br>MPI (持滿 +37.3%) | \$702,808.39 | +20.26% | -297,191.61 | -29.72% |
+| 2019-Q2 | 2019-04-01 | \$702,808.39 | GrandProcess (持滿 +10.5%)<br>Gudeng (持滿 +29.8%)<br>UMT (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%) | \$703,308.81 | +0.07% | -296,691.19 | -29.67% |
+| 2019-Q3 | 2019-07-01 | \$703,308.81 | GrandProcess (持滿 +20.4%)<br>Gudeng (持滿 +139.2%)<br>UMT (持滿 +98.1%)<br>MPI (持滿 -2.3%) | \$1,152,219.50 | +63.83% | +152,219.50 | +15.22% |
+| 2019-Q4 | 2019-10-01 | \$1,152,219.50 | GrandProcess (持滿 +85.7%)<br>Gudeng (持滿 +80.7%)<br>UMT (持滿 +11.4%)<br>MPI (持滿 +25.6%) | \$1,737,855.85 | +50.83% | +737,855.85 | +73.79% |
+| 2020-Q1 | 2020-01-01 | \$1,737,855.85 | GrandProcess (🛑停損 -20.0%)<br>Scientech (🛑停損 -20.0%)<br>Gudeng (🛑停損 -20.0%)<br>Allring (🛑停損 -20.0%)<br>UMT (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%)<br>Auras (🛑停損 -20.0%) | \$1,390,284.68 | -20.00% | +390,284.68 | +39.03% |
+| 2020-Q2 | 2020-04-01 | \$1,390,284.68 | GrandProcess (持滿 +41.4%)<br>Scientech (持滿 +27.0%)<br>Gudeng (持滿 +114.6%)<br>Allring (持滿 +18.7%)<br>UMT (持滿 +139.9%)<br>MPI (持滿 +95.7%)<br>Auras (持滿 +36.8%) | \$2,332,074.62 | +67.74% | +1,332,074.62 | +133.21% |
+| 2020-Q3 | 2020-07-01 | \$2,332,074.62 | GrandProcess (持滿 +39.7%)<br>Scientech (持滿 +17.5%)<br>Gudeng (持滿 +4.0%)<br>Allring (持滿 +59.5%)<br>UMT (🛑停損 -20.0%)<br>MPI (持滿 +4.1%)<br>Auras (持滿 +39.6%) | \$2,813,117.14 | +20.63% | +1,813,117.14 | +181.31% |
+| 2020-Q4 | 2020-10-01 | \$2,813,117.14 | GrandProcess (持滿 +6.1%)<br>Scientech (持滿 +4.3%)<br>Gudeng (持滿 -4.6%)<br>Allring (持滿 +30.2%)<br>UMT (持滿 +14.7%)<br>MPI (持滿 +11.4%)<br>Auras (持滿 -10.1%) | \$3,022,373.02 | +7.44% | +2,022,373.02 | +202.24% |
+| 2021-Q1 | 2021-01-01 | \$3,022,373.02 | GrandProcess (🛑停損 -20.0%)<br>Scientech (持滿 +6.9%)<br>Gudeng (持滿 +22.6%)<br>Allring (持滿 +22.3%)<br>UMT (持滿 +6.8%)<br>MPI (持滿 +9.0%)<br>Auras (持滿 +0.5%) | \$3,229,613.89 | +6.86% | +2,229,613.89 | +222.96% |
+| 2021-Q2 | 2021-04-01 | \$3,229,613.89 | GrandProcess (🛑停損 -20.0%)<br>Scientech (🛑停損 -20.0%)<br>Gudeng (🛑停損 -20.0%)<br>Allring (持滿 +1.7%)<br>UMT (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%)<br>Auras (🛑停損 -20.0%) | \$2,683,655.40 | -16.90% | +1,683,655.40 | +168.37% |
+| 2021-Q3 | 2021-07-01 | \$2,683,655.40 | GrandProcess (持滿 -17.3%)<br>Scientech (持滿 +9.9%)<br>Gudeng (🛑停損 -20.0%)<br>Allring (持滿 -8.6%)<br>UMT (持滿 -14.1%)<br>MPI (持滿 -3.5%)<br>Auras (持滿 -9.6%) | \$2,441,283.78 | -9.03% | +1,441,283.78 | +144.13% |
+| 2021-Q4 | 2021-10-01 | \$2,441,283.78 | GrandProcess (持滿 +12.7%)<br>Scientech (持滿 +57.2%)<br>Gudeng (持滿 +40.3%)<br>Allring (持滿 +12.4%)<br>UMT (持滿 +7.2%)<br>MPI (持滿 -0.4%)<br>Auras (持滿 +25.5%) | \$2,981,013.82 | +22.11% | +1,981,013.82 | +198.10% |
+| 2022-Q1 | 2022-01-01 | \$2,981,013.82 | GrandProcess (🛑停損 -20.0%)<br>Scientech (🛑停損 -20.0%)<br>Gudeng (🛑停損 -20.0%)<br>Allring (持滿 +10.7%)<br>UMT (🛑停損 -20.0%)<br>MPI (持滿 -12.4%)<br>Auras (持滿 +2.0%) | \$2,641,092.33 | -11.40% | +1,641,092.33 | +164.11% |
+| 2022-Q2 | 2022-04-01 | \$2,641,092.33 | GrandProcess (🛑停損 -20.0%)<br>Scientech (🛑停損 -20.0%)<br>Gudeng (持滿 -15.1%)<br>Allring (🛑停損 -20.0%)<br>UMT (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%)<br>Auras (🛑停損 -20.0%) | \$2,131,178.65 | -19.31% | +1,131,178.65 | +113.12% |
+| 2022-Q3 | 2022-07-01 | \$2,131,178.65 | GrandProcess (持滿 +3.5%)<br>Scientech (持滿 +1.8%)<br>Gudeng (持滿 +43.5%)<br>Allring (持滿 -5.3%)<br>UMT (持滿 +1.2%)<br>MPI (持滿 +10.4%)<br>Auras (持滿 -5.6%) | \$2,281,868.30 | +7.07% | +1,281,868.30 | +128.19% |
+| 2022-Q4 | 2022-10-01 | \$2,281,868.30 | GrandProcess (持滿 +8.6%)<br>Scientech (持滿 +6.8%)<br>Gudeng (🛑停損 -20.0%)<br>Allring (持滿 -8.0%)<br>UMT (🛑停損 -20.0%)<br>MPI (持滿 +34.9%)<br>Auras (持滿 +6.1%) | \$2,309,265.33 | +1.20% | +1,309,265.33 | +130.93% |
+| 2023-Q1 | 2023-01-01 | \$2,309,265.33 | GrandProcess (持滿 +35.3%)<br>Scientech (持滿 +16.2%)<br>Allring (持滿 +8.6%)<br>Auras (持滿 +45.1%)<br>MPI (持滿 +14.4%)<br>UMT (持滿 +14.3%) | \$2,824,545.02 | +22.31% | +1,824,545.02 | +182.45% |
+| 2023-Q2 | 2023-04-01 | \$2,824,545.02 | GrandProcess (持滿 +74.6%)<br>Scientech (持滿 +86.0%)<br>Allring (持滿 +33.0%)<br>Auras (持滿 +31.4%)<br>MPI (持滿 +31.4%)<br>UMT (持滿 +11.1%) | \$4,083,998.50 | +44.59% | +3,083,998.50 | +308.40% |
+| 2023-Q3 | 2023-07-01 | \$4,083,998.50 | GrandProcess (持滿 -7.2%)<br>Scientech (持滿 +28.2%)<br>Allring (持滿 +26.4%)<br>Auras (🛑停損 -20.0%)<br>MPI (持滿 +14.8%)<br>UMT (持滿 -10.8%) | \$4,297,483.25 | +5.23% | +3,297,483.25 | +329.75% |
+| 2023-Q4 | 2023-10-01 | \$4,297,483.25 | GrandProcess (持滿 +13.5%)<br>Scientech (持滿 +0.9%)<br>Allring (持滿 +13.7%)<br>Auras (持滿 +6.8%)<br>MPI (持滿 +2.1%)<br>UMT (持滿 +58.8%) | \$4,984,266.50 | +15.98% | +3,984,266.50 | +398.43% |
+| 2024-Q1 | 2024-01-01 | \$4,984,266.50 | GrandProcess (持滿 +59.8%)<br>Scientech (持滿 +49.9%)<br>Allring (持滿 +88.7%)<br>Auras (持滿 +109.9%)<br>MPI (持滿 +37.2%)<br>UMT (持滿 -6.8%) | \$7,797,039.54 | +56.43% | +6,797,039.54 | +679.70% |
+| 2024-Q2 | 2024-04-01 | \$7,797,039.54 | GrandProcess (持滿 +55.7%)<br>Scientech (持滿 +24.5%)<br>Allring (🛑停損 -20.0%)<br>Auras (持滿 +12.7%)<br>MPI (持滿 +70.7%)<br>UMT (持滿 +50.2%) | \$10,315,823.86 | +32.30% | +9,315,823.86 | +931.58% |
+| 2024-Q3 | 2024-07-01 | \$10,315,823.86 | GrandProcess (持滿 +25.4%)<br>Scientech (持滿 +12.1%)<br>Allring (持滿 +78.2%)<br>Auras (🛑停損 -20.0%)<br>MPI (持滿 +41.2%)<br>UMT (🛑停損 -20.0%) | \$12,326,124.37 | +19.49% | +11,326,124.37 | +1132.61% |
+| 2024-Q4 | 2024-10-01 | \$12,326,124.37 | GrandProcess (持滿 -15.4%)<br>Scientech (持滿 -9.2%)<br>Allring (持滿 -17.4%)<br>Auras (持滿 -2.7%)<br>MPI (持滿 +21.2%)<br>UMT (持滿 +22.1%) | \$12,298,575.00 | -0.22% | +11,298,575.00 | +1129.86% |
+| 2025-Q1 | 2025-01-01 | \$12,298,575.00 | GrandProcess (🛑停損 -20.0%)<br>Auras (🛑停損 -20.0%)<br>Teh_hsin (持滿 -15.9%)<br>Scientech (🛑停損 -20.0%)<br>Allring (🛑停損 -20.0%)<br>UMT (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%)<br>MCT (🛑停損 -20.0%) | \$9,902,276.68 | -19.48% | +8,902,276.68 | +890.23% |
+| 2025-Q2 | 2025-04-01 | \$9,902,276.68 | GrandProcess (🛑停損 -20.0%)<br>Auras (🛑停損 -20.0%)<br>Teh_hsin (🛑停損 -20.0%)<br>Scientech (🛑停損 -20.0%)<br>Allring (🛑停損 -20.0%)<br>UMT (🛑停損 -20.0%)<br>MPI (🛑停損 -20.0%)<br>MCT (🛑停損 -20.0%) | \$7,921,821.35 | -20.00% | +6,921,821.35 | +692.18% |
+| 2025-Q3 | 2025-07-01 | \$7,921,821.35 | GrandProcess (持滿 -4.4%)<br>Auras (持滿 +30.9%)<br>Teh_hsin (持滿 +0.5%)<br>Scientech (持滿 +10.0%)<br>Allring (持滿 -2.6%)<br>UMT (持滿 +13.2%)<br>MPI (持滿 +84.2%)<br>MCT (持滿 -9.6%) | \$9,131,015.14 | +15.26% | +8,131,015.14 | +813.10% |
+| 2025-Q4 | 2025-10-01 | \$9,131,015.14 | GrandProcess (持滿 +1.6%)<br>Auras (持滿 +20.0%)<br>Teh_hsin (持滿 +29.0%)<br>Scientech (🛑停損 -20.0%)<br>Allring (持滿 -4.2%)<br>UMT (持滿 +9.5%)<br>MPI (持滿 +32.0%)<br>MCT (持滿 +12.0%) | \$10,041,994.11 | +9.98% | +9,041,994.11 | +904.20% |
+| 2026-Q1 | 2026-01-01 | \$10,041,994.11 | GrandProcess (持滿 +82.6%)<br>Auras (持滿 -8.0%)<br>Teh_hsin (🛑停損 -20.0%)<br>Scientech (持滿 +37.2%)<br>Allring (持滿 +139.2%)<br>UMT (持滿 +258.8%)<br>MPI (持滿 +74.8%)<br>MCT (🛑停損 -20.0%) | \$16,876,280.07 | +68.06% | +15,876,280.07 | +1587.63% |
+| 2026-Q2 | 2026-04-01 | \$16,876,280.07 | GrandProcess (持滿 +20.1%)<br>Auras (持滿 +17.6%)<br>Teh_hsin (持滿 +58.6%)<br>Scientech (持滿 +91.2%)<br>Allring (持滿 +38.6%)<br>UMT (持滿 +9.6%)<br>MPI (持滿 +62.4%)<br>MCT (持滿 +13.1%) | \$23,442,649.23 | +38.91% | +22,442,649.23 | +2244.26% |
+`;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 動態渲染 ApexCharts K 線圖
+        const watchlistData = [];
+        if (watchlistData && watchlistData.length > 0) {
+            watchlistData.forEach(item => {
+                const cleanId = 'chart_' + item.company_id.replace('.', '_');
+                const container = document.getElementById(cleanId);
+                if (container && item.kline_data && item.kline_data.length > 0) {
+                    const entryTime = new Date(item.entry_date).getTime();
+                    
+                    const options = {
+                        series: [{
+                            name: '收盤價',
+                            data: item.kline_data.map(k => [new Date(k.date).getTime(), k.close])
+                        }],
+                        chart: {
+                            type: 'area',
+                            height: 240,
+                            background: 'transparent',
+                            toolbar: { show: false },
+                            foreColor: '#94a3b8'
+                        },
+                        colors: ['#38bdf8'],
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.3,
+                                opacityTo: 0.05,
+                                stops: [0, 90, 100]
+                            }
+                        },
+                        stroke: { curve: 'smooth', width: 2 },
+                        xaxis: {
+                            type: 'datetime',
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => val.toFixed(1)
+                            }
+                        },
+                        grid: { borderColor: 'rgba(255,255,255,0.04)' },
+                        annotations: {
+                            xaxis: [{
+                                x: entryTime,
+                                strokeDashArray: 4,
+                                borderColor: '#10b981',
+                                label: {
+                                    borderColor: '#10b981',
+                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
+                                    text: '列入觀察 (' + item.entry_date + ')'
+                                }
+                            }],
+                            points: [{
+                                x: entryTime,
+                                y: item.entry_price,
+                                marker: {
+                                    size: 6,
+                                    fillColor: '#10b981',
+                                    strokeColor: '#fff',
+                                    radius: 2
+                                },
+                                label: {
+                                    borderColor: '#10b981',
+                                    offsetY: -10,
+                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
+                                    text: '進場點: ' + item.entry_price
+                                }
+                            }]
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            x: { format: 'yyyy-MM-dd' }
+                        }
+                    };
+                    const chart = new ApexCharts(container, options);
+                    chart.render();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
