@@ -2,10 +2,11 @@ name: TWSE Quantitative Daily Ingestion & Weekly Reporting Pipeline
 
 on:
   schedule:
-    # 1. 每日數據更新與追蹤：台北時間週一至週五 18:00 執行 (UTC 10:00)
-    - cron: '0 10 * * 1-5'
-    # 2. 每週彙整與多 Agent 研判報告：台北時間週一 07:30 執行 (UTC 週日 23:30)
-    - cron: '30 23 * * 0'
+    # 1. 每日數據更新與追蹤：台北時間週一至週五 18:17 執行 (UTC 10:17)
+    #    註：避開整點以降低 GitHub Actions 高負載期被延遲/丟棄的機率
+    - cron: '17 10 * * 1-5'
+    # 2. 每週彙整與多 Agent 研判報告：台北時間週一 07:47 執行 (UTC 週日 23:47)
+    - cron: '47 23 * * 0'
   workflow_dispatch: # 支援手動即時觸發排程
 
 permissions:
@@ -40,15 +41,15 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           # 根據觸發事件類型與 cron 時間判斷執行模式
-          # UTC 10:00 (18:00 Taipei) -> 每日追蹤
-          # UTC 23:30 (07:30 Taipei) -> 每週報告
+          # UTC 10:17 (18:17 Taipei) -> 每日追蹤
+          # UTC 23:47 (07:47 Taipei) -> 每週報告
           TRIGGER_CRON="${{ github.event.schedule }}"
           echo "Trigger Cron: $TRIGGER_CRON"
-          
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "手動觸發：預設執行完整每週報告研判"
             python main_agent.py --weekly-report
-          elif [ "$TRIGGER_CRON" = "0 10 * * 1-5" ]; then
+          elif [ "$TRIGGER_CRON" = "17 10 * * 1-5" ]; then
             echo "排程觸發：執行每日股價追蹤與觀察名單更新"
             python main_agent.py --daily-update
           else
