@@ -68,7 +68,7 @@ class CriticDecision(BaseModel):
 def get_llm_model(structured_model=None):
     api_key = os.environ.get("GEMINI_API_KEY")
     if api_key:
-        llm = ChatGoogleGenerativeAI(model=os.environ.get("GEMINI_MODEL", "gemini-3.1-pro"), temperature=0, google_api_key=api_key)
+        llm = ChatGoogleGenerativeAI(model=os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"), temperature=0, google_api_key=api_key)
     else:
         # 當處於 GitHub Actions 或是已設定嚴格模式時，無 API Key 直接報錯，不以假數據混淆
         raise ValueError("缺少必要的 GEMINI_API_KEY 環境變數。請在專案設定或 GitHub Secrets 中配置它。")
