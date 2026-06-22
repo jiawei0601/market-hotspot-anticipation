@@ -240,6 +240,11 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         HumanMessage(content=prompt)
     ])
     report_text = response.content
+    if isinstance(report_text, list):
+        report_text = "".join(
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in report_text
+        )
 
     return {"feasibility_report_draft": report_text}
 
