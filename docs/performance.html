@@ -287,7 +287,7 @@
         // 讀取 Raw Markdown 字串並使用 marked 渲染
         const rawMarkdown = `# 系統長期績效與勝率評估報告
 
-*最後更新日期：2026-06-22*
+*最後更新日期：2026-06-23*
 *評估標準：推薦標的自進場日起，最大潛在漲幅 \$\\ge 15.0\\%\$ 判定為「成功 (Win)」*
 
 ---
@@ -299,9 +299,9 @@
 | **追蹤標的總數** | **3 支** | 系統主動甄選之非共識黃金建倉標的 |
 | **最大潛在漲幅達標率 (MFE)** | **0.0%** | 曾觸及最大漲幅 \$\\ge 15.0\\%\$ 的比率（非實現報酬，會高估真實勝率） |
 | **實現報酬勝率 (Realized)** | **0.0%** | 以「當前實現報酬」\$\\ge 15.0\\%\$ 計算的比率 |
-| **平均當前回報率** | **+0.2%** | 若買入持有至今的等權重平均收益率 |
+| **平均當前回報率** | **-3.3%** | 若買入持有至今的等權重平均收益率 |
 | **平均最大潛在漲幅** | **+4.3%** | 推薦後平均最大波段漲幅 |
-| **平均最大波段回撤** | **-1.6%** | 推薦後曾遭遇的平均最大跌幅 |
+| **平均最大波段回撤** | **-3.7%** | 推薦後曾遭遇的平均最大跌幅 |
 
 ---
 
@@ -309,9 +309,9 @@
 
 | 股票代碼 / 名稱 | 技術板塊 | 進場日期 | 進場價 | 最新價 | 當前收益率 | 最大潛在漲幅 | 最大跌幅 (回撤) | 追蹤狀態 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **3324.雙鴻** | CPO_Optical_Transceiver | 2026-06-19 | 1070 | 1075 | **+0.5%** | **+3.3%** | 0.0% | 🟢 追蹤中 |
-| **2486.一詮** | CPO_Optical_Transceiver | 2026-06-19 | 276 | 272 | **-1.6%** | **+6.7%** | -2.4% | 🟢 追蹤中 |
-| **8027.鈦昇** | CPO_Optical_Transceiver | 2026-06-19 | 241 | 245 | **+1.7%** | **+2.9%** | -2.5% | 🟢 追蹤中 |
+| **3324.雙鴻** | CPO_Optical_Transceiver | 2026-06-19 | 1070 | 1025 | **-4.2%** | **+3.3%** | -4.2% | 🟢 追蹤中 |
+| **2486.一詮** | CPO_Optical_Transceiver | 2026-06-19 | 276 | 265 | **-4.2%** | **+6.7%** | -4.3% | 🟢 追蹤中 |
+| **8027.鈦昇** | CPO_Optical_Transceiver | 2026-06-19 | 241 | 237 | **-1.7%** | **+2.9%** | -2.5% | 🟢 追蹤中 |
 
 ---
 
@@ -387,14 +387,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 1070.0,
-    "current_price": 1075.0,
+    "current_price": 1025.0,
     "max_price_since": 1105.0,
-    "min_price_since": 1070.0,
+    "min_price_since": 1025.0,
     "max_return_pct": 3.27,
-    "min_return_pct": 0.0,
-    "current_return_pct": 0.47,
+    "min_return_pct": -4.21,
+    "current_return_pct": -4.21,
     "status": "tracking",
-    "last_updated": "2026-06-22 15:33:59",
+    "last_updated": "2026-06-23 12:48:57",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -890,7 +890,15 @@
         "high": 1105.0,
         "low": 1070.0,
         "close": 1075.0,
-        "volume": 2282393
+        "volume": 2137757
+      },
+      {
+        "date": "2026-06-23",
+        "open": 1075.0,
+        "high": 1080.0,
+        "low": 1025.0,
+        "close": 1025.0,
+        "volume": 2328215
       }
     ]
   },
@@ -900,14 +908,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 276.5,
-    "current_price": 272.0,
+    "current_price": 265.0,
     "max_price_since": 295.0,
-    "min_price_since": 270.0,
+    "min_price_since": 264.5,
     "max_return_pct": 6.69,
-    "min_return_pct": -2.35,
-    "current_return_pct": -1.63,
+    "min_return_pct": -4.34,
+    "current_return_pct": -4.16,
     "status": "tracking",
-    "last_updated": "2026-06-22 15:33:59",
+    "last_updated": "2026-06-23 12:48:57",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1403,7 +1411,15 @@
         "high": 295.0,
         "low": 270.0,
         "close": 272.0,
-        "volume": 17840421
+        "volume": 17539010
+      },
+      {
+        "date": "2026-06-23",
+        "open": 271.5,
+        "high": 276.5,
+        "low": 264.5,
+        "close": 265.0,
+        "volume": 6291696
       }
     ]
   },
@@ -1413,14 +1429,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 241.0,
-    "current_price": 245.0,
+    "current_price": 237.0,
     "max_price_since": 248.0,
     "min_price_since": 235.0,
     "max_return_pct": 2.9,
     "min_return_pct": -2.49,
-    "current_return_pct": 1.66,
+    "current_return_pct": -1.66,
     "status": "tracking",
-    "last_updated": "2026-06-22 15:33:59",
+    "last_updated": "2026-06-23 12:48:58",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1916,7 +1932,15 @@
         "high": 248.0,
         "low": 235.0,
         "close": 245.0,
-        "volume": 1970458
+        "volume": 1887428
+      },
+      {
+        "date": "2026-06-23",
+        "open": 245.5,
+        "high": 245.5,
+        "low": 235.0,
+        "close": 237.0,
+        "volume": 1190815
       }
     ]
   }
