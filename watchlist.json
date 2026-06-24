@@ -5,14 +5,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 1070.0,
-    "current_price": 1025.0,
+    "current_price": 1055.0,
     "max_price_since": 1105.0,
-    "min_price_since": 1025.0,
+    "min_price_since": 995.0,
     "max_return_pct": 3.27,
-    "min_return_pct": -4.21,
-    "current_return_pct": -4.21,
+    "min_return_pct": -7.01,
+    "current_return_pct": -1.4,
     "status": "tracking",
-    "last_updated": "2026-06-23 12:48:57",
+    "last_updated": "2026-06-24 12:30:32",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -516,7 +516,15 @@
         "high": 1080.0,
         "low": 1025.0,
         "close": 1025.0,
-        "volume": 2328215
+        "volume": 2181320
+      },
+      {
+        "date": "2026-06-24",
+        "open": 1000.0,
+        "high": 1065.0,
+        "low": 995.0,
+        "close": 1055.0,
+        "volume": 2084423
       }
     ]
   },
@@ -526,14 +534,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 276.5,
-    "current_price": 265.0,
+    "current_price": 255.0,
     "max_price_since": 295.0,
-    "min_price_since": 264.5,
+    "min_price_since": 248.5,
     "max_return_pct": 6.69,
-    "min_return_pct": -4.34,
-    "current_return_pct": -4.16,
+    "min_return_pct": -10.13,
+    "current_return_pct": -7.78,
     "status": "tracking",
-    "last_updated": "2026-06-23 12:48:57",
+    "last_updated": "2026-06-24 12:30:32",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1037,7 +1045,15 @@
         "high": 276.5,
         "low": 264.5,
         "close": 265.0,
-        "volume": 6291696
+        "volume": 6187429
+      },
+      {
+        "date": "2026-06-24",
+        "open": 263.0,
+        "high": 267.0,
+        "low": 248.5,
+        "close": 255.0,
+        "volume": 8004855
       }
     ]
   },
@@ -1047,14 +1063,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 241.0,
-    "current_price": 237.0,
+    "current_price": 231.5,
     "max_price_since": 248.0,
-    "min_price_since": 235.0,
+    "min_price_since": 229.5,
     "max_return_pct": 2.9,
-    "min_return_pct": -2.49,
-    "current_return_pct": -1.66,
+    "min_return_pct": -4.77,
+    "current_return_pct": -3.94,
     "status": "tracking",
-    "last_updated": "2026-06-23 12:48:58",
+    "last_updated": "2026-06-24 12:30:32",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1558,7 +1574,15 @@
         "high": 245.5,
         "low": 235.0,
         "close": 237.0,
-        "volume": 1190815
+        "volume": 1124455
+      },
+      {
+        "date": "2026-06-24",
+        "open": 229.5,
+        "high": 237.5,
+        "low": 229.5,
+        "close": 231.5,
+        "volume": 1128177
       }
     ]
   }
