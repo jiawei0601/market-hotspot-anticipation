@@ -1,295 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>最新市場熱點預見報告</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <style>
-        :root {
-            --bg-gradient: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 60%, #090d16 100%);
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --primary-cyan: #22d3ee;
-            --accent-green: #34d399;
-            --accent-red: #f87171;
-            --accent-orange: #fbbf24;
-            --card-bg: rgba(15, 23, 42, 0.65);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --table-border: rgba(255, 255, 255, 0.05);
-            --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
-            --glass-bg: rgba(15, 23, 42, 0.75);
-        }
-        body {
-            font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
-            background: var(--bg-gradient);
-            background-attachment: fixed;
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 16px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }
-        .logo {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.35rem;
-            font-weight: 800;
-            color: var(--primary-cyan);
-            letter-spacing: 1.5px;
-            display: flex;
-            align-items: center;
-        }
-        .logo span {
-            color: #fff;
-            margin-left: 6px;
-            font-weight: 400;
-            font-size: 1.1rem;
-        }
-        .logo-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent-green);
-            border-radius: 50%;
-            margin-right: 10px;
-            box-shadow: 0 0 10px var(--accent-green);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 0.6; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(0.9); opacity: 0.6; }
-        }
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            margin-left: 24px;
-            font-size: 0.92rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            padding: 8px 16px;
-            border-radius: 20px;
-        }
-        .nav-links a:hover, .nav-links a.active {
-            color: #fff;
-            background: rgba(34, 211, 238, 0.15);
-            box-shadow: inset 0 0 1px rgba(34, 211, 238, 0.5);
-        }
-        .container {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 40px;
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            box-shadow: var(--card-shadow);
-        }
-        /* Markdown 內容精細排版 */
-        h1, h2, h3, h4 {
-            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
-            font-weight: 700;
-            color: #ffffff;
-            margin-top: 2em;
-            margin-bottom: 0.8em;
-        }
-        h1 {
-            font-size: 2.4rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 16px;
-            margin-top: 0;
-            background: linear-gradient(135deg, #22d3ee, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 800;
-        }
-        h2 {
-            font-size: 1.65rem;
-            border-left: 4px solid var(--primary-cyan);
-            padding-left: 16px;
-            margin-top: 1.8em;
-        }
-        h3 {
-            font-size: 1.25rem;
-            color: #f1f5f9;
-        }
-        p {
-            color: #cbd5e1;
-            margin-bottom: 1.6em;
-            font-size: 1rem;
-        }
-        /* 表格現代化樣式 */
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin: 28px 0;
-            background: rgba(15, 23, 42, 0.3);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--table-border);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-        th, td {
-            padding: 16px 20px;
-            text-align: left;
-            border-bottom: 1px solid var(--table-border);
-            font-size: 0.92rem;
-        }
-        th {
-            background-color: rgba(34, 211, 238, 0.06);
-            color: var(--primary-cyan);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.8px;
-            border-bottom: 2px solid rgba(34, 211, 238, 0.15);
-        }
-        tr:last-child td {
-            border-bottom: none;
-        }
-        tr:hover td {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        /* Badges & Highlights */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            line-height: 1;
-            letter-spacing: 0.2px;
-            border: 1px solid transparent;
-            margin: 2px;
-        }
-        .badge-success {
-            background: rgba(52, 211, 153, 0.12);
-            color: var(--accent-green);
-            border-color: rgba(52, 211, 153, 0.25);
-        }
-        .badge-danger {
-            background: rgba(248, 113, 113, 0.12);
-            color: var(--accent-red);
-            border-color: rgba(248, 113, 113, 0.25);
-        }
-        .badge-warning {
-            background: rgba(251, 191, 36, 0.12);
-            color: var(--accent-orange);
-            border-color: rgba(251, 191, 36, 0.25);
-        }
-        .stock-tag {
-            font-family: 'Fira Code', monospace;
-            background: rgba(34, 211, 238, 0.1);
-            color: var(--primary-cyan);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            border: 1px solid rgba(34, 211, 238, 0.2);
-            font-weight: 600;
-            display: inline-block;
-        }
-        /* 區塊引用與警示 */
-        blockquote {
-            background: rgba(34, 211, 238, 0.04);
-            border-left: 4px solid var(--primary-cyan);
-            padding: 20px 24px;
-            margin: 28px 0;
-            border-radius: 0 16px 16px 0;
-            border-top: 1px solid rgba(34, 211, 238, 0.08);
-            border-right: 1px solid rgba(34, 211, 238, 0.08);
-            border-bottom: 1px solid rgba(34, 211, 238, 0.08);
-        }
-        blockquote p {
-            margin: 0;
-            color: #93c5fd;
-            font-style: italic;
-            font-size: 1.05rem;
-        }
-        /* 程式碼與公式 */
-        pre {
-            background: #0f172a;
-            padding: 18px;
-            border-radius: 12px;
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-        }
-        code {
-            font-family: 'Fira Code', 'Courier New', monospace;
-            background: rgba(255, 255, 255, 0.07);
-            padding: 3px 7px;
-            border-radius: 6px;
-            color: #f472b6;
-            font-size: 0.9rem;
-        }
-        pre code {
-            background: none;
-            padding: 0;
-            color: #e2e8f0;
-        }
-        hr {
-            border: none;
-            border-top: 1px solid var(--border-color);
-            margin: 40px 0;
-        }
-        a {
-            color: var(--primary-cyan);
-            text-decoration: none;
-            transition: opacity 0.2s;
-        }
-        a:hover {
-            opacity: 0.8;
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="logo"><div class="logo-dot"></div>ANTIGRAVITY<span>RESEARCH</span></div>
-        <div class="nav-links">
-            <a href="index.html" id="nav-rep">每週熱點報告</a>
-            <a href="performance.html" id="nav-perf">系統實盤績效</a>
-            <a href="monte_carlo.html" id="nav-mc">蒙地卡羅回測</a>
-            <a href="backtest.html" id="nav-bt">季度再平衡回測</a>
-        </div>
-    </div>
-    <div class="container" id="content">正在渲染報告內容，請稍候...</div>
-    <script>
-        // 設定導航欄 active 樣式 (針對靜態 Pages 最佳化)
-        const path = window.location.pathname;
-        if (path.endsWith('performance.html')) {
-            document.getElementById('nav-perf').classList.add('active');
-        } else if (path.endsWith('monte_carlo.html')) {
-            document.getElementById('nav-mc').classList.add('active');
-        } else if (path.endsWith('backtest.html')) {
-            document.getElementById('nav-bt').classList.add('active');
-        } else {
-            document.getElementById('nav-rep').classList.add('active');
-        }
-        
-        // 讀取 Raw Markdown 字串並使用 marked 渲染
-        const rawMarkdown = `# 國量化前沿研究：CPO 光電收發器世代演進與半導體供應鏈洗牌可行性評估報告
+# 國量化前沿研究：CPO 光電收發器世代演進與半導體供應鏈洗牌可行性評估報告
 
 **機密等級：** 機構投資人內部決策專用  
 **研究板塊：** CPO_Optical_Transceiver  
-**產品世代：** Vera Rubin \$\\rightarrow\$ Feynman \$\\rightarrow\$ Feynman_Next（超前 18-24 個月前瞻佈局）  
+**產品世代：** Vera Rubin $\rightarrow$ Feynman $\rightarrow$ Feynman_Next（超前 18-24 個月前瞻佈局）  
 **撰寫時間：** 2026 年 6 月  
 
 ---
@@ -298,7 +11,7 @@
 
 在高算力需求呈指數級增長（單晶片 TDP 突破 1500W 至 2000W+）的背景下，傳統以「矽與銅」為介質的物理架構已逼近傳輸損耗與散熱極限。本報告針對 NVIDIA（或同等超大型運算架構）從當前世代 **Vera Rubin**、下一代 **Feynman**，跨越至下下一代 **Feynman_Next**（超前 18-24 個月）的物理與架構變革，進行深度的半導體價值量（Content Value, CV）洗牌與替代風險評估。
 
-\`\`\`
+```
 【Feynman_Next 物理架構演進路徑】
 Vera Rubin (高速銅線/傳統光模組) 
    │
@@ -307,7 +20,7 @@ Feynman (PIC/EIC 載板整合 + 3D VC/水冷)
    │
    ▼ (晶圓級光電單一整合 + 玻璃基板 + DTC 散熱)
 Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
-\`\`\`
+```
 
 ### 1. 傳輸介質的典範轉移：銅退光進與晶圓級光電整合（Monolithic Integration）
 *   **Vera Rubin 世代**：系統高度依賴傳統高速銅線（如 PCIe Gen 6/7, InfiniBand）與傳統可插拔光收發器（Pluggable Transceivers）。此時，光電轉換模組仍屬於獨立外置元件。
@@ -326,7 +39,7 @@ Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
 
 基於上述物理變革，本機構對供應鏈核心標的之內容價值（Content Value, CV，定義為單一系統/晶片架構中該廠商的價值權重）進行了三代演進的定量推演。
 
-\`\`\`
+```
 【Feynman_Next 核心標的 Content Value (CV) 演進趨勢】
   30 |                                              [弘塑: 26.0]
      |                                              [家登: 22.0]
@@ -335,30 +48,30 @@ Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
   10 |   [聯鈞: 4.5]                 [聯鈞: 8.0] (價值侵蝕!)
      |________________________________________________________
          Vera Rubin      Feynman       Feynman_Next
-\`\`\`
+```
 
 ### 1. 致命的「Feynman_Next 陷阱」：光通訊價值量侵蝕與替代風險
 *   **代表廠商：聯鈞 (3450.TW)**
-    *   **CV 演進**：4.5 (Vera Rubin) \$\\rightarrow\$ **14.0 (Feynman)** \$\\rightarrow\$ **8.0 (Feynman_Next)**
+    *   **CV 演進**：4.5 (Vera Rubin) $\rightarrow$ **14.0 (Feynman)** $\rightarrow$ **8.0 (Feynman_Next)**
     *   **成長率**：Feynman 世代同比暴增 **+211.11%**；Feynman_Next 世代同比衰退 **-42.86%**。
     *   **深度定量分析**：在 Feynman 世代，聯鈞作為 CPO 封裝與光電轉換模組的先驅，受惠於大量中游精密光學對準（Optical Alignment）、雷射光源（ELS）封裝與測試需求，CV 暴漲至 14.0。然而，一旦技術演進至 Feynman_Next 的晶圓級光電整合，台積電 COUPE 平台將 PIC 與 EIC 直接在晶圓廠內完成 3D 堆疊。**原本屬於聯鈞的光學封裝與對準步驟被「半導體化」消滅**，聯鈞的定位退化為僅提供外置雷射光源（ELS）的低毛利代工，導致其 CV 暴跌 42.86%。這是典型的「技術被上游整合（Integration by Foundry）」風險。
 
 ### 2. 玻璃基板與先進封裝設備：無可替代的絕對贏家
 *   **鈦昇 (8027.TWO) — 玻璃基板雷射設備霸主**
-    *   **CV 演進**：1.0 \$\\rightarrow\$ 8.0 \$\\rightarrow\$ **18.0**（Feynman_Next 世代再增長 **+125.00%**）
+    *   **CV 演進**：1.0 $\rightarrow$ 8.0 $\rightarrow$ **18.0**（Feynman_Next 世代再增長 **+125.00%**）
     *   **深度定量分析**：玻璃基板物理特性極脆，傳統機械鑽孔會導致微裂縫（Micro-cracks）。鈦昇的 TGV 雷射改質與蝕刻技術，是 Feynman_Next 導入玻璃基板的絕對關鍵。其 CV 從 Vera Rubin 世代的 1.0 暴增至 Feynman_Next 的 18.0，累計增幅達 1700%，且在 Feynman_Next 世代具備極高的技術壁壘與零替代風險。
 *   **弘塑 (3131.TWO) & 辛耘 (3583.TW) — 濕製程與單晶圓清洗設備**
-    *   **弘塑 CV**：10.0 \$\\rightarrow\$ 18.0 \$\\rightarrow\$ **26.0**（Feynman_Next 世代增長 **+44.44%**）
-    *   **辛耘 CV**：6.0 \$\\rightarrow\$ 12.0 \$\\rightarrow\$ **18.0**（Feynman_Next 世代增長 **+50.00%**）
+    *   **弘塑 CV**：10.0 $\rightarrow$ 18.0 $\rightarrow$ **26.0**（Feynman_Next 世代增長 **+44.44%**）
+    *   **辛耘 CV**：6.0 $\rightarrow$ 12.0 $\rightarrow$ **18.0**（Feynman_Next 世代增長 **+50.00%**）
     *   **深度定量分析**：隨著 CoWoS 封裝結構往 3D IC（SoIC）與玻璃基板演進，晶圓與基板的層數增加，微污染控制（Contamination Control）要求達到極致。弘塑與辛耘的單晶圓濕式清洗設備，在高寬比（Aspect Ratio）極高的 TGV 與 TSV 清洗需求下，機台平均售價（ASP）與需求量同步暴增。弘塑更已進入 Feynman_Next 的規格制定階段，護城河極深。
 *   **萬潤 (6187.TWO) — 精密點膠與 Underfill 設備**
-    *   **CV 演進**：5.0 \$\\rightarrow\$ 10.0 \$\\rightarrow\$ **15.0**（Feynman_Next 世代增長 **+50.00%**）
+    *   **CV 演進**：5.0 $\rightarrow$ 10.0 $\rightarrow$ **15.0**（Feynman_Next 世代增長 **+50.00%**）
     *   **深度定量分析**：在 Feynman_Next 晶片高度堆疊與玻璃基板的架構下，熱應力極易導致晶片翹曲（Warpage）。萬潤的先進封裝點膠與底填（Underfill）設備，對於防止晶片熱脹冷縮破裂至關重要，其價值量隨著封裝複雜度呈線性成長。
 
 ### 3. 散熱技術的典範轉移：從模組到系統級協同設計
 *   **雙鴻 (3324.TWO) vs. 奇鋐 (3017.TW)**
-    *   **雙鴻 CV**：8.0 \$\\rightarrow\$ 12.0 \$\\rightarrow\$ **18.0**（Feynman_Next 世代增長 **+50.00%**）
-    *   **奇鋐 CV**：8.0 \$\\rightarrow\$ 15.0 \$\\rightarrow\$ **20.0**（Feynman_Next 世代增長 **+33.33%**）
+    *   **雙鴻 CV**：8.0 $\rightarrow$ 12.0 $\rightarrow$ **18.0**（Feynman_Next 世代增長 **+50.00%**）
+    *   **奇鋐 CV**：8.0 $\rightarrow$ 15.0 $\rightarrow$ **20.0**（Feynman_Next 世代增長 **+33.33%**）
     *   **深度定量分析**：雙鴻在 Feynman_Next 世代與客戶共同開發 DTC 散熱技術，將冷卻液直接導入晶片表面的微通道，這需要極高精度的金屬加工與防漏液設計，使雙鴻成功從「散熱模組廠」升級為「半導體熱管理協同設計廠」，無替代風險。奇鋐雖然在 Feynman 世代憑藉 3D VC 與水冷板模組取得極大份額（CV 15.0），但在 Feynman_Next 世代，由於系統整合度極高，部分水冷板價值可能被系統廠或機殼廠（如晟銘電的液冷機櫃整合）瓜分，導致其 CV 增速放緩至 +33.33%。
 
 ---
@@ -372,7 +85,7 @@ Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
 
 然而，目前多數廠商申報的官方設備 Backlog YoY 仍停留在 **15.96%** 的平緩期。這代表官方統計數據存在顯著的「申報滯後性」。根據歷史定量關係，**材料指數領先設備 Backlog 約 1 至 1.5 個季度（3-4 個月），而設備 Backlog 又領先設備商實體營收約 2 個季度（6 個月）**。因此，當前材料指數的 V 型反彈，預示著 **2026 年 Q3 底（9月），各設備廠的實際 Backlog YoY 將迎來集體重估，預估屆時 Backlog YoY 將突破 50% 的爆發線**。
 
-\`\`\`
+```
 【高頻指標與實體營收傳導鏈與時間差】
 2026-05-15 (材料指數見底 146.0)
    │
@@ -381,7 +94,7 @@ Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
    │
    ▼ (領先 2 季度 / 6 個月)
 2027-Q1 底 (設備商實體營收迎來爆發性認列)
-\`\`\`
+```
 
 ### 2. 2026 年 5 月真實營收與未來 3 個月 YoY 拐點推演
 基於台灣證券交易所開放 API 數據，我們對核心標的進行了 2026 年 5 月真實營收分析，並對未來 3 個月（6、7、8 月）的 YoY 增速進行定量預測：
@@ -429,7 +142,7 @@ Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
 
 在行為金融學中，股價的超額收益（Alpha）由**「預期差（Actual - Consensus）」**決定，而非單純的營收絕對值。當市場共識度過高時，股價往往已「定價完美（Priced in）」，此時任何微小的利空都會引發估值修正。
 
-\`\`\`
+```
 【 預期差象限定位圖 】
 
 高共識 (Consensus > 80)
@@ -444,7 +157,7 @@ Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
        │  * 一詮 (Consensus: 58.5)       * 鈦昇 (YoY: 140.17%)
        │
 低共識 (Consensus < 60)
-\`\`\`
+```
 
 ### 1. 排除擁擠交易（Crowded Trades）
 *   **先進封裝設備雙雄：弘塑（Consensus Score: 91.7）、辛耘（Consensus Score: 81.2）**
@@ -495,134 +208,4 @@ Feynman_Next (COUPE 平台 + TGV 玻璃通孔 + 微流體液冷)
     *   配置 **鈦昇 (8027.TWO)**，給予 20% 的權重。其 5 月營收 YoY 達 140.17% 已驗證拐點，且為 Feynman_Next 玻璃基板雷射設備的唯一剛需。
 
 **總結：**  
-不要在人聲鼎沸的 **弘塑（Consensus 91.7）** 裡尋找奇蹟，要在無人問津的 **晟銘電（Consensus 21.6）** 裡等待爆發。利用高頻材料指數的領先性，在官方 Backlog 重估前完成建倉，並在 Feynman_Next 物理變革消滅 CPO 價值前優雅離場。這才是行為金融學在半導體投資中的最高境界。`;
-        const container = document.getElementById('content');
-        container.innerHTML = DOMPurify.sanitize(marked.parse(rawMarkdown));
-        
-        // UI/UX 動態排版後處理：將表格內特定文本包裝為漂亮的 Badge
-        const tables = container.querySelectorAll('table');
-        tables.forEach(table => {
-            const rows = table.querySelectorAll('tr');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td, th');
-                cells.forEach(cell => {
-                    let html = cell.innerHTML;
-                    
-                    // 1. 股票代碼與中文名稱標籤化 (例如: 3131.弘塑)
-                    const stockRegex = /(\b\d{4}\.[\u4e00-\u9fa5]+)/g;
-                    html = html.replace(stockRegex, '<span class="stock-tag">$1</span>');
-                    
-                    // 2. 交易狀態標籤化
-                    html = html.replace(/(🛑停損\s*[-+]?\d+(?:\.\d+)?%)/g, '<span class="badge badge-danger">$1</span>');
-                    html = html.replace(/(持滿\s*[-+]?\d+(?:\.\d+)?%)/g, '<span class="badge badge-success">$1</span>');
-                    html = html.replace(/(🟢 成功\s*\(Win\))/g, '<span class="badge badge-success">$1</span>');
-                    html = html.replace(/(🔴 失敗\s*\(Loss\))/g, '<span class="badge badge-danger">$1</span>');
-                    html = html.replace(/(🟢 建倉)/g, '<span class="badge badge-success">$1</span>');
-                    html = html.replace(/(🟢 追蹤中)/g, '<span class="badge badge-success">$1</span>');
-                    html = html.replace(/(🔴 已結案)/g, '<span class="badge badge-danger">$1</span>');
-                    
-                    // 3. 數值與正負回報率著色
-                    const percentRegex = /^\s*([+-]?\d+(?:\.\d+)?%)\s*$/;
-                    const match = html.match(percentRegex);
-                    if (match) {
-                        const pctStr = match[1];
-                        if (pctStr.startsWith('+') || parseFloat(pctStr) > 0) {
-                            html = `<span style="color: var(--accent-green); font-weight: 700; font-family: 'Fira Code', monospace;">${pctStr}</span>`;
-                        } else if (pctStr.startsWith('-') || parseFloat(pctStr) < 0) {
-                            html = `<span style="color: var(--accent-red); font-weight: 700; font-family: 'Fira Code', monospace;">${pctStr}</span>`;
-                        } else {
-                            html = `<span style="color: var(--text-muted); font-family: 'Fira Code', monospace;">${pctStr}</span>`;
-                        }
-                    }
-                    
-                    if (html !== cell.innerHTML) {
-                        cell.innerHTML = html;
-                    }
-                });
-            });
-        });
-
-        // 動態渲染 ApexCharts K 線圖
-        const watchlistData = [];
-        if (watchlistData && watchlistData.length > 0) {
-            watchlistData.forEach(item => {
-                const cleanId = 'chart_' + item.company_id.replace('.', '_');
-                const container = document.getElementById(cleanId);
-                if (container && item.kline_data && item.kline_data.length > 0) {
-                    const entryTime = new Date(item.entry_date).getTime();
-                    
-                    const options = {
-                        series: [{
-                            name: '收盤價',
-                            data: item.kline_data.map(k => [new Date(k.date).getTime(), k.close])
-                        }],
-                        chart: {
-                            type: 'area',
-                            height: 240,
-                            background: 'transparent',
-                            toolbar: { show: false },
-                            foreColor: '#94a3b8'
-                        },
-                        colors: ['#38bdf8'],
-                        fill: {
-                            type: 'gradient',
-                            gradient: {
-                                shadeIntensity: 1,
-                                opacityFrom: 0.3,
-                                opacityTo: 0.05,
-                                stops: [0, 90, 100]
-                            }
-                        },
-                        stroke: { curve: 'smooth', width: 2 },
-                        xaxis: {
-                            type: 'datetime',
-                            axisBorder: { show: false },
-                            axisTicks: { show: false }
-                        },
-                        yaxis: {
-                            labels: {
-                                formatter: (val) => val.toFixed(1)
-                            }
-                        },
-                        grid: { borderColor: 'rgba(255,255,255,0.04)' },
-                        annotations: {
-                            xaxis: [{
-                                x: entryTime,
-                                strokeDashArray: 4,
-                                borderColor: '#10b981',
-                                label: {
-                                    borderColor: '#10b981',
-                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
-                                    text: '列入觀察 (' + item.entry_date + ')'
-                                }
-                            }],
-                            points: [{
-                                x: entryTime,
-                                y: item.entry_price,
-                                marker: {
-                                    size: 6,
-                                    fillColor: '#10b981',
-                                    strokeColor: '#fff',
-                                    radius: 2
-                                },
-                                label: {
-                                    borderColor: '#10b981',
-                                    offsetY: -10,
-                                    style: { color: '#fff', background: '#10b981', fontSize: '11px', padding: [3, 6] },
-                                    text: '進場點: ' + item.entry_price
-                                }
-                            }]
-                        },
-                        tooltip: {
-                            theme: 'dark',
-                            x: { format: 'yyyy-MM-dd' }
-                        }
-                    };
-                    const chart = new ApexCharts(container, options);
-                    chart.render();
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+不要在人聲鼎沸的 **弘塑（Consensus 91.7）** 裡尋找奇蹟，要在無人問津的 **晟銘電（Consensus 21.6）** 裡等待爆發。利用高頻材料指數的領先性，在官方 Backlog 重估前完成建倉，並在 Feynman_Next 物理變革消滅 CPO 價值前優雅離場。這才是行為金融學在半導體投資中的最高境界。
