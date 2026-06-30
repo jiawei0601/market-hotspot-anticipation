@@ -5,14 +5,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 1070.0,
-    "current_price": 970.0,
+    "current_price": 1010.0,
     "max_price_since": 1105.0,
     "min_price_since": 968.0,
     "max_return_pct": 3.27,
     "min_return_pct": -9.53,
-    "current_return_pct": -9.35,
+    "current_return_pct": -5.61,
     "status": "tracking",
-    "last_updated": "2026-06-26 12:35:06",
+    "last_updated": "2026-06-30 12:25:43",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -540,7 +540,23 @@
         "high": 1005.0,
         "low": 968.0,
         "close": 970.0,
-        "volume": 2803843
+        "volume": 2454358
+      },
+      {
+        "date": "2026-06-29",
+        "open": 974.0,
+        "high": 1010.0,
+        "low": 974.0,
+        "close": 995.0,
+        "volume": 1301444
+      },
+      {
+        "date": "2026-06-30",
+        "open": 1010.0,
+        "high": 1035.0,
+        "low": 1000.0,
+        "close": 1010.0,
+        "volume": 2633175
       }
     ]
   },
@@ -550,14 +566,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 276.5,
-    "current_price": 225.0,
+    "current_price": 238.5,
     "max_price_since": 295.0,
-    "min_price_since": 224.5,
+    "min_price_since": 217.5,
     "max_return_pct": 6.69,
-    "min_return_pct": -18.81,
-    "current_return_pct": -18.63,
+    "min_return_pct": -21.34,
+    "current_return_pct": -13.74,
     "status": "tracking",
-    "last_updated": "2026-06-26 12:35:06",
+    "last_updated": "2026-06-30 12:25:43",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1085,7 +1101,23 @@
         "high": 250.0,
         "low": 224.5,
         "close": 225.0,
-        "volume": 9857166
+        "volume": 9589545
+      },
+      {
+        "date": "2026-06-29",
+        "open": 226.0,
+        "high": 227.0,
+        "low": 217.5,
+        "close": 224.5,
+        "volume": 5242281
+      },
+      {
+        "date": "2026-06-30",
+        "open": 228.0,
+        "high": 244.0,
+        "low": 225.5,
+        "close": 238.5,
+        "volume": 5047193
       }
     ]
   },
@@ -1095,14 +1127,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 241.0,
-    "current_price": 210.0,
+    "current_price": 216.5,
     "max_price_since": 248.0,
-    "min_price_since": 210.0,
+    "min_price_since": 189.0,
     "max_return_pct": 2.9,
-    "min_return_pct": -12.86,
-    "current_return_pct": -12.86,
+    "min_return_pct": -21.58,
+    "current_return_pct": -10.17,
     "status": "tracking",
-    "last_updated": "2026-06-26 12:35:07",
+    "last_updated": "2026-06-30 12:25:43",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1630,7 +1662,23 @@
         "high": 226.0,
         "low": 210.0,
         "close": 210.0,
-        "volume": 1810311
+        "volume": 1706449
+      },
+      {
+        "date": "2026-06-29",
+        "open": 206.0,
+        "high": 206.0,
+        "low": 189.0,
+        "close": 197.0,
+        "volume": 1579191
+      },
+      {
+        "date": "2026-06-30",
+        "open": 205.5,
+        "high": 216.5,
+        "low": 203.0,
+        "close": 216.5,
+        "volume": 860566
       }
     ]
   }
