@@ -12,7 +12,7 @@
     "min_return_pct": -9.53,
     "current_return_pct": -5.61,
     "status": "tracking",
-    "last_updated": "2026-06-30 12:25:43",
+    "last_updated": "2026-07-01 13:12:30",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -556,7 +556,15 @@
         "high": 1035.0,
         "low": 1000.0,
         "close": 1010.0,
-        "volume": 2633175
+        "volume": 2522083
+      },
+      {
+        "date": "2026-07-01",
+        "open": 1025.0,
+        "high": 1040.0,
+        "low": 1000.0,
+        "close": 1010.0,
+        "volume": 1913153
       }
     ]
   },
@@ -566,14 +574,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 276.5,
-    "current_price": 238.5,
+    "current_price": 231.0,
     "max_price_since": 295.0,
     "min_price_since": 217.5,
     "max_return_pct": 6.69,
     "min_return_pct": -21.34,
-    "current_return_pct": -13.74,
+    "current_return_pct": -16.46,
     "status": "tracking",
-    "last_updated": "2026-06-30 12:25:43",
+    "last_updated": "2026-07-01 13:12:30",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1117,7 +1125,15 @@
         "high": 244.0,
         "low": 225.5,
         "close": 238.5,
-        "volume": 5047193
+        "volume": 4981504
+      },
+      {
+        "date": "2026-07-01",
+        "open": 241.5,
+        "high": 243.0,
+        "low": 229.0,
+        "close": 231.0,
+        "volume": 5537475
       }
     ]
   },
@@ -1127,14 +1143,14 @@
     "sector": "CPO_Optical_Transceiver",
     "entry_date": "2026-06-19",
     "entry_price": 241.0,
-    "current_price": 216.5,
+    "current_price": 236.5,
     "max_price_since": 248.0,
     "min_price_since": 189.0,
     "max_return_pct": 2.9,
     "min_return_pct": -21.58,
-    "current_return_pct": -10.17,
+    "current_return_pct": -1.87,
     "status": "tracking",
-    "last_updated": "2026-06-30 12:25:43",
+    "last_updated": "2026-07-01 13:12:30",
     "kline_data": [
       {
         "date": "2026-03-23",
@@ -1678,7 +1694,15 @@
         "high": 216.5,
         "low": 203.0,
         "close": 216.5,
-        "volume": 860566
+        "volume": 813052
+      },
+      {
+        "date": "2026-07-01",
+        "open": 229.0,
+        "high": 236.5,
+        "low": 229.0,
+        "close": 236.5,
+        "volume": 1022901
       }
     ]
   }
