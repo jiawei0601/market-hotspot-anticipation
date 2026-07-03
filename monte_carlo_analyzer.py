@@ -16,6 +16,27 @@ from constants import CHINESE_MAPPING
 MONTE_CARLO_WATCHLIST = "monte_carlo_watchlist.json"
 MONTE_CARLO_REPORT = "reports/monte_carlo_analysis.md"
 
+# ====== 台股交易成本假設（與 backtest_engine.py 口徑一致）======
+# 買進手續費 0.1425%
+FEE_RATE_BUY = 0.001425
+# 賣出手續費 0.1425%
+FEE_RATE_SELL = 0.001425
+# 證交稅（僅賣出課徵）0.3%
+TAX_RATE = 0.003
+# 滑價假設：買賣雙邊各 0.1%
+SLIPPAGE_RATE = 0.001
+
+
+def apply_net_return(gross_return_pct: float) -> float:
+    """
+    將毛報酬率（%）轉換為扣除買賣手續費、證交稅與滑價後的淨報酬率（%）。
+    """
+    buy_cost_rate = FEE_RATE_BUY + SLIPPAGE_RATE
+    sell_cost_rate = FEE_RATE_SELL + TAX_RATE + SLIPPAGE_RATE
+    gross_multiplier = 1 + gross_return_pct / 100.0
+    net_multiplier = gross_multiplier * (1 - sell_cost_rate) / (1 + buy_cost_rate)
+    return (net_multiplier - 1) * 100.0
+
 class MonteCarloSimulator:
     def __init__(self, start_date_str: str, end_date_str: str, sample_count: int):
         self.start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
@@ -24,7 +45,10 @@ class MonteCarloSimulator:
         
         self.monitor = MarketInformationMonitor()
         self.price_cache = {}  # 💡 記憶體快取：{ company_id: DataFrame }
-        
+
+        # 缺資料標的清單（進場價或出場價無法取得），不得以 0.0 混入報表，需顯式列出
+        self.missing_data_entries: List[Dict[str, Any]] = []
+
         # 初始化乾淨的虛擬 watchlist
         if os.path.exists(MONTE_CARLO_WATCHLIST):
             os.remove(MONTE_CARLO_WATCHLIST)
@@ -149,40 +173,51 @@ class MonteCarloSimulator:
             exit_date_str = exit_date_obj.strftime("%Y-%m-%d")
             
             for cid, name in picked_targets:
-                entry_price = self.get_historical_price_at(cid, date_str)
-                if entry_price <= 0:
+                entry_price, entry_missing = self.get_historical_price_at(cid, date_str)
+                if entry_missing or entry_price <= 0:
+                    self.missing_data_entries.append({
+                        "company_id": cid, "name": name,
+                        "attempted_date": date_str, "reason": "entry_price_unavailable"
+                    })
                     continue
-                    
-                max_price, min_price, exit_price = self.get_period_prices(cid, date_str, exit_date_str)
-                if exit_price <= 0:
+
+                max_price, min_price, exit_price, period_missing = self.get_period_prices(cid, date_str, exit_date_str)
+                if period_missing or exit_price <= 0:
+                    self.missing_data_entries.append({
+                        "company_id": cid, "name": name,
+                        "attempted_date": date_str, "reason": "exit_price_unavailable"
+                    })
                     continue
-                    
+
                 max_return = (max_price - entry_price) / entry_price * 100
                 min_return = (min_price - entry_price) / entry_price * 100
                 final_return = (exit_price - entry_price) / entry_price * 100
-                
+                net_return = apply_net_return(final_return)
+
                 portfolio_details.append({
                     "name": name,
                     "cid": cid,
                     "max_return": max_return,
                     "min_return": min_return,
-                    "final_return": final_return
+                    "final_return": final_return,
+                    "net_return": net_return
                 })
-                
+
             if not portfolio_details:
-                print(f" -> [WARN] 該期推薦標的皆無股價數據，略過此組。")
+                print(f" -> [WARN] 該期推薦標的皆無股價數據（缺資料），略過此組，已列入缺資料清單。")
                 continue
-                
+
             # 計算等權重組合績效
             port_max_ret = sum(x["max_return"] for x in portfolio_details) / len(portfolio_details)
             port_min_ret = sum(x["min_return"] for x in portfolio_details) / len(portfolio_details)
             port_final_ret = sum(x["final_return"] for x in portfolio_details) / len(portfolio_details)
-            
-            is_win = port_max_ret >= 30.0  # 💡 門檻改為 >= 30.0% 視為成功
+            port_net_ret = sum(x["net_return"] for x in portfolio_details) / len(portfolio_details)
+
+            is_win = port_max_ret >= 30.0  # 💡 門檻改為 >= 30.0% 視為成功（組合口徑，與個股 15% 口徑不同，見報告註記）
             port_names_str = ", ".join([CHINESE_MAPPING.get(x['cid'], f"{x['cid']}.{x['name']}") for x in portfolio_details])
-            
-            print(f" -> [組合結果] 標的數: {len(portfolio_details)} | 平均最大漲幅: {port_max_ret:.1f}% | 平均最大跌幅: {port_min_ret:.1f}% | 最終組合回報: {port_final_ret:.1f}% | {'[Win]' if is_win else '[Loss]'}")
-            
+
+            print(f" -> [組合結果] 標的數: {len(portfolio_details)} | 平均最大漲幅: {port_max_ret:.1f}% | 平均最大跌幅: {port_min_ret:.1f}% | 最終組合毛報酬: {port_final_ret:.1f}% | 最終組合淨報酬: {port_net_ret:.1f}% | {'[Win]' if is_win else '[Loss]'}")
+
             results.append({
                 "sample_idx": idx + 1,
                 "entry_date": date_str,
@@ -193,29 +228,34 @@ class MonteCarloSimulator:
                 "max_return": round(port_max_ret, 2),
                 "min_return": round(port_min_ret, 2),
                 "final_return": round(port_final_ret, 2),
-                "is_win": is_win
+                "net_return": round(port_net_ret, 2),
+                "is_win": is_win,
+                "n_holdings": len(portfolio_details)
             })
             
         self.generate_monte_carlo_report(results)
         self.restore_environment()
 
-    def get_historical_price_at(self, company_id: str, date_str: str) -> float:
+    def get_historical_price_at(self, company_id: str, date_str: str) -> "tuple[float, bool]":
         """
-        優先從 In-Memory cache 獲取特定歷史收盤價，無 cache 時降級到 yfinance 下載
+        優先從 In-Memory cache 獲取特定歷史收盤價，無 cache 時降級到 yfinance 下載。
+        回傳 (price, missing)：missing=True 代表資料缺失，不得以 0.0 混入報表分母。
         """
         if company_id in self.price_cache:
             df = self.price_cache[company_id]
             df_filtered = df.loc[:date_str]
             if not df_filtered.empty:
-                return float(df_filtered["close"].ffill().iloc[-1])
-            return 0.0
-            
+                price = float(df_filtered["close"].ffill().iloc[-1])
+                if price > 0:
+                    return price, False
+            return 0.0, True
+
         import yfinance as yf
         try:
             target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
             start_date = (target_date - datetime.timedelta(days=10)).strftime("%Y-%m-%d")
             end_date = (target_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-            
+
             df = yf.download(company_id, start=start_date, end=end_date, progress=False)
             if not df.empty:
                 if df.columns.nlevels > 1:
@@ -223,14 +263,17 @@ class MonteCarloSimulator:
                 df.columns = [c.lower() for c in df.columns]
                 df_filtered = df.loc[:date_str]
                 if not df_filtered.empty:
-                    return float(df_filtered["close"].ffill().iloc[-1])
-        except Exception:
-            pass
-        return 0.0
+                    price = float(df_filtered["close"].ffill().iloc[-1])
+                    if price > 0:
+                        return price, False
+        except Exception as e:
+            print(f"[WARN] 無法取得 {company_id} 於 {date_str} 的歷史股價: {e}")
+        return 0.0, True
 
-    def get_period_prices(self, company_id: str, start_date_str: str, end_date_str: str) -> tuple:
+    def get_period_prices(self, company_id: str, start_date_str: str, end_date_str: str) -> "tuple[float, float, float, bool]":
         """
-        優先從 In-Memory cache 提取追蹤期內最高、最低及最終收盤價，完全避免 lookup delay
+        優先從 In-Memory cache 提取追蹤期內最高、最低及最終收盤價，完全避免 lookup delay。
+        回傳 (max_price, min_price, exit_price, missing)。
         """
         if company_id in self.price_cache:
             df = self.price_cache[company_id]
@@ -240,9 +283,10 @@ class MonteCarloSimulator:
                 max_p = float(df_period["high"].max())
                 min_p = float(df_period["low"].min())
                 exit_p = float(df_period["close"].ffill().iloc[-1])
-                return max_p, min_p, exit_p
-            return 0.0, 0.0, 0.0
-            
+                if exit_p > 0:
+                    return max_p, min_p, exit_p, False
+            return 0.0, 0.0, 0.0, True
+
         import yfinance as yf
         try:
             df = yf.download(company_id, start=start_date_str, end=end_date_str, progress=False)
@@ -250,14 +294,15 @@ class MonteCarloSimulator:
                 if df.columns.nlevels > 1:
                     df.columns = df.columns.get_level_values(0)
                 df.columns = [c.lower() for c in df.columns]
-                
+
                 max_p = float(df["high"].max())
                 min_p = float(df["low"].min())
                 exit_p = float(df["close"].ffill().iloc[-1])
-                return max_p, min_p, exit_p
-        except Exception:
-            pass
-        return 0.0, 0.0, 0.0
+                if exit_p > 0:
+                    return max_p, min_p, exit_p, False
+        except Exception as e:
+            print(f"[WARN] 無法取得 {company_id} 於 {start_date_str}~{end_date_str} 的期間價格: {e}")
+        return 0.0, 0.0, 0.0, True
 
     def generate_monte_carlo_report(self, results: List[Dict[str, Any]]):
         """
@@ -266,35 +311,55 @@ class MonteCarloSimulator:
         valid_trades = [r for r in results if r["status"] == "建倉完成 (Long)"]
         total_samples = len(results)
         total_trades = len(valid_trades)
-        
+
         win_trades = sum(1 for r in valid_trades if r["is_win"])
         realized_wins = sum(1 for r in valid_trades if r["final_return"] >= 30.0)
+        net_wins = sum(1 for r in valid_trades if r.get("net_return", r["final_return"]) >= 30.0)
         win_rate = (win_trades / total_trades * 100) if total_trades > 0 else 0.0
         realized_win_rate = (realized_wins / total_trades * 100) if total_trades > 0 else 0.0
-        
+        net_win_rate = (net_wins / total_trades * 100) if total_trades > 0 else 0.0
+
         avg_max_return = sum(r["max_return"] for r in valid_trades) / total_trades if total_trades > 0 else 0.0
         avg_min_return = sum(r["min_return"] for r in valid_trades) / total_trades if total_trades > 0 else 0.0
         avg_final_return = sum(r["final_return"] for r in valid_trades) / total_trades if total_trades > 0 else 0.0
-        
+        avg_net_return = sum(r.get("net_return", r["final_return"]) for r in valid_trades) / total_trades if total_trades > 0 else 0.0
+
+        n_missing = len(self.missing_data_entries)
+
         table_rows = []
         for r in results:
             if r["status"] == "空倉 (No Signal)":
                 table_rows.append(
-                    f"| {r['sample_idx']} | {r['entry_date']} | ⚪ 空倉 (No Signal) | - | - | - | - | - |"
+                    f"| {r['sample_idx']} | {r['entry_date']} | ⚪ 空倉 (No Signal) | - | - | - | - | - | - |"
                 )
             else:
                 win_icon = "🟢 成功 (Win)" if r["is_win"] else "🔴 失敗 (Loss)"
+                net_ret = r.get("net_return", r["final_return"])
                 table_rows.append(
                     f"| {r['sample_idx']} | {r['entry_date']} | 🟢 建倉 | {r['company_name']} | "
-                    f"{r['max_return']:.1f}% | {r['min_return']:.1f}% | {r['final_return']:.1f}% | {win_icon} |"
+                    f"{r['max_return']:.1f}% | {r['min_return']:.1f}% | {r['final_return']:.1f}% | {net_ret:.1f}% | {win_icon} |"
                 )
-                
+
+        missing_rows = []
+        for m in self.missing_data_entries:
+            display_name = CHINESE_MAPPING.get(m['company_id'], f"{m['company_id']}.{m['name']}")
+            missing_rows.append(f"| **{display_name}** | {m['attempted_date']} | {m['reason']} |")
+        missing_rows_block = "\n".join(missing_rows) if missing_rows else "| - | 無 | - |"
+
         report_content = f"""# 蒙地卡羅歷史隨機時間段回測與勝率分析報告 (52週追蹤)
 
 > **資料說明（Stage 2）**：進場篩選訊號（Backlog YoY／Consensus）已改用真實 PIT 月快照（`data/snapshots/`），月營收 YoY 為真實申報資料（日粒度 PIT 截斷）。⚠️ 剩餘限制：① 股價來自 yfinance，下市股不可見（倖存者偏差）；② Consensus 目前僅含外資持股%（股價部分待整合）。**勝率為參考指標，非無偏差策略證據。**
+>
+> ⚠️ **universe 為事後選定之供應鏈名單，回測勝率不構成策略證據，僅供機制驗證。**
+>
+> ⚠️ **口徑註記**：本報告的組合勝利門檻為等權重投資組合平均最大漲幅 ≥30%；`backtest_engine.py` 的個股勝率門檻為單一標的最大漲幅 ≥15%。兩者評估對象與口徑不同（組合 vs 個股），並非同一指標的調參前後對照，不可直接比較。
 
 本回測報告在 **2015-01-01 至 2025-06-01** 十年歷史區間中，隨機抽樣 **{total_samples} 個不同的時間斷面**。
 每個交易均嚴格排除未來數據偏誤，且在進場後進行 **52 週 (1年) 的追蹤持有**，藉此評估量化策略的長期統計期望值。
+
+**交易成本假設**：買進手續費 {FEE_RATE_BUY*100:.4f}%、賣出手續費 {FEE_RATE_SELL*100:.4f}% + 證交稅 {TAX_RATE*100:.2f}%、滑價每邊 {SLIPPAGE_RATE*100:.2f}%。「52週最終組合毛報酬」未扣成本；「52週最終組合淨報酬」已扣除上述成本。**最大潛在漲幅／最大回撤為持有期間未實現極值，維持毛值（未扣成本）**，因為該價位並未真正成交。
+
+**缺資料標的**：進場價或出場價無法自 yfinance 取得者，該標的不計入該期組合平均值計算（已從分母排除，詳見下方缺資料清單），不得以 0.0 混入。
 
 ## 📊 核心統計評估
 
@@ -303,18 +368,27 @@ class MonteCarloSimulator:
 | **回測抽樣總數** | {total_samples} 組 |
 | **發出買入訊號期數** | {total_trades} 組 |
 | **空倉觀望期數** | {total_samples - total_trades} 組 |
-| **MFE 達標次數 (曾觸 ≥30%)** | {win_trades} 次 |
+| **缺資料標的次數（不計入組合分母）** | {n_missing} 次 |
+| **MFE 達標次數 (曾觸 ≥30%，毛值)** | {win_trades} 次 |
 | **最大潛在漲幅達標率 (MFE)** | **{win_rate:.1f}%** （非實現報酬，會高估） |
-| **實現報酬勝率 (52週期末實現 ≥30%)** | **{realized_win_rate:.1f}%** |
-| **52週平均最大潛在漲幅** | **{avg_max_return:.1f}%** |
-| **52週平均最大回撤 (跌幅)** | **{avg_min_return:.1f}%** |
-| **52週平均最終持有回報** | **{avg_final_return:.1f}%** |
+| **實現報酬勝率 (52週期末毛報酬 ≥30%)** | **{realized_win_rate:.1f}%** |
+| **淨報酬勝率 (52週期末淨報酬，已扣成本，≥30%)** | **{net_win_rate:.1f}%** |
+| **52週平均最大潛在漲幅（毛值）** | **{avg_max_return:.1f}%** |
+| **52週平均最大回撤（跌幅，毛值）** | **{avg_min_return:.1f}%** |
+| **52週平均最終持有毛報酬** | **{avg_final_return:.1f}%** |
+| **52週平均最終持有淨報酬（已扣成本）** | **{avg_net_return:.1f}%** |
 
 ## 📈 隨機採樣交易歷史明細
 
-| 編號 | 隨機進場日期 | 交易狀態 | 推薦標的組合 | 52週平均最大漲幅 | 52週平均最大跌幅 | 52週最終組合回報 | 研判結果 |
-| :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: |
+| 編號 | 隨機進場日期 | 交易狀態 | 推薦標的組合 | 52週平均最大漲幅 | 52週平均最大跌幅 | 52週最終組合毛報酬 | 52週最終組合淨報酬 | 研判結果 |
+| :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 {"\n".join(table_rows)}
+
+## ⚠️ 缺資料標的清單（未計入組合平均分母）
+
+| 標的名稱 | 嘗試日期 | 缺資料原因 |
+| :--- | :---: | :--- |
+{missing_rows_block}
 
 ## 💡 統計決策學意義
 
@@ -324,7 +398,7 @@ class MonteCarloSimulator:
         os.makedirs("reports", exist_ok=True)
         with open(MONTE_CARLO_REPORT, "w", encoding="utf-8") as f:
             f.write(report_content)
-            
+
         print(f"[OK] 蒙地卡羅勝率報告已儲存至 {MONTE_CARLO_REPORT}")
 
 if __name__ == "__main__":

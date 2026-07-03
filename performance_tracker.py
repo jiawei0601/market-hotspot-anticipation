@@ -96,6 +96,8 @@ def update_watchlist_daily_prices(as_of_date: str = ""):
             
             if df.empty:
                 print(f"[WARN] 無法取得 {cid} 自 {start_date} 至今的 K 線數據。")
+                item["price_fetch_status"] = "failed"
+                item["last_fetch_error_date"] = as_of_date
                 continue
                 
             # 將欄位名稱轉為小寫，並處理 MultiIndex
@@ -140,7 +142,8 @@ def update_watchlist_daily_prices(as_of_date: str = ""):
             item["max_return_pct"] = round(max_return, 2)
             item["min_return_pct"] = round(min_return, 2)
             item["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
+            item["price_fetch_status"] = "ok"
+
             # 定義結案條件 (例如：持有超過 12 個月，或達到特定的停利/停損，本系統為長期評估，預設維持 tracking)
             # 此處可供後續策略擴充
             

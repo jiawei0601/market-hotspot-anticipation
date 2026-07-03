@@ -1,4 +1,6 @@
+import inspect
 import unittest
+import main_agent
 from main_agent import app, route_based_on_critic
 
 class TestAgentWorkflow(unittest.TestCase):
@@ -39,6 +41,17 @@ class TestAgentWorkflow(unittest.TestCase):
         }
         next_step = route_based_on_critic(max_state)
         self.assertEqual(next_step, "__end__")
+
+    def test_watchlist_golden_selection_uses_single_source_of_truth(self):
+        """run_hotspot_scan 的 watchlist 篩選必須直接讀取
+        market_monitor.is_golden_accumulation_target 的判定結果，
+        不得在 main_agent.py 內另立獨立的共識度/YoY 門檻（見 CONTEXT.md 誠實化修正第 3 點：
+        鈦昇共識度 64.6 > CONSENSUS_MAX=60 卻曾被誤標為黃金標的的根因）。"""
+        source = inspect.getsource(main_agent.run_hotspot_scan)
+        self.assertIn('data.get("is_golden_accumulation_target"', source)
+        # 禁止再出現另立的寬鬆門檻（例如舊版 consensus < 70.0）
+        self.assertNotIn("70.0", source)
+        self.assertNotIn("_compute_consensus", source)
 
 if __name__ == "__main__":
     unittest.main()

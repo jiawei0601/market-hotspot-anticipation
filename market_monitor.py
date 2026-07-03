@@ -9,6 +9,11 @@ CONSENSUS_MAX = 60.0       # 共識度上限：< 此值才算「逆勢/未擁擠
 BACKLOG_LEAD_MIN = 50.0    # 設備 Backlog 領先門檻：> 此值才算「領先已動」
 DOWNSTREAM_YOY_MAX = 15.0  # 下游當月營收 YoY 上限：< 此值才算「基本面未現/拐點前」
 
+# 誠實化標示文案（見 CONTEXT.md 審查修正）
+CONSENSUS_GRANULARITY_NOTE = "粗粒度：12 檔樣本橫斷面百分位，一階約 ±8 分為雜訊，非精確分數"
+REVENUE_PROJECTION_NOTE = "機械外推情境（末值 × 固定加速係數），非模型預測"
+BACKLOG_SIGNAL_NOTE = "板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料"
+
 _PRIORS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "priors", "content_value.json")
 
 
@@ -356,9 +361,11 @@ class MarketInformationMonitor:
         # ---- 股價部分（有快照就加入；無則僅用持股%）----
         price_consensus = self._compute_price_consensus(company_id, as_of_date)
 
+        # 四捨五入到整數：12 檔 universe 橫斷面百分位一階本就是 8.3 分，
+        # 小數點呈現是假精度（見 CONTEXT.md 誠實化修正）。
         if price_consensus is not None:
-            return round((holdings_consensus + price_consensus) / 2, 1)
-        return round(holdings_consensus, 1)
+            return round((holdings_consensus + price_consensus) / 2)
+        return round(holdings_consensus)
 
     # ==================== 核心訊號：真實 PIT 營收拐點 ====================
 
@@ -455,9 +462,11 @@ class MarketInformationMonitor:
                 "inflection_expected": inflection_expected,
                 "peak_month": peak_month,
                 "projected_peak_yoy_pct": peak_yoy_val,
+                "projection_note": REVENUE_PROJECTION_NOTE,
                 "last_month_yoy": yoy_curve[8],
                 "future_3m_yoy": future_yoy,
                 "consensus_score": consensus,
+                "granularity_note": CONSENSUS_GRANULARITY_NOTE,
                 "has_real_data": has_real,
                 "real_date_ym": latest_real_period,
                 "real_revenue_billion": last_actual_rev if has_real else None,
@@ -465,6 +474,7 @@ class MarketInformationMonitor:
                 "equipment_lead_active": equipment_lead_active_global,
                 "current_backlog_yoy_pct": sector_backlog_yoy,
                 "backlog_yoy_curve_3m": [sector_backlog_yoy] * 3,
+                "backlog_signal_note": BACKLOG_SIGNAL_NOTE,
                 "is_golden_accumulation_target": (
                     consensus < CONSENSUS_MAX
                     and equipment_lead_active_global

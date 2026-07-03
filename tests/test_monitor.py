@@ -1,5 +1,5 @@
 import unittest
-from market_monitor import MarketInformationMonitor
+from market_monitor import MarketInformationMonitor, CONSENSUS_MAX
 
 class TestMarketInformationMonitor(unittest.TestCase):
     def setUp(self):
@@ -62,6 +62,34 @@ class TestMarketInformationMonitor(unittest.TestCase):
             self.assertIn("real_date_ym", data)
             self.assertIn("real_revenue_billion", data)
             self.assertIn("real_yoy_pct", data)
+            # 誠實化欄位：機械外推 / 粗粒度 / 板塊代理訊號標示
+            self.assertIn("projection_note", data)
+            self.assertIn("granularity_note", data)
+            self.assertIn("backlog_signal_note", data)
+
+    def test_consensus_score_is_integer_not_false_precision(self):
+        """Consensus 分數須為整數（禁止小數點假精度，見 CONTEXT.md 誠實化修正）"""
+        for cid in ["3450.TW", "3324.TWO"]:
+            consensus = self.monitor._compute_consensus(cid)
+            if consensus is not None:
+                self.assertEqual(consensus, round(consensus))
+                self.assertIsInstance(consensus, int)
+
+    def test_golden_target_flag_matches_pre_registered_thresholds(self):
+        """is_golden_accumulation_target 必須嚴格等於 pre-registered 門檻運算結果，
+        不允許任何呼叫端另立更寬鬆的門檻（見 CONTEXT.md / ADR 0003 誠實化修正第 3 點）。"""
+        company_ids = ["3450.TW", "3324.TWO"]
+        result = self.monitor.simulate_revenue_inflection(company_ids)
+        for cid, data in result.items():
+            expected = (
+                data["consensus_score"] < CONSENSUS_MAX
+                and data["equipment_lead_active"]
+                and data["last_month_yoy"] < 15.0
+            )
+            self.assertEqual(data["is_golden_accumulation_target"], expected)
+            # 共識度超過門檻者絕不可被標記為黃金標的
+            if data["consensus_score"] >= CONSENSUS_MAX:
+                self.assertFalse(data["is_golden_accumulation_target"])
 
 if __name__ == "__main__":
     unittest.main()

@@ -32,7 +32,12 @@ if os.path.exists(".env"):
                 os.environ[key.strip()] = val.strip()
 
 # 匯入數據監控引擎
-from market_monitor import MarketInformationMonitor
+from market_monitor import (
+    MarketInformationMonitor,
+    REVENUE_PROJECTION_NOTE,
+    CONSENSUS_GRANULARITY_NOTE,
+    BACKLOG_SIGNAL_NOTE,
+)
 
 # 1. 狀態定義 (TypedDict) - 升級以包含下下一代能見度、設備訂單與預期差共識分析
 class MarketHotspotState(TypedDict):
@@ -157,7 +162,14 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"你的分析必須專注於：\n"
         f"1. **優先呈現真實數據**：如果數據中包含真實的公開月度營收（即 `has_real_data` 為 True 的標的），請在分析中優先指出該公司最新的實際營收金額（單位：億元）、實際 YoY 成長率，並基於這些真實基期對未來的營收與訂單拐點進行合理推演，而非僅依賴模擬數據。\n"
         f"2. **設備訂單 (Backlog) 的領先性**：設備 Backlog YoY 是否已率先爆發 (大於 50%)，即使此時下游成品營收依然在谷底？\n"
-        f"3. **尋找黃金潛伏標的**：根據第二層思考，判定哪些公司符合『低共識、下游營收在谷底去庫存、但上游設備 Backlog 訂單已率先暴增』的黃金積累特徵。"
+        f"3. **尋找黃金潛伏標的**：只有 `is_golden_accumulation_target` 欄位為 True 的公司，才可以稱為『非共識黃金潛伏標的』；其餘一律稱為『觀察名單（未過共識門檻）』，不得混用兩者的措辭。\n\n"
+        f"【誠實化強制規則，違反視為分析不合格】：\n"
+        f"- `projected_peak_yoy_pct` 與 `future_3m_yoy` 欄位是「{REVENUE_PROJECTION_NOTE}」，"
+        f"你只能稱其為『機械外推情境』，嚴禁描述為『預測』『基本面預測』『模型預測』或任何暗示其為研究判斷結果的詞語。\n"
+        f"- `consensus_score` 為粗粒度分數（{CONSENSUS_GRANULARITY_NOTE}），"
+        f"呈現時一律標註『共識度 XX（粗粒度，±8 分為雜訊）』，不得暗示個位以下精度。\n"
+        f"- `current_backlog_yoy_pct` / `backlog_yoy_curve_3m` 是「{BACKLOG_SIGNAL_NOTE}」，"
+        f"呈現時必須註明『板塊層代理訊號，非公司別訂單資料』，不得寫成該公司自己的訂單數據。"
     )
     
     if state.get("critic_feedback"):
@@ -189,7 +201,11 @@ def media_story_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"請分析供應鏈與營收/設備指標的結論，並結合各廠商的『共識度得分 (Consensus Score)』進行預期差過濾。\n\n"
         f"請規劃操作策略：\n"
         f"1. **排除 Consensus 標的**：對於媒體已經寫爆、市場高度共識 (Consensus > 80) 的股票（如 FOCI 聯鈞、MCT 晟銘電），提出『已充分反映』與『下世代替代風險』的警告。\n"
-        f"2. **規劃非共識 (Non-Consensus) 潛伏期**：針對低共識度 (Consensus < 60) 且設備訂單先行暴增的標的（如 GrandProcess 弘塑、Auras 雙鴻），模擬未來 2-3 個月新聞會如何包裝（從『無人關注的冷門設備』到『先進封裝與液冷直接受益者』的 Storytelling 傳導），並制定精確的潛伏與退場時間表。"
+        f"2. **規劃非共識 (Non-Consensus) 潛伏期**：針對低共識度 (Consensus < 60) 且設備訂單先行暴增的標的（如 GrandProcess 弘塑、Auras 雙鴻），模擬未來 2-3 個月新聞會如何包裝（從『無人關注的冷門設備』到『先進封裝與液冷直接受益者』的 Storytelling 傳導），並制定精確的潛伏與退場時間表。\n\n"
+        f"【誠實化強制規則，違反視為分析不合格】：\n"
+        f"- 只有前一節分析中明確標記 `is_golden_accumulation_target` 為 True 的公司，才可稱為『非共識黃金潛伏標的』；"
+        f"其餘一律稱為『觀察名單（未過共識門檻）』，即使共識度數字看起來偏低也不可越級標記為黃金標的。\n"
+        f"- Consensus Score 是{CONSENSUS_GRANULARITY_NOTE}，呈現時不得暗示個位以下精度，並附註粗粒度警語。"
     )
 
     if state.get("critic_feedback"):
@@ -231,7 +247,15 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"  四... 預期差與共識度 (Consensus Score) 過濾操作策略\n"
         f"  五、 結論與非共識 (Non-Consensus) 投資建議\n"
         f"- **定量指標比率不可低於 40%**。必須包含：各代 Content Value 變動比率、設備 Backlog 增幅、Consensus Score、預估 YoY 峰值。\n"
-        f"- 採用嚴謹、具備學術感且流暢的繁體中文撰寫。"
+        f"- 採用嚴謹、具備學術感且流暢的繁體中文撰寫。\n\n"
+        f"【誠實化強制規則，全篇適用，違反視為報告不合格】：\n"
+        f"1. 任何『預估 YoY 峰值』『未來 3 個月 YoY』數字，一律標示為『機械外推情境（末值 × 固定加速係數），非模型預測』，"
+        f"禁止使用『預測』『展望』等暗示基本面研判的詞語描述該數字。\n"
+        f"2. Consensus Score 呈現時須註明『共識度 XX（粗粒度：12 檔樣本，±8 分為雜訊）』，不得暗示個位以下精度。\n"
+        f"3. 只有前段分析中明確標記 `is_golden_accumulation_target` 為 True 的公司，才可在結論中稱為『非共識黃金潛伏標的』；"
+        f"其餘一律稱為『觀察名單（未過共識門檻）』。\n"
+        f"4. 設備 Backlog YoY 數據，一律標示為『板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料』，"
+        f"不得寫成該公司自身的訂單或拉貨數字。"
     )
     
     llm = get_llm_model()
@@ -393,15 +417,9 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
             raw_rev = pricing_rev_analysis.get("raw_revenue", {})
             
             for cid, data in raw_rev.items():
-                # 黃金建倉條件：低共識 + 真實 YoY 已爆發（取代舊版 is_golden_accumulation_target flag）
-                consensus = monitor._compute_consensus(cid, as_of_date if as_of_date else None)
-                yoy = data.get("last_month_yoy", 0.0) or 0.0
-                is_golden = (
-                    consensus is not None and
-                    consensus < 70.0 and        # 低共識（略寬於 CONSENSUS_MAX=60，容許邊緣標的）
-                    data.get("has_real_data", False) and
-                    abs(yoy) > 30.0             # 真實 YoY 已有顯著動能
-                )
+                # 黃金建倉條件：與 market_monitor.is_golden_accumulation_target 同一判定，
+                # 禁止在此另立門檻（見 CONTEXT.md / ADR 0003：pre-registered 門檻不可回測 tune）。
+                is_golden = data.get("is_golden_accumulation_target", False)
                 if not is_golden:
                     continue
 
