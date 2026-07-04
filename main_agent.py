@@ -4,7 +4,7 @@ import time
 import argparse
 import datetime
 from typing import TypedDict, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # 解決 Windows 終端機 CP950 編碼問題，若為 Windows 平台可進行編碼環境防護
 import codecs
@@ -19,7 +19,7 @@ if sys.platform.startswith('win'):
 
 # LangChain & LangGraph 相關依賴
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 
 # 自動讀取本地 .env 檔案並寫入環境變數
@@ -65,38 +65,71 @@ class MarketHotspotState(TypedDict):
 # 2. Pydantic 結構化 Critic 輸出定義 - 強制審查超前指標
 class CriticDecision(BaseModel):
     validation_status: str = Field(
-        ..., 
-        description="審查報告品質。報告必須同時包含：1. 18-24個月下下世代替代風險；2. 設備拉貨領先度 (Backlog YoY) 數據；3. 共識度與預期差 (Consensus Score) 的非共識標的分析。滿足則 PASS，否則 FAIL。"
+        ...,
+        description="審查報告品質。報告必須同時包含：1. 18-24個月下下世代替代風險；2. 設備拉貨領先度 (Backlog YoY) 定量數據，"
+                     "但若該板塊經程式端確認無 equipment 分類成員（Backlog 訊號不適用），此項改以「報告是否誠實標示不適用」為準，"
+                     "不得因缺數據判 FAIL（詳見審查訊息中的具體要求）；3. 共識度與預期差 (Consensus Score) 的非共識標的分析。"
+                     "滿足則回傳字串 PASS，否則回傳字串 FAIL。只允許 PASS 或 FAIL 兩種值。"
     )
+
+    # GLM-5.2 實測曾回傳 "REJECTED" 等非枚舉字串（2026-07-04 切換 NIM 時發現）。
+    # fail-closed 正規化：明確的通過同義詞 → PASS，其餘一律 FAIL。
+    @field_validator("validation_status", mode="before")
+    @classmethod
+    def _normalize_status(cls, v):
+        s = str(v).strip().upper()
+        if s in ("PASS", "PASSED", "APPROVE", "APPROVED", "ACCEPT", "ACCEPTED", "OK"):
+            return "PASS"
+        return "FAIL"
     critic_feedback: str = Field(
         ..., 
         description="詳細的審查反饋意見。若 validation_status 為 FAIL，指出哪些超前定量數據或非共識分析缺失。"
     )
 
-# 初始化 LLM 模型（支援環境變數 GEMINI_API_KEY）
+# 初始化 LLM 模型（支援環境變數 NVIDIA_NIM_API_KEY）
+# 供應商：NVIDIA NIM（OpenAI 相容端點），模型：GLM-5.2（z-ai/glm-5.2）。
+# 若需回退其他供應商，改設對應 env（不在程式內保留雙路徑，維持單一供應商）。
 def get_llm_model(structured_model=None):
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get("NVIDIA_NIM_API_KEY")
     if api_key:
-        llm = ChatGoogleGenerativeAI(model=os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"), temperature=0, google_api_key=api_key)
+        llm = ChatOpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=api_key,
+            model=os.environ.get("NIM_MODEL", "z-ai/glm-5.2"),
+            temperature=0,
+        )
     else:
         # 當處於 GitHub Actions 或是已設定嚴格模式時，無 API Key 直接報錯，不以假數據混淆
-        raise ValueError("缺少必要的 GEMINI_API_KEY 環境變數。請在專案設定或 GitHub Secrets 中配置它。")
-        
+        raise ValueError("缺少必要的 NVIDIA_NIM_API_KEY 環境變數。請在專案設定或 GitHub Secrets 中配置它。")
+
     if structured_model:
         return llm.with_structured_output(structured_model)
     return llm
 
 def _invoke_with_retry(llm, messages, retries: int = 3, backoff: float = 2.0):
-    """呼叫 LLM，對暫時性錯誤有限重試+指數退避；耗盡才 raise。不捏造假數據。"""
+    """呼叫 LLM，對暫時性錯誤有限重試+指數退避；耗盡才 raise。不捏造假數據。
+
+    429（限流）另走長退避：NIM 免費層連續多板塊掃描實測會撞 429（2026-07-04），
+    2/4/8 秒扛不住限流窗口，改 30/60/120/240/300 秒最多 5 輪，限流重試不消耗一般重試額度。"""
     last_err = None
-    for attempt in range(retries):
+    rate_limit_sleeps = (30, 60, 120, 240, 300)
+    rate_limit_attempts = 0
+    attempt = 0
+    while attempt < retries:
         try:
             return llm.invoke(messages)
         except Exception as e:
             last_err = e
-            if attempt < retries - 1:
+            if "429" in str(e) and rate_limit_attempts < len(rate_limit_sleeps):
+                wait = rate_limit_sleeps[rate_limit_attempts]
+                rate_limit_attempts += 1
+                print(f"[限流 429] 退避 {wait} 秒後重試（第 {rate_limit_attempts}/{len(rate_limit_sleeps)} 輪）", flush=True)
+                time.sleep(wait)
+                continue
+            attempt += 1
+            if attempt < retries:
                 time.sleep(backoff * (2 ** attempt))
-    raise RuntimeError(f"LLM 呼叫在 {retries} 次重試後仍失敗：{last_err}")
+    raise RuntimeError(f"LLM 呼叫在重試耗盡後仍失敗：{last_err}")
 
 # 板塊世代規格先驗檔路徑（見 data/priors/sector_specs.json）
 _SECTOR_SPECS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "priors", "sector_specs.json")
@@ -238,6 +271,28 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"\n\n【板塊名單來源警語】{MEMBERSHIP_FALLBACK_NOTE}"
         if membership_source == MEMBERSHIP_SOURCE_FALLBACK else ""
     )
+
+    # 板塊是否有 equipment 分類成員，由程式（market_monitor）判定後的事實，
+    # 不交由 LLM 自行判斷/猜測。任一標的的 current_backlog_yoy_pct 為 None
+    # 即代表本板塊無 equipment 成員，Backlog 板塊層訊號不適用。
+    backlog_applicable = any(
+        data.get("current_backlog_yoy_pct") is not None for data in revenue_data.values()
+    )
+    backlog_instruction = (
+        f"2. **設備訂單 (Backlog) 的領先性**：設備 Backlog YoY 是否已率先爆發 (大於 50%)，即使此時下游成品營收依然在谷底？\n"
+        if backlog_applicable else
+        f"2. **本板塊無 equipment 分類成員，Backlog 訊號不適用**：`current_backlog_yoy_pct` 為 None，"
+        f"禁止以 0.0 或任何自行估算的數字充數，請在分析中明示『本板塊無 equipment 分類成員，Backlog 訊號不適用』，"
+        f"並改以其他既有量化訊號（真實營收 YoY、Consensus Score）作為領先性討論依據。\n"
+    )
+    backlog_honesty_rule = (
+        f"- `current_backlog_yoy_pct` / `backlog_yoy_curve_3m` 是「{BACKLOG_SIGNAL_NOTE}」，"
+        f"呈現時必須註明『板塊層代理訊號，非公司別訂單資料』，不得寫成該公司自己的訂單數據。"
+        if backlog_applicable else
+        f"- 本板塊 `current_backlog_yoy_pct` 為 None（`backlog_not_applicable_note` 已標明原因）："
+        f"禁止以 0.0 或任何編造數字呈現 Backlog 板塊層訊號，一律明示『本板塊無 equipment 分類成員，Backlog 訊號不適用』。"
+    )
+
     prompt = (
         f"你是一個量化金融與產業營收分析專家。\n"
         f"請針對高頻報價走勢與各供應鏈廠商的成品營收 YoY、設備 Backlog 訂單 YoY 數據進行定量解析。\n"
@@ -245,15 +300,14 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"營收與設備 Backlog 數據（包含來自台灣證券交易所開放 API 的真實營收）：\n{revenue_data}\n\n"
         f"你的分析必須專注於：\n"
         f"1. **優先呈現真實數據**：如果數據中包含真實的公開月度營收（即 `has_real_data` 為 True 的標的），請在分析中優先指出該公司最新的實際營收金額（單位：億元）、實際 YoY 成長率，並基於這些真實基期對未來的營收與訂單拐點進行合理推演，而非僅依賴模擬數據。\n"
-        f"2. **設備訂單 (Backlog) 的領先性**：設備 Backlog YoY 是否已率先爆發 (大於 50%)，即使此時下游成品營收依然在谷底？\n"
+        f"{backlog_instruction}"
         f"3. **尋找黃金潛伏標的**：只有 `is_golden_accumulation_target` 欄位為 True 的公司，才可以稱為『非共識黃金潛伏標的』；其餘一律稱為『觀察名單（未過共識門檻）』，不得混用兩者的措辭。\n\n"
         f"【誠實化強制規則，違反視為分析不合格】：\n"
         f"- `projected_peak_yoy_pct` 與 `future_3m_yoy` 欄位是「{REVENUE_PROJECTION_NOTE}」，"
         f"你只能稱其為『機械外推情境』，嚴禁描述為『預測』『基本面預測』『模型預測』或任何暗示其為研究判斷結果的詞語。\n"
         f"- `consensus_score` 為粗粒度分數（{CONSENSUS_GRANULARITY_NOTE}），"
         f"呈現時一律標註『共識度 XX（粗粒度，±8 分為雜訊）』，不得暗示個位以下精度。\n"
-        f"- `current_backlog_yoy_pct` / `backlog_yoy_curve_3m` 是「{BACKLOG_SIGNAL_NOTE}」，"
-        f"呈現時必須註明『板塊層代理訊號，非公司別訂單資料』，不得寫成該公司自己的訂單數據。"
+        f"{backlog_honesty_rule}"
         f"{membership_warning}"
     )
 
@@ -366,6 +420,26 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         generation_line = f"產品世代演進：{state['current_generation']} --> {state['next_generation']} --> {future_gen} (超前 18-24 個月)\n"
         section_one_title = f"  一、 技術物理限制與超前 18-24 個月 ({future_gen}) 洗牌框架\n"
 
+    # 板塊是否有 equipment 分類成員，由程式（market_monitor）判定後的事實注入 prompt，
+    # 不交由 LLM 自行猜測。任一標的的 current_backlog_yoy_pct 為 None 即代表不適用。
+    raw_revenue = state.get("pricing_revenue_analysis", {}).get("raw_revenue", {})
+    backlog_applicable = any(
+        data.get("current_backlog_yoy_pct") is not None for data in raw_revenue.values()
+    )
+    section_three_title = (
+        f"  三、 領先 6-9 個月之設備 Backlog 訂單與營收基期定量預測\n"
+        if backlog_applicable else
+        f"  三、 設備 Backlog 訊號不適用說明（本板塊無 equipment 分類成員）與營收基期定量預測\n"
+    )
+    backlog_honesty_rule = (
+        f"4. 設備 Backlog YoY 數據，一律標示為『板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料』，"
+        f"不得寫成該公司自身的訂單或拉貨數字。\n"
+        if backlog_applicable else
+        f"4. 本板塊無 equipment 分類成員，`current_backlog_yoy_pct` 為 None：全篇禁止以 0.0 或任何編造數字呈現"
+        f"設備 Backlog 板塊層訊號，第三部分必須明示『本板塊無 equipment 分類成員，Backlog 訊號不適用』，"
+        f"改以真實營收 YoY 與 Consensus Score 作為該部分的定量依據。\n"
+    )
+
     prompt = (
         f"請將以下三位專家的研判結果整合，撰寫一份架構極其嚴謹、具備學術研究報告深度的傳統中文（繁體中文）可行性評估報告。\n"
         f"目標技術板塊：{state['target_sector']}\n"
@@ -377,10 +451,11 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"- 必須明確分為以下五大部分：\n"
         f"{section_one_title}"
         f"  二、 供應鏈內容價值 (Content Value) 正反面推演與下世代替代風險警告\n"
-        f"  三、 領先 6-9 個月之設備 Backlog 訂單與營收基期定量預測\n"
+        f"{section_three_title}"
         f"  四... 預期差與共識度 (Consensus Score) 過濾操作策略\n"
         f"  五、 結論與非共識 (Non-Consensus) 投資建議\n"
-        f"- **定量指標比率不可低於 40%**。必須包含：各代 Content Value 變動比率、設備 Backlog 增幅、Consensus Score、預估 YoY 峰值。\n"
+        f"- **定量指標比率不可低於 40%**。必須包含：各代 Content Value 變動比率、Consensus Score、預估 YoY 峰值"
+        f"{'、設備 Backlog 增幅' if backlog_applicable else '（本板塊 Backlog 不適用，此欄以真實營收 YoY 幅度替代）'}。\n"
         f"- 採用嚴謹、具備學術感且流暢的繁體中文撰寫。\n\n"
         f"【誠實化強制規則，全篇適用，違反視為報告不合格】：\n"
         f"1. 任何『預估 YoY 峰值』『未來 3 個月 YoY』數字，一律標示為『機械外推情境（末值 × 固定加速係數），非模型預測』，"
@@ -388,8 +463,7 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"2. Consensus Score 呈現時須註明『共識度 XX（粗粒度：12 檔樣本，±8 分為雜訊）』，不得暗示個位以下精度。\n"
         f"3. 只有前段分析中明確標記 `is_golden_accumulation_target` 為 True 的公司，才可在結論中稱為『非共識黃金潛伏標的』；"
         f"其餘一律稱為『觀察名單（未過共識門檻）』。\n"
-        f"4. 設備 Backlog YoY 數據，一律標示為『板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料』，"
-        f"不得寫成該公司自身的訂單或拉貨數字。\n"
+        f"{backlog_honesty_rule}"
         f"5. 若本次無任何公司通過黃金潛伏門檻，誠實陳述『無標的通過』即止；"
         f"嚴禁虛構『假設性標的』『模擬情境』或以任何不符合條件的公司示範進場策略——寧可報告短，不可捏造情境。"
         + ("\n6. 本板塊無世代規格登記，全篇禁止出現 Vera_Rubin/Feynman/Feynman_Next 等 GPU 世代名稱或任何自行編造的世代代號。" if spec_missing else "")
@@ -424,20 +498,43 @@ def quality_critic_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"1. 18-24個月下下世代 ({future_gen}) 洗牌與替代風險警告；\n"
     )
 
+    # 板塊是否有 equipment 分類成員，由程式（market_monitor）判定後的事實注入 critic prompt，
+    # 不交由 LLM 自行猜測。任一標的的 current_backlog_yoy_pct 為 None 即代表不適用。
+    raw_revenue = state.get("pricing_revenue_analysis", {}).get("raw_revenue", {})
+    backlog_applicable = any(
+        data.get("current_backlog_yoy_pct") is not None for data in raw_revenue.values()
+    )
+    backlog_requirement = (
+        "2. 至少一家設備商的拉貨領先度 (Backlog YoY) 定量數據；\n"
+        if backlog_applicable else
+        "2.【本板塊無 equipment 分類成員，Backlog 板塊層訊號不適用（程式端已確認）】"
+        "此項審查標準改為：報告是否誠實標示『本板塊無 equipment 分類成員，Backlog 訊號不適用』。"
+        "只要報告有做到這一點即視為滿足本項，不得因報告缺少設備商 Backlog YoY 定量數據而判 FAIL；"
+        "若報告反而捏造 0.0 或任何數字冒充 Backlog 定量數據，則仍應判 FAIL。\n"
+    )
+
     prompt = (
         f"請審查以下可行性研究報告是否滿足超前指標完整性。\n"
         f"要求報告中必須清晰包含：\n"
         f"{generation_requirement}"
-        f"2. 至少一家設備商的拉貨領先度 (Backlog YoY) 定量數據；\n"
+        f"{backlog_requirement}"
         f"3. 供應鏈公司的共識度得分 (Consensus Score) 與預期差非共識判定。\n\n"
         f"另須檢查【捏造禁令】：若報告在「無標的通過黃金潛伏門檻」的情況下，"
         f"出現『假設性標的』『模擬情境』或以不符合條件的公司示範進場/退場策略，一律判 FAIL 並要求刪除該段。\n\n"
         f"【報告內容】：\n{report}\n"
     )
-    
+
+    critic_system_message = (
+        "你是投審會主席，嚴格執行第二層思考審查，絕不接受缺少下下世代替代風險或共識度過濾分析的報告。"
+        + ("缺少設備 Backlog 定量數據的報告同樣不可接受。"
+           if backlog_applicable else
+           "本板塊無 equipment 分類成員，Backlog 板塊層訊號不適用——審查 Backlog 項目時，"
+           "只要報告誠實標示『不適用』即算通過，不得因缺乏設備商 Backlog 數據而判 FAIL。")
+    )
+
     critic_llm = get_llm_model(CriticDecision)
     decision = _invoke_with_retry(critic_llm, [
-        SystemMessage(content="你是投審會主席，嚴格執行第二層思考審查，絕不接受缺少下下世代替代風險、設備 Backlog 或共識度過濾分析的報告。"),
+        SystemMessage(content=critic_system_message),
         HumanMessage(content=prompt)
     ])
     status = decision.validation_status
@@ -457,7 +554,8 @@ def route_based_on_critic(state: MarketHotspotState) -> str:
     """
     決定下一步路徑。如果品質不合格且迭代次數 < 3，退回專家重新優化；否則結束。
     """
-    if state["validation_status"] == "FAIL" and state["iteration_count"] < 3:
+    # fail-closed：只有明確 PASS 才放行；任何非 PASS 值（含模型回傳的非枚舉字串）都觸發重修
+    if state["validation_status"] != "PASS" and state["iteration_count"] < 3:
         print("--> 審查未通過，觸發自我修正 (Self-Correction) 機制，回溯至專家節點...")
         return "supply_chain_expert"
     print("--> 審查通過或達迭代上限，導向結束節點。")

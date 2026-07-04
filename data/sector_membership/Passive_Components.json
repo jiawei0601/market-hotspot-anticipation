@@ -1,0 +1,122 @@
+[
+  {
+    "stock_id": "2327",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "2026Q1法說會(4/30含AI技術峰會)：董事長陳泰銘定位公司為全球領先被動元件/感測器/電子零組件解決方案供應商；Q1合併營收382億元(QoQ+6.1%,YoY+22.7%)，AI應用占營收15%(2024年僅4%)，高階市場(AI/車用/工規/醫療/航太)營收占比約75%；透過併購Pulse/KEMET/三家感測器公司擴充版圖",
+    "evidence_url": "https://blog.fugle.tw/post/earnings-call-2327-2026-04-30",
+    "evidence_date": "2026-04-30",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2492",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "2026年最新法說會(媒體轉述,確切場次日期精確度低)：全球前五大MLCC廠,核心產品為積層陶瓷電容/晶片電阻/電感/射頻元件,MLCC占營收逾90%；新增低軌衛星通訊應用線(陶瓷天線/高頻RF MLCC/LEO雙工濾波器)為2026年新成長軸心；中國營收占比揭露46.1%(前次法說會51%)",
+    "evidence_url": "https://tw.stock.yahoo.com/news/ai-需求百倍暴增-同樣被動元件大行情-國巨與華新科卻是兩種方向不同",
+    "evidence_date": "2026-05-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3026",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "2026-06法說會(董事長唐錦榮親自主持,暌違多年)：宣布第2個「4年30億計畫」聚焦擴充日本/台灣AI電源用高壓MLCC產能；NP0 MLCC全球市占率50%+,為台廠中唯一可與村田/TDK並列的高階利基廠；產線滿載,交期20週以上",
+    "evidence_url": "https://www.sinotrade.com.tw/richclub/hotstock/禾伸堂法說-攻頂AI電源供應鏈-宣佈啟動第二個30億擴產週期",
+    "evidence_date": "2026-06-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2472",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "2026-05-11法說會：老牌鋁質電解電容器廠(1976年創立)，2026年1-4月合併營收41.39億元(YoY+11%)，其中鋁電解電容器占營收65%；泰國新廠2026 Q4量產；正式打入NVIDIA Vera Rubin平台板端供電供應鏈",
+    "evidence_url": "https://www.sinotrade.com.tw/richclub/hotstock/立隆電-2472-做什麼-法說會重點有哪些",
+    "evidence_date": "2026-05-11",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2375",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "2025Q3法說會(富果法說會備忘錄逐字整理)：公司旗下Jamicon/Teapo/Ralec/ASJ四大品牌，三大產品線為電解電容(43%)/電阻(47%)/風扇(10%)；電阻業務因AI伺服器需求年增13%；2026年展望三大產品線皆正成長",
+    "evidence_url": "https://blog.fugle.tw/post/earnings-call-2375-2025-11-19",
+    "evidence_date": "2025-11-19",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2478",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司官網「公司概況」自述(無版本日期標示,精確度低)：全球被動元件/保護元件/電流感測元件領域的領導者，1989年成立，主要產品為厚膜晶片電阻/晶片排阻/電流感測電阻；晶片電阻占營收90.8%(依MoneyDJ/財報資料)",
+    "evidence_url": "https://www.tai.com.tw/zh-Hant/about",
+    "evidence_date": "2026-01-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6127",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會揭露(無單一場次確切日期,媒體轉述,精確度低)：全球前二大晶片電阻用陶瓷基板廠(台灣唯一)，電阻基板占營收50.7%、非電阻基板45.1%；昆山新廠稼動率提升、切入光通訊應用；車用電子(逆變器/車載充電樁)進入收割期",
+    "evidence_url": "https://www.pocket.tw/school/report/SCHOOL/6829/",
+    "evidence_date": "2026-06-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6173",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "2026Q1法說會(總經理陳根群親自說明)：Q1營收10.17億元(YoY+8%)、毛利率28.4%(較去年同期+6.1pp)；國內唯一自製介電陶瓷粉末(MLCC/LTCC/微波瓷粉)廠商；AI營收占比目標今年突破10%；六甲高階粉末廠2027 Q3投產",
+    "evidence_url": "https://finance.biggo.com.tw/news/TW_6173.TW_2026-05-21",
+    "evidence_date": "2026-05-21",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6449",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說揭露(場次確切日期精確度低,財務數字精確至2026Q1)：台灣最大固態電容(導電性高分子鋁電解電容)廠，捲繞型固態電容(V-Chip/DIP)全球產能最大；AI伺服器電容單價約傳統一倍、毛利率50%以上；伺服器營收占比從2024年約11%升至2025Q4約21.8%；2026Q1 EPS 2.11元(YoY+37%)",
+    "evidence_url": "https://vocus.cc/article/6a1d9a33fd8978000192776d",
+    "evidence_date": "2026-04-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3624",
+    "sector": "Passive_Components",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "2026Q1法說會(富果法說會備忘錄逐字整理)：AI占營收比重達12%(去年不到5%)；訂單交期由5週拉長至15週；核心產品為精密電阻/高頻電感；針對部分產品今年已進行三波漲價、平均漲幅30-35%",
+    "evidence_url": "https://blog.fugle.tw/post/earnings-call-3624-2026-05-11",
+    "evidence_date": "2026-05-11",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  }
+]

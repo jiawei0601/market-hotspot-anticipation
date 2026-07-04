@@ -50,8 +50,15 @@
 - **散熱首份報告產出**（`reports/2026-07-04-Thermal_Cooling-feasibility-report.md`，Critic PASS）：正確使用登記簿 11 檔、誠實回報「無標的通過黃金潛伏門檻」。首版曾出現 LLM 虛構「假設性標的情境」→ 已加誠實化規則第 5 條（嚴禁虛構假設性標的）＋ Critic 捏造禁令檢查，重產後 0 虛構。
 - 156 tests 綠。
 
+### ✅ 七板塊擴容＋LLM 切換 NIM GLM-5.2（2026-07-04 深夜完成）
+- **四個新板塊上線**（證據定日入簿＋PIT 回填＋sector_specs 無世代框架模式）：LEO_Satellite 12 檔（E1×11）、Edge_AI 10 檔（全 E1、嚴格門檻）、Passive_Components 10 檔（全 E1）、Memory 13 檔（全 E1）。CHINESE_MAPPING 擴至 75 筆（尾碼依 universe records 程式核對；曾誤標 4904 中華電信→已修為遠傳）。
+- **LLM 供應商切換**：Gemini → NVIDIA NIM `z-ai/glm-5.2`（`NIM_MODEL` 可覆寫；無金鑰 fail loud）。GitHub secret `NVIDIA_NIM_API_KEY` 已設。**Critic 三重 fail-closed**（GLM 實測回 "REJECTED" 非枚舉值）：描述鎖 PASS/FAIL＋validator 同義詞正規化（未知→FAIL）＋路由改「非 PASS 即重修」。
+- **Backlog 不適用誠實化**：無 equipment 成員板塊 `get_backlog_lead` 回 None（非 0.0 充數）、黃金閘門誠實地不可觸發（替代訊號＝開放產品決策）、Critic 要求改條件式（程式判定注入，不讓 LLM 猜）。散熱板塊憑此首次過審發布。
+- **429 限流韌性**：`_invoke_with_retry` 對 429 走 30→300 秒長退避（不耗一般重試額度）；CI 板塊間隔 sleep 90。
+- **CI 週報擴至七板塊**。**報告 6/7 完成**（Memory 因 NIM 當日額度耗盡待重試，背景已排 30 分鐘冷卻重掃）。watchlist=0（七板塊皆無黃金標的，誠實結果）。167 tests 綠。
+
 ## 進行中
-- 無。
+- Memory 板塊首掃：背景冷卻重試中（scan_Memory_retry.log）。成功後補 commit 該報告即可。
 
 ## 下一步（依優先序）
 1. **watchlist 重置待使用者確認**：現役 3 檔（雙鴻/一詮/鈦昇）是舊寬鬆閘門產物（已知），重置流程＝歸檔→清空→重掃（CPO 與新板塊在修正後閘門下目前皆無黃金標的，重置後 watchlist 很可能為空——這是誠實結果）。

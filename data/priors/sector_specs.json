@@ -16,5 +16,29 @@
     "next_generation": "Feynman",
     "future_generation": "Feynman_Next",
     "narrative_hint": "GPU 世代交替下先進封裝（CoWoS/SoIC/FOPLP/玻璃基板）產能與良率瓶頸的直接受益供應鏈：設備／材料商（弘塑、辛耘、均華、志聖）→ 封測代工（日月光投控、力成）雙層結構"
+  },
+  "LEO_Satellite": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "低軌衛星星系部署週期驅動：SpaceX Starlink/Amazon Kuiper/OneWeb等星系加速發射與地面設備放量，非GPU世代驅動——供應鏈價值鏈為射頻/天線元件（昇達科/同欣電/穩懋/全訊/耀登/璟德）→ 地面站設備/終端（台揚/啟碁/仲琦）→ 電信服務端商轉（中華電信），景氣循環綁定星系發射排程與地面設備放量節奏，非晶片世代交替"
+  },
+  "Edge_AI": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "終端 NPU 滲透驅動：AI推論從雲端下沉到終端/邊緣裝置（工業電腦/嵌入式系統導入NPU/邊緣AI加速卡），非GPU資料中心世代驅動——供應鏈價值鏈為工業電腦整機廠（研華/凌華/研揚/樺漢/友通/威強電/立端/其陽/安勤）→ 邊緣AI算力模組供應商（宜鼎子公司安提），成長節奏綁定各廠Edge AI專案設計獲勝(Design Win)與營收占比爬升曲線，非晶片世代交替"
+  },
+  "Passive_Components": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "AI 伺服器高階 MLCC 含量提升與被動元件漲價循環：AI 主機板/電源模組對高容值/高頻 MLCC、固態電容需求推升單價與含量，疊加傳統景氣循環（消費性電子庫存去化後回補）雙軌驅動，非單一世代切換事件，適合用「AI 占營收比重」「漲價幅度」「交期拉長天數」等連續指標追蹤，而非世代二分法"
+  },
+  "Memory": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "HBM/DDR5 循環與利基型記憶體定位：AI伺服器HBM需求排擠標準型DRAM/NAND產能，帶動傳產記憶體(DDR4/利基型/工控模組)供給緊縮與漲價循環；此為典型景氣循環（供需缺口→漲價→擴產→供過於求）疊加結構性題材（AI需求墊高長期均值），非單一世代切換事件，適合用「合約價季增率」「稼動率」「資本支出」等連續指標追蹤"
   }
 }

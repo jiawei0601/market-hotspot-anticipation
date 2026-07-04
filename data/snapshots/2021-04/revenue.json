@@ -187,5 +187,313 @@
     "revenue_billion": 1.5628,
     "announce_date": "2021-04-10",
     "yoy_pct": 23.34
+  },
+  "2313": {
+    "stock_id": "2313",
+    "period": "2021-03",
+    "revenue_billion": 45.2739,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -5.84
+  },
+  "2314": {
+    "stock_id": "2314",
+    "period": "2021-03",
+    "revenue_billion": 3.2344,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 0.65
+  },
+  "2383": {
+    "stock_id": "2383",
+    "period": "2021-03",
+    "revenue_billion": 28.1834,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 29.97
+  },
+  "2419": {
+    "stock_id": "2419",
+    "period": "2021-03",
+    "revenue_billion": 9.4558,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 46.45
+  },
+  "3105": {
+    "stock_id": "3105",
+    "period": "2021-03",
+    "revenue_billion": 19.8894,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -4.35
+  },
+  "3138": {
+    "stock_id": "3138",
+    "period": "2021-03",
+    "revenue_billion": 1.3885,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 24.43
+  },
+  "3152": {
+    "stock_id": "3152",
+    "period": "2021-03",
+    "revenue_billion": 2.6515,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 60.67
+  },
+  "3491": {
+    "stock_id": "3491",
+    "period": "2021-03",
+    "revenue_billion": 1.3973,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 20.64
+  },
+  "4904": {
+    "stock_id": "4904",
+    "period": "2021-03",
+    "revenue_billion": 65.7653,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 3.73
+  },
+  "5222": {
+    "stock_id": "5222",
+    "period": "2021-03",
+    "revenue_billion": 0.8794,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 123.65
+  },
+  "6271": {
+    "stock_id": "6271",
+    "period": "2021-03",
+    "revenue_billion": 11.6483,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 71.05
+  },
+  "6285": {
+    "stock_id": "6285",
+    "period": "2021-03",
+    "revenue_billion": 57.4737,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 18.25
+  },
+  "2395": {
+    "stock_id": "2395",
+    "period": "2021-03",
+    "revenue_billion": 50.3132,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 23.41
+  },
+  "2397": {
+    "stock_id": "2397",
+    "period": "2021-03",
+    "revenue_billion": 7.421,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -12.78
+  },
+  "3022": {
+    "stock_id": "3022",
+    "period": "2021-03",
+    "revenue_billion": 5.5884,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 47.92
+  },
+  "3479": {
+    "stock_id": "3479",
+    "period": "2021-03",
+    "revenue_billion": 4.2056,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -0.59
+  },
+  "3564": {
+    "stock_id": "3564",
+    "period": "2021-03",
+    "revenue_billion": 1.229,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -10.42
+  },
+  "5289": {
+    "stock_id": "5289",
+    "period": "2021-03",
+    "revenue_billion": 8.0187,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 8.1
+  },
+  "6166": {
+    "stock_id": "6166",
+    "period": "2021-03",
+    "revenue_billion": 8.4119,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -20.16
+  },
+  "6245": {
+    "stock_id": "6245",
+    "period": "2021-03",
+    "revenue_billion": 6.3036,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 6.39
+  },
+  "6414": {
+    "stock_id": "6414",
+    "period": "2021-03",
+    "revenue_billion": 81.7625,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 25.11
+  },
+  "6579": {
+    "stock_id": "6579",
+    "period": "2021-03",
+    "revenue_billion": 4.9543,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 6.17
+  },
+  "2327": {
+    "stock_id": "2327",
+    "period": "2021-03",
+    "revenue_billion": 87.2635,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 116.27
+  },
+  "2375": {
+    "stock_id": "2375",
+    "period": "2021-03",
+    "revenue_billion": 6.3185,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 72.55
+  },
+  "2472": {
+    "stock_id": "2472",
+    "period": "2021-03",
+    "revenue_billion": 7.6294,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 10.6
+  },
+  "2478": {
+    "stock_id": "2478",
+    "period": "2021-03",
+    "revenue_billion": 6.1017,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 23.6
+  },
+  "2492": {
+    "stock_id": "2492",
+    "period": "2021-03",
+    "revenue_billion": 37.5792,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 53.67
+  },
+  "3026": {
+    "stock_id": "3026",
+    "period": "2021-03",
+    "revenue_billion": 16.0008,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 26.96
+  },
+  "3624": {
+    "stock_id": "3624",
+    "period": "2021-03",
+    "revenue_billion": 2.3866,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 32.82
+  },
+  "6127": {
+    "stock_id": "6127",
+    "period": "2021-03",
+    "revenue_billion": 0.906,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 26.52
+  },
+  "6173": {
+    "stock_id": "6173",
+    "period": "2021-03",
+    "revenue_billion": 5.3151,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 32.94
+  },
+  "6449": {
+    "stock_id": "6449",
+    "period": "2021-03",
+    "revenue_billion": 2.3623,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 45.52
+  },
+  "2337": {
+    "stock_id": "2337",
+    "period": "2021-03",
+    "revenue_billion": 36.0819,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -7.06
+  },
+  "2344": {
+    "stock_id": "2344",
+    "period": "2021-03",
+    "revenue_billion": 79.6734,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 92.41
+  },
+  "2408": {
+    "stock_id": "2408",
+    "period": "2021-03",
+    "revenue_billion": 64.0762,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 19.64
+  },
+  "2451": {
+    "stock_id": "2451",
+    "period": "2021-03",
+    "revenue_billion": 13.4761,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 31.87
+  },
+  "3006": {
+    "stock_id": "3006",
+    "period": "2021-03",
+    "revenue_billion": 19.1004,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 31.63
+  },
+  "3260": {
+    "stock_id": "3260",
+    "period": "2021-03",
+    "revenue_billion": 33.5331,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 15.8
+  },
+  "4967": {
+    "stock_id": "4967",
+    "period": "2021-03",
+    "revenue_billion": 6.0906,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -8.55
+  },
+  "5351": {
+    "stock_id": "5351",
+    "period": "2021-03",
+    "revenue_billion": 3.8333,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 23.09
+  },
+  "6531": {
+    "stock_id": "6531",
+    "period": "2021-03",
+    "revenue_billion": 4.9311,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 10.9
+  },
+  "6770": {
+    "stock_id": "6770",
+    "period": "2021-03",
+    "revenue_billion": 48.055,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 25.48
+  },
+  "8271": {
+    "stock_id": "8271",
+    "period": "2021-03",
+    "revenue_billion": 8.5529,
+    "announce_date": "2021-04-10",
+    "yoy_pct": 18.94
+  },
+  "8299": {
+    "stock_id": "8299",
+    "period": "2021-03",
+    "revenue_billion": 51.7259,
+    "announce_date": "2021-04-10",
+    "yoy_pct": -6.61
   }
 }

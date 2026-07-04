@@ -34,11 +34,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          uv pip install --system pandas numpy pandas-ta yfinance requests langgraph langchain-google-genai pydantic fastapi uvicorn apscheduler
+          uv pip install --system pandas numpy pandas-ta yfinance requests langgraph langchain-openai pydantic fastapi uvicorn apscheduler
 
       - name: Determine Run Mode and Execute
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NVIDIA_NIM_API_KEY: ${{ secrets.NVIDIA_NIM_API_KEY }}
         run: |
           # 根據觸發事件類型與 cron 時間判斷執行模式
           # UTC 10:17 (18:17 Taipei) -> 每日追蹤
@@ -48,18 +48,20 @@ jobs:
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "手動觸發：三板塊完整每週報告研判"
-            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging; do
+            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging LEO_Satellite Edge_AI Passive_Components Memory; do
               echo "=== 掃描板塊: $SECTOR ==="
               python main_agent.py --weekly-report --sector "$SECTOR"
+              sleep 90   # NIM 限流緩衝：板塊間隔避免 429
             done
           elif [ "$TRIGGER_CRON" = "17 10 * * 1-5" ]; then
             echo "排程觸發：執行每日股價追蹤與觀察名單更新"
             python main_agent.py --daily-update
           else
             echo "排程觸發：三板塊每週彙整報告產出"
-            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging; do
+            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging LEO_Satellite Edge_AI Passive_Components Memory; do
               echo "=== 掃描板塊: $SECTOR ==="
               python main_agent.py --weekly-report --sector "$SECTOR"
+              sleep 90   # NIM 限流緩衝：板塊間隔避免 429
             done
           fi
 

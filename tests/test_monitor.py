@@ -6,6 +6,7 @@ from market_monitor import (
     CONSENSUS_MAX,
     MEMBERSHIP_SOURCE_REGISTRY,
     MEMBERSHIP_SOURCE_FALLBACK,
+    BACKLOG_NOT_APPLICABLE_NOTE,
     _PRIORS_PATH,
 )
 
@@ -262,6 +263,76 @@ class TestRegistryPathIdNormalization(unittest.TestCase):
         self.assertEqual(s["membership_source"], "registry")
         self.assertEqual(len(s["timeline_matrix"]), 3,
                          "純代號成員必須匹配到帶尾碼的矩陣項目（_pure_id 正規化）")
+
+
+class TestBacklogLeadNoEquipmentMembers(unittest.TestCase):
+    """板塊無 equipment 分類成員時（如散熱板塊全 component），get_backlog_lead 必須
+    回傳 None（而非假數字 0.0），且此 None 須誠實傳播至 is_golden_accumulation_target
+    與報告資料組裝（見交辦：GLM 端到端實掃發現的『永遠 0.0 導致報告永遠不可發布』問題）。
+    """
+
+    def setUp(self):
+        self.monitor = MarketInformationMonitor()
+        self.no_equipment_sector = "Thermal_Component_Only_Sector"
+        self.member_ids = ["9999", "8888"]
+
+    def _patch_no_equipment_members(self):
+        """把 resolve_sector_members 與 _resolve_member_segments 都 mock 成
+        「兩檔成員、皆為 component」，模擬散熱板塊全 component、無 equipment 成員的情境。"""
+        patch_resolve = mock.patch.object(
+            self.monitor, "resolve_sector_members",
+            return_value=(self.member_ids, MEMBERSHIP_SOURCE_REGISTRY),
+        )
+        patch_segments = mock.patch.object(
+            self.monitor, "_resolve_member_segments",
+            return_value={cid: "component" for cid in self.member_ids},
+        )
+        return patch_resolve, patch_segments
+
+    def test_get_backlog_lead_returns_none_when_no_equipment_members(self):
+        """無 equipment 分類成員時，get_backlog_lead 必須回傳 None，不可回傳 0.0。"""
+        p1, p2 = self._patch_no_equipment_members()
+        with p1, p2:
+            result = self.monitor.get_backlog_lead(sector=self.no_equipment_sector)
+        self.assertIsNone(result)
+
+    def test_simulate_revenue_inflection_propagates_none_and_not_applicable_note(self):
+        """simulate_revenue_inflection 的每筆結果都必須誠實反映 Backlog 不適用：
+        current_backlog_yoy_pct 為 None、backlog_yoy_curve_3m 為 [None, None, None]、
+        equipment_lead_active 為 False、附帶 backlog_not_applicable_note。"""
+        p1, p2 = self._patch_no_equipment_members()
+        with p1, p2:
+            result = self.monitor.simulate_revenue_inflection(
+                self.member_ids, sector=self.no_equipment_sector
+            )
+        for cid in self.member_ids:
+            data = result[cid]
+            self.assertIsNone(data["current_backlog_yoy_pct"])
+            self.assertEqual(data["backlog_yoy_curve_3m"], [None, None, None])
+            self.assertFalse(data["equipment_lead_active"])
+            self.assertEqual(data["backlog_not_applicable_note"], BACKLOG_NOT_APPLICABLE_NOTE)
+
+    def test_is_golden_accumulation_target_false_when_backlog_not_applicable(self):
+        """黃金閘門三條件維持不變：Backlog 不適用（None）時 equipment_lead_active 為
+        False，該板塊誠實地不可能觸發黃金標的，即使共識度與 YoY 兩條件皆滿足。"""
+        p1, p2 = self._patch_no_equipment_members()
+        with p1, p2:
+            result = self.monitor.simulate_revenue_inflection(
+                self.member_ids, sector=self.no_equipment_sector
+            )
+        for cid in self.member_ids:
+            data = result[cid]
+            self.assertFalse(data["is_golden_accumulation_target"])
+
+    def test_backlog_not_applicable_note_absent_when_equipment_members_exist(self):
+        """有 equipment 成員的板塊（CPO 回歸）：backlog_not_applicable_note 應為 None，
+        current_backlog_yoy_pct 應為 float，行為與改動前一致。"""
+        company_ids = ["3450.TW", "3324.TWO"]
+        result = self.monitor.simulate_revenue_inflection(company_ids)
+        for cid in company_ids:
+            data = result[cid]
+            self.assertIsNone(data["backlog_not_applicable_note"])
+            self.assertIsInstance(data["current_backlog_yoy_pct"], float)
 
 
 if __name__ == "__main__":

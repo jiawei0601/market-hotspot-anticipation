@@ -13,6 +13,7 @@ DOWNSTREAM_YOY_MAX = 15.0  # 下游當月營收 YoY 上限：< 此值才算「�
 CONSENSUS_GRANULARITY_NOTE = "粗粒度：12 檔樣本橫斷面百分位，一階約 ±8 分為雜訊，非精確分數"
 REVENUE_PROJECTION_NOTE = "機械外推情境（末值 × 固定加速係數），非模型預測"
 BACKLOG_SIGNAL_NOTE = "板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料"
+BACKLOG_NOT_APPLICABLE_NOTE = "本板塊無 equipment 分類成員，Backlog 板塊層訊號不適用"
 
 # 板塊成員解析來源標記
 def _pure_id(cid: str) -> str:
@@ -353,17 +354,24 @@ class MarketInformationMonitor:
         return result
 
     def get_backlog_lead(self, as_of_date: Optional[str] = None,
-                         sector: Optional[str] = None) -> float:
+                         sector: Optional[str] = None) -> Optional[float]:
         """
         板塊 segment=equipment 公司真實月營收 YoY 中位數（日粒度 PIT 正確）。
         此為 ADR 0006 定義的 Equipment Backlog Lead 訊號（誠實限制：是「動能代理」而非真訂單）。
         成員清單改由 resolve_sector_members(sector, as_of) 解析；segment 優先用
         sector_membership.get_member_segments，缺值 fallback content_value 的 segment。
-        資料不足時回傳 0.0。
+
+        該板塊（經 resolve_sector_members + segment 解析）無任何 equipment 分類成員時，
+        回傳 None（不可回傳 0.0——0.0 是「equipment 公司 YoY 中位數為零」的假數字，
+        會被下游誤讀為「已有量化 Backlog 訊號但顯示零成長」）。
+        equipment 成員存在但真實 YoY 資料不足時，同樣回傳 None（資料不足不可等同於零）。
         """
         member_ids, _source = self.resolve_sector_members(sector, as_of_date)
         segments = self._resolve_member_segments(sector, as_of_date, member_ids)
         equipment_cids = [cid for cid in member_ids if segments.get(cid) == "equipment"]
+
+        if not equipment_cids:
+            return None
 
         yoy_values = []
         for cid in equipment_cids:
@@ -373,7 +381,7 @@ class MarketInformationMonitor:
                 yoy_values.append(hist[-1]["yoy_pct"])
 
         if not yoy_values:
-            return 0.0
+            return None
         return round(float(np.median(yoy_values)), 2)
 
     def _read_price_history(self, company_id: str, as_of_date_str: Optional[str],
@@ -508,7 +516,11 @@ class MarketInformationMonitor:
         Stage 2 改動：
         - 歷史 YoY 曲線（索引 0-8）= 真實 PIT 快照 yoy_pct（非 sin 合成）
         - 未來 3 個月（索引 9-11）= 投影（以末尾 YoY × 加速係數）
-        - Backlog Lead = 板塊 equipment 公司真實 YoY 中位數（非隨機合成）
+        - Backlog Lead = 板塊 equipment 公司真實 YoY 中位數（非隨機合成）；
+          板塊無 equipment 分類成員時 get_backlog_lead 回傳 None，本函式據此將
+          equipment_lead_active_global 判定為 False（Backlog 訊號不適用，非零成長），
+          current_backlog_yoy_pct / backlog_yoy_curve_3m 亦為 None，並附
+          backlog_not_applicable_note 供報告端誠實標示「不適用」。
         - Consensus = 外資持股% 歷史百分位 + 同儕排名（fallback 至靜態先驗）
         真實資料不足（< 3 筆）時 fallback 合成，並標記 has_real_data=False。
 
@@ -522,9 +534,13 @@ class MarketInformationMonitor:
         today = (datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
                  if as_of_date else datetime.date.today())
 
-        # 板塊 equipment 真實 Backlog Lead（一次算好，所有個股共用）
+        # 板塊 equipment 真實 Backlog Lead（一次算好，所有個股共用）。
+        # None 表示本板塊無 equipment 分類成員（或成員存在但真實 YoY 資料不足），
+        # Backlog 板塊層訊號不適用——gate 條件視為不滿足（見 equipment_lead_active_global）。
         sector_backlog_yoy = self.get_backlog_lead(as_of_date, sector)
-        equipment_lead_active_global = sector_backlog_yoy > BACKLOG_LEAD_MIN
+        equipment_lead_active_global = (
+            sector_backlog_yoy is not None and sector_backlog_yoy > BACKLOG_LEAD_MIN
+        )
 
         matrix = self.get_point_in_time_matrix(as_of_date, sector)
         matrix_by_cid = {_pure_id(it["company_id"]): it for it in matrix}
@@ -616,6 +632,12 @@ class MarketInformationMonitor:
                 "current_backlog_yoy_pct": sector_backlog_yoy,
                 "backlog_yoy_curve_3m": [sector_backlog_yoy] * 3,
                 "backlog_signal_note": BACKLOG_SIGNAL_NOTE,
+                "backlog_not_applicable_note": (
+                    BACKLOG_NOT_APPLICABLE_NOTE if sector_backlog_yoy is None else None
+                ),
+                # 黃金閘門三條件維持不變：Backlog 為 None（無 equipment 成員）時
+                # equipment_lead_active_global 已為 False，此板塊誠實地不可能觸發黃金標的。
+                # 是否該為無 equipment 成員的板塊提供替代訊號＝開放產品決策，此處不代為決定。
                 "is_golden_accumulation_target": (
                     consensus < CONSENSUS_MAX
                     and equipment_lead_active_global

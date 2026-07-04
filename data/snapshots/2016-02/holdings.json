@@ -108,5 +108,195 @@
     "stock_id": "6239",
     "date": "2016-02-26",
     "foreign_ratio": 69.39
+  },
+  "2313": {
+    "stock_id": "2313",
+    "date": "2016-02-26",
+    "foreign_ratio": 24.97
+  },
+  "2314": {
+    "stock_id": "2314",
+    "date": "2016-02-26",
+    "foreign_ratio": 1.96
+  },
+  "2383": {
+    "stock_id": "2383",
+    "date": "2016-02-26",
+    "foreign_ratio": 35.66
+  },
+  "2419": {
+    "stock_id": "2419",
+    "date": "2016-02-26",
+    "foreign_ratio": 10.24
+  },
+  "3105": {
+    "stock_id": "3105",
+    "date": "2016-02-26",
+    "foreign_ratio": 32.07
+  },
+  "3152": {
+    "stock_id": "3152",
+    "date": "2016-02-26",
+    "foreign_ratio": 16.14
+  },
+  "3491": {
+    "stock_id": "3491",
+    "date": "2016-02-26",
+    "foreign_ratio": 6.27
+  },
+  "4904": {
+    "stock_id": "4904",
+    "date": "2016-02-26",
+    "foreign_ratio": 31.77
+  },
+  "6271": {
+    "stock_id": "6271",
+    "date": "2016-02-26",
+    "foreign_ratio": 22.99
+  },
+  "6285": {
+    "stock_id": "6285",
+    "date": "2016-02-26",
+    "foreign_ratio": 17.95
+  },
+  "2395": {
+    "stock_id": "2395",
+    "date": "2016-02-26",
+    "foreign_ratio": 37.85
+  },
+  "2397": {
+    "stock_id": "2397",
+    "date": "2016-02-26",
+    "foreign_ratio": 11.41
+  },
+  "3022": {
+    "stock_id": "3022",
+    "date": "2016-02-26",
+    "foreign_ratio": 5.8
+  },
+  "3479": {
+    "stock_id": "3479",
+    "date": "2016-02-26",
+    "foreign_ratio": 4.09
+  },
+  "3564": {
+    "stock_id": "3564",
+    "date": "2016-02-26",
+    "foreign_ratio": 7.53
+  },
+  "5289": {
+    "stock_id": "5289",
+    "date": "2016-02-26",
+    "foreign_ratio": 7.86
+  },
+  "6166": {
+    "stock_id": "6166",
+    "date": "2016-02-26",
+    "foreign_ratio": 23.93
+  },
+  "6245": {
+    "stock_id": "6245",
+    "date": "2016-02-26",
+    "foreign_ratio": 7.35
+  },
+  "6414": {
+    "stock_id": "6414",
+    "date": "2016-02-26",
+    "foreign_ratio": 21.52
+  },
+  "2327": {
+    "stock_id": "2327",
+    "date": "2016-02-26",
+    "foreign_ratio": 65.41
+  },
+  "2375": {
+    "stock_id": "2375",
+    "date": "2016-02-26",
+    "foreign_ratio": 6.22
+  },
+  "2472": {
+    "stock_id": "2472",
+    "date": "2016-02-26",
+    "foreign_ratio": 2.95
+  },
+  "2478": {
+    "stock_id": "2478",
+    "date": "2016-02-26",
+    "foreign_ratio": 2.45
+  },
+  "2492": {
+    "stock_id": "2492",
+    "date": "2016-02-26",
+    "foreign_ratio": 19.95
+  },
+  "3026": {
+    "stock_id": "3026",
+    "date": "2016-02-26",
+    "foreign_ratio": 10.69
+  },
+  "3624": {
+    "stock_id": "3624",
+    "date": "2016-02-26",
+    "foreign_ratio": 2.98
+  },
+  "6127": {
+    "stock_id": "6127",
+    "date": "2016-02-26",
+    "foreign_ratio": 0.14
+  },
+  "6173": {
+    "stock_id": "6173",
+    "date": "2016-02-26",
+    "foreign_ratio": 0.02
+  },
+  "6449": {
+    "stock_id": "6449",
+    "date": "2016-02-26",
+    "foreign_ratio": 0.21
+  },
+  "2337": {
+    "stock_id": "2337",
+    "date": "2016-02-26",
+    "foreign_ratio": 10.35
+  },
+  "2344": {
+    "stock_id": "2344",
+    "date": "2016-02-26",
+    "foreign_ratio": 18.88
+  },
+  "2408": {
+    "stock_id": "2408",
+    "date": "2016-02-26",
+    "foreign_ratio": 7.03
+  },
+  "2451": {
+    "stock_id": "2451",
+    "date": "2016-02-26",
+    "foreign_ratio": 29.21
+  },
+  "3006": {
+    "stock_id": "3006",
+    "date": "2016-02-26",
+    "foreign_ratio": 9.58
+  },
+  "3260": {
+    "stock_id": "3260",
+    "date": "2016-02-26",
+    "foreign_ratio": 9.45
+  },
+  "5351": {
+    "stock_id": "5351",
+    "date": "2016-02-26",
+    "foreign_ratio": 6.84
+  },
+  "8271": {
+    "stock_id": "8271",
+    "date": "2016-02-26",
+    "foreign_ratio": 8.07
+  },
+  "8299": {
+    "stock_id": "8299",
+    "date": "2016-02-26",
+    "foreign_ratio": 57.52
   }
 }

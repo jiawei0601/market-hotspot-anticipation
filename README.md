@@ -213,16 +213,16 @@ flowchart LR
    pip install -r requirements.txt
    ```
 2. **設定環境變數**：
-   系統撰寫報告與評審時預設使用 Google Gemini 3.1 Pro。請配置您的 API Key：
+   系統撰寫報告與評審時預設使用 NVIDIA NIM 上的 GLM-5.2（`z-ai/glm-5.2`，OpenAI 相容端點）。請配置您的 API Key：
    - **Windows (PowerShell)**：
      ```powershell
-     $env:GEMINI_API_KEY="your-api-key-here"
+     $env:NVIDIA_NIM_API_KEY="your-api-key-here"
      ```
    - **Linux / macOS**：
      ```bash
-     export GEMINI_API_KEY="your-api-key-here"
+     export NVIDIA_NIM_API_KEY="your-api-key-here"
      ```
-   > **備註**：必須設定 GEMINI_API_KEY，否則主分析流程會在呼叫 LLM 時報錯。系統不整合 Ollama；惟各 Agent 節點在 LLM 呼叫失敗時，內建規則式模版作為降級產出，確保排程不中斷。
+   > **備註**：必須設定 NVIDIA_NIM_API_KEY，否則主分析流程會在呼叫 LLM 時報錯。可選 `NIM_MODEL` 覆寫模型 ID（預設 `z-ai/glm-5.2`）。系統不整合 Ollama；惟各 Agent 節點在 LLM 呼叫失敗時，內建規則式模版作為降級產出，確保排程不中斷。
 
 ### 4.2 執行熱點分析
 執行 `main_agent.py` 並指定目標板塊（例如 `CPO_Optical_Transceiver`）：

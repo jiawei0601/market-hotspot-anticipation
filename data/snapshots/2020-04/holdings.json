@@ -133,5 +133,210 @@
     "stock_id": "6664",
     "date": "2020-04-30",
     "foreign_ratio": 0.42
+  },
+  "2313": {
+    "stock_id": "2313",
+    "date": "2020-04-30",
+    "foreign_ratio": 20.96
+  },
+  "2314": {
+    "stock_id": "2314",
+    "date": "2020-04-30",
+    "foreign_ratio": 1.42
+  },
+  "2383": {
+    "stock_id": "2383",
+    "date": "2020-04-30",
+    "foreign_ratio": 34.65
+  },
+  "2419": {
+    "stock_id": "2419",
+    "date": "2020-04-30",
+    "foreign_ratio": 4.87
+  },
+  "3105": {
+    "stock_id": "3105",
+    "date": "2020-04-30",
+    "foreign_ratio": 47.9
+  },
+  "3152": {
+    "stock_id": "3152",
+    "date": "2020-04-30",
+    "foreign_ratio": 24.51
+  },
+  "3491": {
+    "stock_id": "3491",
+    "date": "2020-04-30",
+    "foreign_ratio": 2.91
+  },
+  "4904": {
+    "stock_id": "4904",
+    "date": "2020-04-30",
+    "foreign_ratio": 20.84
+  },
+  "6271": {
+    "stock_id": "6271",
+    "date": "2020-04-30",
+    "foreign_ratio": 25.04
+  },
+  "6285": {
+    "stock_id": "6285",
+    "date": "2020-04-30",
+    "foreign_ratio": 16.99
+  },
+  "2395": {
+    "stock_id": "2395",
+    "date": "2020-04-30",
+    "foreign_ratio": 40.62
+  },
+  "2397": {
+    "stock_id": "2397",
+    "date": "2020-04-30",
+    "foreign_ratio": 21.46
+  },
+  "3022": {
+    "stock_id": "3022",
+    "date": "2020-04-30",
+    "foreign_ratio": 21.19
+  },
+  "3479": {
+    "stock_id": "3479",
+    "date": "2020-04-30",
+    "foreign_ratio": 9.26
+  },
+  "3564": {
+    "stock_id": "3564",
+    "date": "2020-04-30",
+    "foreign_ratio": 2.22
+  },
+  "5289": {
+    "stock_id": "5289",
+    "date": "2020-04-30",
+    "foreign_ratio": 24.21
+  },
+  "6166": {
+    "stock_id": "6166",
+    "date": "2020-04-30",
+    "foreign_ratio": 18.86
+  },
+  "6245": {
+    "stock_id": "6245",
+    "date": "2020-04-30",
+    "foreign_ratio": 9.21
+  },
+  "6414": {
+    "stock_id": "6414",
+    "date": "2020-04-30",
+    "foreign_ratio": 11.04
+  },
+  "6579": {
+    "stock_id": "6579",
+    "date": "2020-04-30",
+    "foreign_ratio": 3.04
+  },
+  "2327": {
+    "stock_id": "2327",
+    "date": "2020-04-30",
+    "foreign_ratio": 47.22
+  },
+  "2375": {
+    "stock_id": "2375",
+    "date": "2020-04-30",
+    "foreign_ratio": 3.64
+  },
+  "2472": {
+    "stock_id": "2472",
+    "date": "2020-04-30",
+    "foreign_ratio": 2.61
+  },
+  "2478": {
+    "stock_id": "2478",
+    "date": "2020-04-30",
+    "foreign_ratio": 6.64
+  },
+  "2492": {
+    "stock_id": "2492",
+    "date": "2020-04-30",
+    "foreign_ratio": 21.23
+  },
+  "3026": {
+    "stock_id": "3026",
+    "date": "2020-04-30",
+    "foreign_ratio": 13.73
+  },
+  "3624": {
+    "stock_id": "3624",
+    "date": "2020-04-30",
+    "foreign_ratio": 40.79
+  },
+  "6127": {
+    "stock_id": "6127",
+    "date": "2020-04-30",
+    "foreign_ratio": 1.54
+  },
+  "6173": {
+    "stock_id": "6173",
+    "date": "2020-04-30",
+    "foreign_ratio": 1.78
+  },
+  "6449": {
+    "stock_id": "6449",
+    "date": "2020-04-30",
+    "foreign_ratio": 1.57
+  },
+  "2337": {
+    "stock_id": "2337",
+    "date": "2020-04-30",
+    "foreign_ratio": 17.91
+  },
+  "2344": {
+    "stock_id": "2344",
+    "date": "2020-04-30",
+    "foreign_ratio": 21.41
+  },
+  "2408": {
+    "stock_id": "2408",
+    "date": "2020-04-30",
+    "foreign_ratio": 20.98
+  },
+  "2451": {
+    "stock_id": "2451",
+    "date": "2020-04-30",
+    "foreign_ratio": 15.31
+  },
+  "3006": {
+    "stock_id": "3006",
+    "date": "2020-04-30",
+    "foreign_ratio": 19.88
+  },
+  "3260": {
+    "stock_id": "3260",
+    "date": "2020-04-30",
+    "foreign_ratio": 8.59
+  },
+  "4967": {
+    "stock_id": "4967",
+    "date": "2020-04-30",
+    "foreign_ratio": 8.82
+  },
+  "5351": {
+    "stock_id": "5351",
+    "date": "2020-04-30",
+    "foreign_ratio": 7.34
+  },
+  "6531": {
+    "stock_id": "6531",
+    "date": "2020-04-30",
+    "foreign_ratio": 18.97
+  },
+  "8271": {
+    "stock_id": "8271",
+    "date": "2020-04-30",
+    "foreign_ratio": 20.42
+  },
+  "8299": {
+    "stock_id": "8299",
+    "date": "2020-04-30",
+    "foreign_ratio": 54.1
   }
 }

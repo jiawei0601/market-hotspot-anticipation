@@ -1,0 +1,122 @@
+[
+  {
+    "stock_id": "2395",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "Q1法說會（2026-05-06）：管理層以「Edge AI」原文用語揭露營收占比達20.5%（約130個專案、1.2億美元營收），設定「5年3倍、每年30%成長」Edge AI目標",
+    "evidence_url": "https://finance.biggo.com/news/TW_2395.TW_2026-05-06 ; https://vocus.cc/article/6a0003befd897800013ea381",
+    "evidence_date": "2026-05-06",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6166",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（2025-08-07 / 2025-12-02）：以「Edge AI」為策略主軸，揭露Design Win中43.5%為Edge AI相關案、邊緣AI平台營收占比逾3成，推出AGAI Agent Platform等Edge AI產品規劃",
+    "evidence_url": "https://vocus.cc/article/68968b94fd8978000140fb19 ; https://udn.com/news/story/7240/9177368",
+    "evidence_date": "2025-12-02",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "5289",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（2026-03-30）提出完整「Edge AI Stack」五層技術架構（算力/記憶體/儲存/感測傳輸/軟體層），揭露Edge AI系統出貨占比由23%升至25%、目標30%，子公司安提(Aetina)專攻Edge AI算力平台",
+    "evidence_url": "https://vocus.cc/article/69fdf1ecfd89780001afb906 ; https://cmnews.com.tw/article/newsyoudeservetoknow-dcd477e7-c983-11f0-9fe5-566c411421e0",
+    "evidence_date": "2026-03-30",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6414",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "COMPUTEX（2026-05-15）董事長朱復銓公開表示市場成長動能將「由雲端AI延伸至Edge AI、AI Agent及Physical AI」，展示新世代實體AI邊緣運算平台，稱已建立從AI基礎設施到Edge AI的完整價值鏈",
+    "evidence_url": "https://vocus.cc/article/6a0744d3fd89780001ed915f ; https://www.sinotrade.com.tw/richclub/hotopic/-%E6%B3%95%E8%AA%AA%E6%9C%83%E6%9C%AC%E9%80%B1%E7%99%BB%E5%A0%B4-%E9%B4%BB%E6%B5%B7-%E5%87%8C%E8%8F%AF-%E6%A8%BA%E6%BC%A2%E7%87%9F%E6%94%B6%E6%95%B8%E6%93%9A%E8%88%87%E9%82%8A%E7%B7%A3-AI-%E4%BD%88%E5%B1%80-6a016e58c4e5ae011bcdd023",
+    "evidence_date": "2026-05-15",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6579",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（2026-05-13）總經理林建宏揭露AI相關營收去年成長115%、占比20%，今年目標升至25-30%，明確稱「隨著邊緣AI加速成長」帶動此成長",
+    "evidence_url": "https://www.cmoney.tw/forum/article/178914758 ; https://www.ioiotimes.com/?p=147635",
+    "evidence_date": "2026-05-13",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2397",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會/公司資料（2026-05）明確定位核心事業含「AI Edge Infrastructure（AI邊緣基礎架構）」與「Rugged Edge Computing（強固邊緣運算）」，總經理田芝穎談話提及AI時代客戶需求",
+    "evidence_url": "https://www.chinatimes.com/realtimenews/20260519002960-260410 ; https://vocus.cc/article/69c14ea8fd89780001a13027",
+    "evidence_date": "2026-05-19",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3022",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司自訂事業群名稱「網通暨邊緣運算產品及服務」為官方產品分類用語；惟法說會未單獨揭露邊緣運算精確營收占比數字，證據強度弱於研華/宜鼎/凌華，evidence_date精確度低（以落檔執行日代替）",
+    "evidence_url": "https://ww2.money-link.com.tw/TWStock/StockNews.aspx?SymId=3022 ; https://www.sinotrade.com.tw/richclub/hotstock/%E5%8F%B0%E8%82%A1%E6%B3%95%E8%AA%AA-%E5%A8%81%E5%BC%B7%E9%9B%BB-3022--2025-Q1-%E6%B7%A1%E5%AD%A3%E4%B8%8D%E6%B7%A1%E7%9A%84%E6%88%90%E9%95%B7%E5%8B%95%E8%83%BD-%E9%82%8A%E7%B7%A3AI%E5%B8%83%E5%B1%80%E9%A1%AF%E9%9C%B2%E6%9B%99%E5%85%89-0630-68622c0a21f67d00796d564c",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6245",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（確切季度未確認）自揭「邊緣運算類佔比從17%上升至19%」，屬公司自揭財務結構層級證據，非泛稱聯想；evidence_date精確度低（以落檔執行日代替）",
+    "evidence_url": "https://vocus.cc/article/66a62c1cfd89780001f09c4e ; https://news.cnyes.com/news/id/5823960",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3564",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司官網原文自我定位：「AEWIN is professional in the fields of Network Appliance, Edge AI and Server」，屬公司官方英文原文用語；但未見法說會揭露佔比等財務層級證據，證據強度中等，evidence_date以落檔執行日代替（官網現況非特定法說會日期）",
+    "evidence_url": "https://www.aewin.com/",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3479",
+    "sector": "Edge_AI",
+    "action": "add",
+    "segment": "equipment",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司新聞稿（2026-01-14）含公司自訂計畫名稱「Sustainable AI Initiative」「Edge AI Systems」，Digitimes/工商時報報導引用公司發布內容；但未查到法說會逐字稿或精確財務占比，證據強度中等偏弱",
+    "evidence_url": "https://turnnewsapp.com/livenews/finance/20260114001651-260410 ; https://www.digitimes.com.tw/tech/dt/n/shwnws.asp?id=0000741135_K2K0I24W475O8M4WOLHOH",
+    "evidence_date": "2026-01-14",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  }
+]

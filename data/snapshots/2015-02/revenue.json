@@ -152,5 +152,306 @@
     "revenue_billion": 32.061,
     "announce_date": "2015-02-10",
     "yoy_pct": null
+  },
+  "2313": {
+    "stock_id": "2313",
+    "period": "2015-01",
+    "revenue_billion": 30.2041,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2314": {
+    "stock_id": "2314",
+    "period": "2015-01",
+    "revenue_billion": 6.3566,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2383": {
+    "stock_id": "2383",
+    "period": "2015-01",
+    "revenue_billion": 17.9443,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2419": {
+    "stock_id": "2419",
+    "period": "2015-01",
+    "revenue_billion": 5.4519,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3105": {
+    "stock_id": "3105",
+    "period": "2015-01",
+    "revenue_billion": 8.6632,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3138": {
+    "stock_id": "3138",
+    "period": "2015-01",
+    "revenue_billion": 0.6448,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3152": {
+    "stock_id": "3152",
+    "period": "2015-01",
+    "revenue_billion": 1.2222,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3491": {
+    "stock_id": "3491",
+    "period": "2015-01",
+    "revenue_billion": 0.9463,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "4904": {
+    "stock_id": "4904",
+    "period": "2015-01",
+    "revenue_billion": 83.8994,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "5222": {
+    "stock_id": "5222",
+    "period": "2015-01",
+    "revenue_billion": 0.1013,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6271": {
+    "stock_id": "6271",
+    "period": "2015-01",
+    "revenue_billion": 6.343,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6285": {
+    "stock_id": "6285",
+    "period": "2015-01",
+    "revenue_billion": 42.4798,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2395": {
+    "stock_id": "2395",
+    "period": "2015-01",
+    "revenue_billion": 30.5217,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2397": {
+    "stock_id": "2397",
+    "period": "2015-01",
+    "revenue_billion": 2.4026,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3022": {
+    "stock_id": "3022",
+    "period": "2015-01",
+    "revenue_billion": 6.3586,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3479": {
+    "stock_id": "3479",
+    "period": "2015-01",
+    "revenue_billion": 3.7631,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3564": {
+    "stock_id": "3564",
+    "period": "2015-01",
+    "revenue_billion": 0.958,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "5289": {
+    "stock_id": "5289",
+    "period": "2015-01",
+    "revenue_billion": 3.6156,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6166": {
+    "stock_id": "6166",
+    "period": "2015-01",
+    "revenue_billion": 7.7491,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6245": {
+    "stock_id": "6245",
+    "period": "2015-01",
+    "revenue_billion": 4.3351,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6414": {
+    "stock_id": "6414",
+    "period": "2015-01",
+    "revenue_billion": 8.0221,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6579": {
+    "stock_id": "6579",
+    "period": "2015-01",
+    "revenue_billion": 3.2157,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2327": {
+    "stock_id": "2327",
+    "period": "2015-01",
+    "revenue_billion": 25.805,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2375": {
+    "stock_id": "2375",
+    "period": "2015-01",
+    "revenue_billion": 1.3967,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2472": {
+    "stock_id": "2472",
+    "period": "2015-01",
+    "revenue_billion": 5.4366,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2478": {
+    "stock_id": "2478",
+    "period": "2015-01",
+    "revenue_billion": 3.3942,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2492": {
+    "stock_id": "2492",
+    "period": "2015-01",
+    "revenue_billion": 13.4055,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3026": {
+    "stock_id": "3026",
+    "period": "2015-01",
+    "revenue_billion": 12.4326,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3624": {
+    "stock_id": "3624",
+    "period": "2015-01",
+    "revenue_billion": 1.4819,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6127": {
+    "stock_id": "6127",
+    "period": "2015-01",
+    "revenue_billion": 0.8882,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6173": {
+    "stock_id": "6173",
+    "period": "2015-01",
+    "revenue_billion": 2.1884,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6449": {
+    "stock_id": "6449",
+    "period": "2015-01",
+    "revenue_billion": 1.3713,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2337": {
+    "stock_id": "2337",
+    "period": "2015-01",
+    "revenue_billion": 15.6821,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2344": {
+    "stock_id": "2344",
+    "period": "2015-01",
+    "revenue_billion": 34.1751,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2408": {
+    "stock_id": "2408",
+    "period": "2015-01",
+    "revenue_billion": 39.838,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "2451": {
+    "stock_id": "2451",
+    "period": "2015-01",
+    "revenue_billion": 21.0955,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3006": {
+    "stock_id": "3006",
+    "period": "2015-01",
+    "revenue_billion": 9.3971,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "3260": {
+    "stock_id": "3260",
+    "period": "2015-01",
+    "revenue_billion": 20.0611,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "4967": {
+    "stock_id": "4967",
+    "period": "2015-01",
+    "revenue_billion": 4.2642,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "5351": {
+    "stock_id": "5351",
+    "period": "2015-01",
+    "revenue_billion": 6.5961,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "6531": {
+    "stock_id": "6531",
+    "period": "2015-01",
+    "revenue_billion": 2.6385,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "8271": {
+    "stock_id": "8271",
+    "period": "2015-01",
+    "revenue_billion": 8.984,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
+  },
+  "8299": {
+    "stock_id": "8299",
+    "period": "2015-01",
+    "revenue_billion": 28.4373,
+    "announce_date": "2015-02-10",
+    "yoy_pct": null
   }
 }

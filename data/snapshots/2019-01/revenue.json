@@ -187,5 +187,306 @@
     "revenue_billion": 1.4176,
     "announce_date": "2019-01-10",
     "yoy_pct": -1.9
+  },
+  "2313": {
+    "stock_id": "2313",
+    "period": "2018-12",
+    "revenue_billion": 40.1026,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -29.7
+  },
+  "2314": {
+    "stock_id": "2314",
+    "period": "2018-12",
+    "revenue_billion": 5.7473,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -2.94
+  },
+  "2383": {
+    "stock_id": "2383",
+    "period": "2018-12",
+    "revenue_billion": 16.2589,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -13.43
+  },
+  "2419": {
+    "stock_id": "2419",
+    "period": "2018-12",
+    "revenue_billion": 12.9522,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 51.05
+  },
+  "3105": {
+    "stock_id": "3105",
+    "period": "2018-12",
+    "revenue_billion": 14.278,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -26.24
+  },
+  "3138": {
+    "stock_id": "3138",
+    "period": "2018-12",
+    "revenue_billion": 0.7019,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 22.6
+  },
+  "3152": {
+    "stock_id": "3152",
+    "period": "2018-12",
+    "revenue_billion": 1.6051,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 10.69
+  },
+  "3491": {
+    "stock_id": "3491",
+    "period": "2018-12",
+    "revenue_billion": 1.3289,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 18.49
+  },
+  "4904": {
+    "stock_id": "4904",
+    "period": "2018-12",
+    "revenue_billion": 74.6813,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -2.56
+  },
+  "5222": {
+    "stock_id": "5222",
+    "period": "2018-12",
+    "revenue_billion": 0.508,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 5.88
+  },
+  "6271": {
+    "stock_id": "6271",
+    "period": "2018-12",
+    "revenue_billion": 5.7272,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -7.15
+  },
+  "6285": {
+    "stock_id": "6285",
+    "period": "2018-12",
+    "revenue_billion": 50.1055,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 4.26
+  },
+  "2395": {
+    "stock_id": "2395",
+    "period": "2018-12",
+    "revenue_billion": 41.0696,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 4.59
+  },
+  "2397": {
+    "stock_id": "2397",
+    "period": "2018-12",
+    "revenue_billion": 3.942,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 88.14
+  },
+  "3022": {
+    "stock_id": "3022",
+    "period": "2018-12",
+    "revenue_billion": 6.1757,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 11.75
+  },
+  "3479": {
+    "stock_id": "3479",
+    "period": "2018-12",
+    "revenue_billion": 5.6883,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 16.89
+  },
+  "3564": {
+    "stock_id": "3564",
+    "period": "2018-12",
+    "revenue_billion": 1.7,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 31.59
+  },
+  "5289": {
+    "stock_id": "5289",
+    "period": "2018-12",
+    "revenue_billion": 5.0334,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -1.28
+  },
+  "6166": {
+    "stock_id": "6166",
+    "period": "2018-12",
+    "revenue_billion": 10.8602,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 12.64
+  },
+  "6245": {
+    "stock_id": "6245",
+    "period": "2018-12",
+    "revenue_billion": 8.6328,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 13.74
+  },
+  "6414": {
+    "stock_id": "6414",
+    "period": "2018-12",
+    "revenue_billion": 91.9205,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 55.63
+  },
+  "6579": {
+    "stock_id": "6579",
+    "period": "2018-12",
+    "revenue_billion": 4.533,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -3.8
+  },
+  "2327": {
+    "stock_id": "2327",
+    "period": "2018-12",
+    "revenue_billion": 45.3441,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 35.4
+  },
+  "2375": {
+    "stock_id": "2375",
+    "period": "2018-12",
+    "revenue_billion": 4.252,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 75.38
+  },
+  "2472": {
+    "stock_id": "2472",
+    "period": "2018-12",
+    "revenue_billion": 6.1641,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -8.78
+  },
+  "2478": {
+    "stock_id": "2478",
+    "period": "2018-12",
+    "revenue_billion": 3.5337,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -7.06
+  },
+  "2492": {
+    "stock_id": "2492",
+    "period": "2018-12",
+    "revenue_billion": 30.3277,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 54.63
+  },
+  "3026": {
+    "stock_id": "3026",
+    "period": "2018-12",
+    "revenue_billion": 8.5842,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -21.02
+  },
+  "3624": {
+    "stock_id": "3624",
+    "period": "2018-12",
+    "revenue_billion": 2.0565,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 28.11
+  },
+  "6127": {
+    "stock_id": "6127",
+    "period": "2018-12",
+    "revenue_billion": 0.551,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -40.85
+  },
+  "6173": {
+    "stock_id": "6173",
+    "period": "2018-12",
+    "revenue_billion": 4.0919,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 53.31
+  },
+  "6449": {
+    "stock_id": "6449",
+    "period": "2018-12",
+    "revenue_billion": 1.0536,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -51.27
+  },
+  "2337": {
+    "stock_id": "2337",
+    "period": "2018-12",
+    "revenue_billion": 20.434,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -34.62
+  },
+  "2344": {
+    "stock_id": "2344",
+    "period": "2018-12",
+    "revenue_billion": 36.9182,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -12.94
+  },
+  "2408": {
+    "stock_id": "2408",
+    "period": "2018-12",
+    "revenue_billion": 48.2897,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -19.07
+  },
+  "2451": {
+    "stock_id": "2451",
+    "period": "2018-12",
+    "revenue_billion": 10.4156,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -22.21
+  },
+  "3006": {
+    "stock_id": "3006",
+    "period": "2018-12",
+    "revenue_billion": 8.2512,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -4.93
+  },
+  "3260": {
+    "stock_id": "3260",
+    "period": "2018-12",
+    "revenue_billion": 20.8421,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -18.32
+  },
+  "4967": {
+    "stock_id": "4967",
+    "period": "2018-12",
+    "revenue_billion": 5.777,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -17.6
+  },
+  "5351": {
+    "stock_id": "5351",
+    "period": "2018-12",
+    "revenue_billion": 2.3211,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -57.09
+  },
+  "6531": {
+    "stock_id": "6531",
+    "period": "2018-12",
+    "revenue_billion": 4.2382,
+    "announce_date": "2019-01-10",
+    "yoy_pct": 54.6
+  },
+  "8271": {
+    "stock_id": "8271",
+    "period": "2018-12",
+    "revenue_billion": 6.1628,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -19.84
+  },
+  "8299": {
+    "stock_id": "8299",
+    "period": "2018-12",
+    "revenue_billion": 29.6187,
+    "announce_date": "2019-01-10",
+    "yoy_pct": -1.44
   }
 }
