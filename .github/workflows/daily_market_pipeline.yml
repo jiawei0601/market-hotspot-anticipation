@@ -50,7 +50,7 @@ jobs:
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "手動觸發：三板塊完整每週報告研判"
-            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging LEO_Satellite Edge_AI Passive_Components Memory; do
+            for SECTOR in CPO_Optical_Transceiver Advanced_Packaging Passive_Components Memory ABF_PCB_Substrate Semiconductor_Materials_Recycling IC_Design_ASIC AI_Power_Infrastructure Quartz_Crystal Traditional_Recovery; do
               echo "=== 掃描板塊: $SECTOR ==="
               python main_agent.py --weekly-report --sector "$SECTOR"
               sleep 90   # NIM 限流緩衝：板塊間隔避免 429
@@ -60,7 +60,7 @@ jobs:
             python main_agent.py --daily-update
           else
             echo "排程觸發：三板塊每週彙整報告產出"
-            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging LEO_Satellite Edge_AI Passive_Components Memory; do
+            for SECTOR in CPO_Optical_Transceiver Advanced_Packaging Passive_Components Memory ABF_PCB_Substrate Semiconductor_Materials_Recycling IC_Design_ASIC AI_Power_Infrastructure Quartz_Crystal Traditional_Recovery; do
               echo "=== 掃描板塊: $SECTOR ==="
               python main_agent.py --weekly-report --sector "$SECTOR"
               sleep 90   # NIM 限流緩衝：板塊間隔避免 429

@@ -1,0 +1,74 @@
+[
+  {
+    "stock_id": "3037",
+    "sector": "ABF_PCB_Substrate",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "欣興法說會（2026-02-25）揭露載板AI占比2025年40%、2026年目標60%，ABF載板稼動率約90%，全球ABF載板前三大供應商，Q1 ABF載板漲價幅度大於上季（財經媒體轉述法說會內容，非原始簡報PDF）",
+    "evidence_url": "https://ec.ltn.com.tw/article/breakingnews/5351020 | https://blog.fugle.tw/post/earnings-call-3037-2026-02-25",
+    "evidence_date": "2026-02-25",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "8046",
+    "sector": "ABF_PCB_Substrate",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "南電法說會（2026-03-17）揭露ABF/BT載板稼動率高檔、ABF載板往大於140mm/30層以上高階規格發展、AI/HPC營收占比16-18%、管理層稱ABF載板供需缺口恐擴大至2028年（財經媒體轉述）",
+    "evidence_url": "https://news.cnyes.com/news/id/6499432 | https://vocus.cc/article/6a2bfbc1fd89780001958938",
+    "evidence_date": "2026-03-17",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3189",
+    "sector": "ABF_PCB_Substrate",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "景碩法說會（2026-03-10）揭露ABF載板占營收約46%、ABF/HPC產品占比24%、產能利用率2025年底85%目標2026年底90%、切入Google TPU/Meta AI加速器訂單、三年235億資本支出擴充ABF產能（財經媒體轉述）",
+    "evidence_url": "https://vocus.cc/article/6a12e06bfd897800013a5ff5",
+    "evidence_date": "2026-03-10",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2383",
+    "sector": "ABF_PCB_Substrate",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "台光電法說會（2026-03-12）揭露NVIDIA OAM/UBB主機板CCL主要供應商、M7以上高速材料占比逾6成、M9次世代材料2026下半年量產鎖定更高速GPU/交換器平台、Q2全面漲價——本筆為AI高速CCL獨立敘事證據，與既有LEO_Satellite登記（低軌衛星CCL）為不同板塊各自獨立證據（財經媒體轉述）",
+    "evidence_url": "https://cmnews.com.tw/article/yeguanyu-d5708ac1-773e-11f1-91c0-039b5800218f",
+    "evidence_date": "2026-03-12",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6274",
+    "sector": "ABF_PCB_Substrate",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "台燿法說會（2026-05-06）揭露2026Q1銅箔基板銷售結構低損耗高速材料合計達70%（ELL&SLL 38%+VLL&LL 32%）、對應AI伺服器/800G交換器、材料規格M6/M7逐步升級M8（財經媒體轉述）",
+    "evidence_url": "https://www.stockfeel.com.tw/%E5%8F%B0%E7%87%BF-6274-ccl-ai-%E4%BC%BA%E6%9C%8D%E5%99%A8-%E4%BA%A4%E6%8F%9B%E5%99%A8/",
+    "evidence_date": "2026-05-06",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6213",
+    "sector": "ABF_PCB_Substrate",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "聯茂法說會（2026-05-28）揭露AI ASIC供應AWS/Meta的M7/M8材料、送樣認證M8-M9全系列高階材料因應AI與1.6T交換器、玻纖布缺貨引發全面漲價（財經媒體轉述）",
+    "evidence_url": "https://vocus.cc/article/6a183c44fd897800013d6d63 | https://uanalyze.com.tw/articles/3345851616",
+    "evidence_date": "2026-05-28",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  }
+]

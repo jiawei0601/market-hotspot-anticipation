@@ -142,5 +142,41 @@
     "evidence_date": "2026-07-04",
     "effective_from": "2026-07-04",
     "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6515",
+    "sector": "Advanced_Packaging",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "穎崴法說會簡報原件（MOPS，2026-05-14，已直接下載驗證內文）全篇以AI時代測試介面為主軸：CPO/CPC測試流程、GPU功耗路線圖（800W→1200W）、ASIC/HBM先進封裝測試挑戰、HyperSocket超大封裝高頻高速測試座；另有公司官網新聞稿（2025-03-17）自述semiconductor test interfaces for the AI era、AI/HPC營收占比逾50%",
+    "evidence_url": "https://mopsov.twse.com.tw/nas/STR/651520260514M001.pdf | https://www.winwayglobal.com/news-detail/GKUqRW8EiXO56Gup",
+    "evidence_date": "2026-05-14",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6510",
+    "sector": "Advanced_Packaging",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "精測2025Q3法說會簡報原件（MOPS，2025-10-29，已直接下載驗證內文）揭露HPC占營收40%、探針卡營收HPC占比57.9%、先進高腳數探針卡測試解決方案（Pin Count約65k）；公司官網探針卡產品頁明列BR系列適用GPU/APU/CPU、NS系列適用ASIC等晶片測試",
+    "evidence_url": "https://mopsov.twse.com.tw/nas/STR/651020251029M001.pdf | https://www.cht-pt.com.tw/xmdoc/cont?xsmsid=0L153385378835229864",
+    "evidence_date": "2025-10-29",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6683",
+    "sector": "Advanced_Packaging",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "雍智科技2025法說會簡報原件（MOPS，2025-10-22，已直接下載逐頁解析）市場應用明列AI/ASIC/CPU/GPU/高速運算，營業項目為晶圓測試載板（Probe Card/Interposer/Probe Head）與IC測試載板（Load Board/Burn-in Board/SFT），前段測試載板占比2025H1達33%；先前CPO板塊查證僅有媒體轉述、判不入簿（見ADR 0008），本筆為AI ASIC/GPU測試介面主題下找到的公司自揭原件，證據升級成立",
+    "evidence_url": "https://mopsov.twse.com.tw/nas/STR/668320251022M001.pdf | 輔助轉述: https://tw.stock.yahoo.com/news/雍智-晶圓測試載板業績看佳-布局美國成長可期-134819259.html",
+    "evidence_date": "2025-10-22",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
   }
 ]

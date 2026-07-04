@@ -1,0 +1,98 @@
+[
+  {
+    "stock_id": "3661",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會(2026-05-08 Q1)明確自陳「純ASIC提供商」定位，負責北美客戶N3 AI加速器compute die設計整合；官網IR定位為silicon design and production services for ASIC/SoC",
+    "evidence_url": "https://tw.fiisual.com/blog/post/2026/Alchip-2026-q1-earnings-call-memo | https://www.alchip.com/en/Investors/financials",
+    "evidence_date": "2026-05-08",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3443",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "官網「ASIC Design Service」頁明確用custom chips／AI and HPC chips描述業務；法說會揭露雲端CSP AI ASIC出貨大增、Turnkey業務動能",
+    "evidence_url": "https://www.guc-asic.com/tw/solution-asic.php | https://vocus.cc/article/694cb16dfd8978000146848b",
+    "evidence_date": "2025-07-31",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3035",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "官網「AI與HPC解決方案」產品頁明確載明雲到邊緣AI設計服務(WebFetch直接驗證)；法說會揭露拿下三星4奈米AI ASIC新案，總經理提出雲、邊、端三層AI布局，2025年報AI應用NRE占比自9%(2021)成長至22%(2025)",
+    "evidence_url": "https://www.faraday-tech.com/tw/content/Product/ASIC_Service/AISolutions | https://vocus.cc/article/69f150fafd897800010f0e6b",
+    "evidence_date": "2026-04-28",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6533",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會簡報(逐頁核實MOPS原文PDF)明確標題Edge AI With Computing In-Memory／Endpoint AI，列具名IP授權客戶案例(Axelera Metis SoC、TetraMem MX200、Renesas R9A06G150、Spacetouch SPV60)；性質為RISC-V IP授權商，非直接ASIC設計服務廠",
+    "evidence_url": "https://mopsov.twse.com.tw/nas/STR/653320250902M001.pdf | https://www.andestech.com/en/2025/06/06/",
+    "evidence_date": "2025-09-03",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2454",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會(2026Q1, 4/30)明確揭露AI Data Center ASIC為獨立業務線(為Google TPU系列Zebrafish/Humufish做客製化AI加速器設計)，2026年AI ASIC營收目標由10億美元上修至20億美元；NeuroPilot邊緣AI平台亦有揭露。誠實聲明：AI ASIC僅為聯發科多元業務之一(主力仍是手機天璣晶片)，非核心業務，但揭露具體可量化，達E1門檻",
+    "evidence_url": "https://money.udn.com/money/story/5612/9474593 | https://www.mediatek.com/asic",
+    "evidence_date": "2026-04-30",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3529",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會(2026-03-26)董事陳莉菁具名發言「我們就是真正的AI」，具體揭露55個7奈米至3奈米先進製程案中9個為AI晶片；NVIDIA Rubin世代晶片CXL記憶體介面已導入力旺技術；HBM Base Die/KV cache/伺服器DIMM均採用力旺IP。誠實聲明：性質為矽智財(IP)授權商而非直接ASIC設計服務廠，CMoney歸類為矽智財IP概念股(C50920)而非ASIC概念股(C50919)",
+    "evidence_url": "https://udn.com/news/story/6839/9406406 | https://vocus.cc/article/69d10fd9fd89780001472ee8",
+    "evidence_date": "2026-03-26",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2379",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E3",
+    "evidence_desc": "法說會(2025-10-29)揭露ASIC將進軍伺服器，5nm/4nm製程鎖定AI/邊緣運算應用；官方新聞稿(2026-05-21)發表RTD2811邊緣AI加速器(20 TOPS NPU)，副總裁具名發言。誠實聲明：屬龐大網通產品組合中的新興/次要業務，CMoney「ASIC概念股」(C50919)未收錄瑞昱，市場面共識薄弱，故降級為E3而非E1",
+    "evidence_url": "https://www.digitimes.com.tw/tech/dt/n/shwnws.asp?id=0000736553 | https://www.thelec.net/news/articleView.html?idxno=10746",
+    "evidence_date": "2025-10-30",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6643",
+    "sector": "IC_Design_ASIC",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E3",
+    "evidence_desc": "官方新聞稿(2025-11-05)原文使用edge AI描述IP應用領域布局(AI PC/AI glasses/邊緣AI加速器)；2026-05-06法說會簡報列邊緣AI/SDV為六大目標市場之一。CMoney「矽智財IP概念股」(C50920)收錄。誠實聲明：有方向性揭露但無具體客戶案例，未達E1門檻",
+    "evidence_url": "https://www.m31tech.com/advanced-nodes-and-royalties-drive-20-revenue-growth-target-for-2025/",
+    "evidence_date": "2025-11-05",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  }
+]

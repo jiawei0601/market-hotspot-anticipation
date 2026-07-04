@@ -40,5 +40,41 @@
     "next_generation": "N/A",
     "future_generation": "N/A",
     "narrative_hint": "HBM/DDR5 循環與利基型記憶體定位：AI伺服器HBM需求排擠標準型DRAM/NAND產能，帶動傳產記憶體(DDR4/利基型/工控模組)供給緊縮與漲價循環；此為典型景氣循環（供需缺口→漲價→擴產→供過於求）疊加結構性題材（AI需求墊高長期均值），非單一世代切換事件，適合用「合約價季增率」「稼動率」「資本支出」等連續指標追蹤"
+  },
+  "ABF_PCB_Substrate": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "高速運算與 HBM 需求大增，ABF 載板與高速 CCL 報價大幅調升——供應鏈為載板三雄（欣興/南電/景碩）與高速 CCL（台光電/台燿/聯茂）"
+  },
+  "Semiconductor_Materials_Recycling": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "半導體材料與循環經濟：稀有金屬及半導體靶材回收商機爆發，誕生超級黑馬——貴金屬回收精煉（光洋科/鑫科）為核心"
+  },
+  "IC_Design_ASIC": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "IC 設計（含矽智財 IP）與 AI ASIC 設計服務：邊緣 AI 落地，高價千金股核心陣營——CSP 客製 ASIC（世芯/創意/聯發科）與 IP 授權（力旺/M31/晶心科）雙軌"
+  },
+  "AI_Power_Infrastructure": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "電力與能源基礎設施（AI 電源）：資料中心高功率電源與水冷周邊件需求不墜——電源供應器（台達電/光寶科/康舒/群電）、重電（華城/士電/中興電/亞力）、水冷周邊件（富世達/雙鴻/奇鋐）三軌"
+  },
+  "Quartz_Crystal": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "石英頻率元件：網通基礎建設與 AI 網通終端大咬訂單——台灣石英六雄（晶技/希華/泰藝/台嘉碩/加高/安碁）"
+  },
+  "Traditional_Recovery": {
+    "current_generation": "N/A",
+    "next_generation": "N/A",
+    "future_generation": "N/A",
+    "narrative_hint": "傳統產業復甦回穩（塑化/水泥）：關稅不確定性消除，低基期資金避風港——台塑四寶與水泥雙雄為核心"
   }
 }

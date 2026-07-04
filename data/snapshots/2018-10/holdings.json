@@ -328,5 +328,210 @@
     "stock_id": "8299",
     "date": "2018-10-31",
     "foreign_ratio": 59.93
+  },
+  "3037": {
+    "stock_id": "3037",
+    "date": "2018-10-31",
+    "foreign_ratio": 19.73
+  },
+  "3189": {
+    "stock_id": "3189",
+    "date": "2018-10-31",
+    "foreign_ratio": 15.85
+  },
+  "6213": {
+    "stock_id": "6213",
+    "date": "2018-10-31",
+    "foreign_ratio": 24.71
+  },
+  "6274": {
+    "stock_id": "6274",
+    "date": "2018-10-31",
+    "foreign_ratio": 23.9
+  },
+  "8046": {
+    "stock_id": "8046",
+    "date": "2018-10-31",
+    "foreign_ratio": 7.86
+  },
+  "2379": {
+    "stock_id": "2379",
+    "date": "2018-10-31",
+    "foreign_ratio": 60.29
+  },
+  "2454": {
+    "stock_id": "2454",
+    "date": "2018-10-31",
+    "foreign_ratio": 56.51
+  },
+  "3035": {
+    "stock_id": "3035",
+    "date": "2018-10-31",
+    "foreign_ratio": 22.49
+  },
+  "3443": {
+    "stock_id": "3443",
+    "date": "2018-10-31",
+    "foreign_ratio": 18.85
+  },
+  "3529": {
+    "stock_id": "3529",
+    "date": "2018-10-31",
+    "foreign_ratio": 49.59
+  },
+  "3661": {
+    "stock_id": "3661",
+    "date": "2018-10-31",
+    "foreign_ratio": 33.4
+  },
+  "6533": {
+    "stock_id": "6533",
+    "date": "2018-10-31",
+    "foreign_ratio": 8.81
+  },
+  "1503": {
+    "stock_id": "1503",
+    "date": "2018-10-31",
+    "foreign_ratio": 31.88
+  },
+  "1513": {
+    "stock_id": "1513",
+    "date": "2018-10-31",
+    "foreign_ratio": 10.47
+  },
+  "1514": {
+    "stock_id": "1514",
+    "date": "2018-10-31",
+    "foreign_ratio": 9.41
+  },
+  "1519": {
+    "stock_id": "1519",
+    "date": "2018-10-31",
+    "foreign_ratio": 7.67
+  },
+  "2301": {
+    "stock_id": "2301",
+    "date": "2018-10-31",
+    "foreign_ratio": 46.55
+  },
+  "6282": {
+    "stock_id": "6282",
+    "date": "2018-10-31",
+    "foreign_ratio": 14.25
+  },
+  "6412": {
+    "stock_id": "6412",
+    "date": "2018-10-31",
+    "foreign_ratio": 9.54
+  },
+  "1785": {
+    "stock_id": "1785",
+    "date": "2018-10-31",
+    "foreign_ratio": 12.39
+  },
+  "3663": {
+    "stock_id": "3663",
+    "date": "2018-10-31",
+    "foreign_ratio": 3.68
+  },
+  "6803": {
+    "stock_id": "6803",
+    "date": "2018-10-31",
+    "foreign_ratio": 2.85
+  },
+  "8390": {
+    "stock_id": "8390",
+    "date": "2018-10-31",
+    "foreign_ratio": 20.3
+  },
+  "9955": {
+    "stock_id": "9955",
+    "date": "2018-10-31",
+    "foreign_ratio": 0.37
+  },
+  "2484": {
+    "stock_id": "2484",
+    "date": "2018-10-31",
+    "foreign_ratio": 5.07
+  },
+  "3042": {
+    "stock_id": "3042",
+    "date": "2018-10-31",
+    "foreign_ratio": 28.07
+  },
+  "3221": {
+    "stock_id": "3221",
+    "date": "2018-10-31",
+    "foreign_ratio": 3.52
+  },
+  "6174": {
+    "stock_id": "6174",
+    "date": "2018-10-31",
+    "foreign_ratio": 1.98
+  },
+  "8182": {
+    "stock_id": "8182",
+    "date": "2018-10-31",
+    "foreign_ratio": 51.34
+  },
+  "8289": {
+    "stock_id": "8289",
+    "date": "2018-10-31",
+    "foreign_ratio": 1.66
+  },
+  "1101": {
+    "stock_id": "1101",
+    "date": "2018-10-31",
+    "foreign_ratio": 31.98
+  },
+  "1102": {
+    "stock_id": "1102",
+    "date": "2018-10-31",
+    "foreign_ratio": 26.16
+  },
+  "1103": {
+    "stock_id": "1103",
+    "date": "2018-10-31",
+    "foreign_ratio": 3.07
+  },
+  "1104": {
+    "stock_id": "1104",
+    "date": "2018-10-31",
+    "foreign_ratio": 15.79
+  },
+  "1108": {
+    "stock_id": "1108",
+    "date": "2018-10-31",
+    "foreign_ratio": 2.2
+  },
+  "1301": {
+    "stock_id": "1301",
+    "date": "2018-10-31",
+    "foreign_ratio": 39.34
+  },
+  "1303": {
+    "stock_id": "1303",
+    "date": "2018-10-31",
+    "foreign_ratio": 30.83
+  },
+  "1312": {
+    "stock_id": "1312",
+    "date": "2018-10-31",
+    "foreign_ratio": 46.33
+  },
+  "1326": {
+    "stock_id": "1326",
+    "date": "2018-10-31",
+    "foreign_ratio": 41.22
+  },
+  "1714": {
+    "stock_id": "1714",
+    "date": "2018-10-31",
+    "foreign_ratio": 21.62
+  },
+  "6505": {
+    "stock_id": "6505",
+    "date": "2018-10-31",
+    "foreign_ratio": 9.19
   }
 }

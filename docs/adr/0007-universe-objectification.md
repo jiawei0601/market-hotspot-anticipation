@@ -65,6 +65,64 @@
 **版本升級**：`RULES_VERSION` 自 `0007-v1` 升為 `0007-v2`。既存的 v1 快照依下方重建政策
 （rules_version 過時）允許重建為 v2；重建為純本地計算（資料全在 `data/universe_cache/` 快取）。
 
+### Pre-registration 修正紀錄三（2026-07-04）：允許清單資料驅動擴充
+
+**觸發背景**：`data/sector_membership/` 板塊登記簿（ADR 0008）陸續收錄了與電子供應鏈無關或
+邊緣的板塊主題。查證草案（`docs/drafts/sector-recycle-quartz-tradi.md`）發現：
+
+- **Traditional_Recovery**（傳產復甦：塑化/水泥，11 檔）：`get_members_in_universe()` 交集為
+  **0 檔**——全部 11 檔的 `industry_category`（塑膠工業／水泥工業／油電燃氣業／化學工業）
+  都不在原 `INDUSTRY_ALLOWED` 十類「電子供應鏈相關」清單內，板塊與 universe 篩選完全互斥。
+- **Semiconductor_Materials_Recycling**（半導體材料循環經濟，7 檔）：交集僅 2 檔（1785光洋科、
+  3663鑫科，因剛好落在「其他電子類」）；其餘 5 檔（8390金益鼎、9955佳龍、6803崑鼎、
+  7610聯友金屬-創、6894衛司特）雖業務實質貼近半導體供應鏈（E1 等級證據），但官方
+  `industry_category` 分別落在「其他」「創新板股票」「綠能環保類」，與電子供應鏈十類無關。
+
+草案將此列為 ADR 0007 範圍內的決策缺口（選項 A：登記簿與 universe 交集脫鉤，維持現狀；
+選項 B：擴充 `INDUSTRY_ALLOWED` 涵蓋登記簿板塊實際涉及的產業分類），提交使用者裁決。
+
+**使用者裁決：選項 B**——擴充允許清單，使 universe 篩選能涵蓋登記簿已收錄板塊的成員。
+
+**方法（資料驅動枚舉，非憑空猜測分類字串）**：讀取 `data/sector_membership/` 下當時存在的
+全部 13 個板塊 JSON 事件檔的全部成員 `stock_id`（去除 `action=remove` 的撤銷事件），
+對照 `data/universe_cache/finmind_stock_info.json`（經 `build_universe_pool()` 相同的
+type∈{twse,tpex}過濾＋去重邏輯，確保與正式篩選管線行為一致）查出每檔的 `industry_category`，
+枚舉出「已入簿成員所屬、但不在現行 `INDUSTRY_ALLOWED` 的類別」完整清單。枚舉結果與新增類別：
+
+| 新增類別 | 觸發板塊 | 觸發股（stock_id 名稱） |
+|---|---|---|
+| 其他 | Semiconductor_Materials_Recycling | 6803崑鼎、8390金益鼎、9955佳龍 |
+| 創新板股票 | Semiconductor_Materials_Recycling | 7610聯友金屬-創 |
+| 綠能環保類 | Semiconductor_Materials_Recycling | 6894衛司特 |
+| 塑膠工業 | Traditional_Recovery | 1301台塑、1303南亞、1312國喬、1326台化 |
+| 水泥工業 | Traditional_Recovery | 1101台泥、1102亞泥、1103嘉泥、1104環泥、1108幸福 |
+| 油電燃氣業 | Traditional_Recovery | 6505台塑化 |
+| 化學工業 | Traditional_Recovery | 1714和桐 |
+
+共新增 7 類，`INDUSTRY_ALLOWED` 自 10 類擴為 17 類。
+
+**誠實聲明（本次修正的性質與限制）**：
+
+1. **允許清單語意本身發生質變**：自本輪起，`INDUSTRY_ALLOWED` 的設計語意從「電子供應鏈相關
+   類別」擴為「登記簿板塊涵蓋之產業」——這不再是單純的電子供應鏈濾網，而是「目前已知登記簿
+   板塊實際涉及的產業分類聯集」。此為範圍性質的改變，非資格判定字串粒度修正（與修正紀錄一、
+   二的性質不同），但修正時點仍在任何回測使用本清單之前，且是使用者明確裁決（選項 B）後執行，
+   非依回測績效反推。
+2. **「其他」是官方分類系統的通用未分類桶**：母體（2026-06 快照）中「其他」類別涵蓋 151 檔，
+   遠多於本次三檔觸發股（6803/8390/9955）。納入「其他」類別意味著這 151 檔中只要通過規則1
+   （上市時長）與規則2（流動性），皆會通過規則3，而非僅有這三檔觸發股。本次納入僅因登記簿
+   證據要求收錄這三檔，**未對「其他」桶內其餘 148 檔逐一審查產業適格性**，這是選項 B
+   的必然結果（允許清單以分類字串為粒度、無法只放行單一 stock_id），使用者裁決時已知悉此點。
+3. **後續維運責任**：若日後新增板塊引入尚未被本清單涵蓋的產業分類，需同步重跑本節枚舉方法
+   （比對板塊成員 `industry_category` 與 `INDUSTRY_ALLOWED`），修訂清單並在 ADR 補記錄，
+   不可讓允許清單與登記簿實際涵蓋範圍脫節、也不可為求方便直接放行未經枚舉驗證的分類字串。
+4. 本輪修正執行時，`data/sector_membership/` 下另有其他 agent 正在並行新增板塊 JSON
+   （ABF/IC_Design/AI_Power 等）；本次枚舉以修正執行當下已存在的 13 個板塊 JSON 為準，
+   晚到的板塊如引入新產業分類，依上一點原則由後續變更另行枚舉補查，不在本次範圍內。
+
+**版本升級**：`RULES_VERSION` 自 `0007-v2` 升為 `0007-v3`。既存的 v2 快照依下方重建政策
+（rules_version 過時）允許重建為 v3；重建為純本地計算（資料全在 `data/universe_cache/` 快取）。
+
 ### 資料來源架構（依 probe-0007 的「批次優先、混合為輔」建議）
 
 - **上市股（type=twse）**：規則 1、2 皆用 TWSE `exchangeReport/MI_INDEX?type=ALLBUT0999` 月底批次

@@ -86,12 +86,27 @@ class TestPassesIndustry(unittest.TestCase):
         self.assertFalse(universe.passes_industry("電子商務業"))
         self.assertFalse(universe.passes_industry("電器電纜"))
 
+    def test_pass_v3_data_driven_expansion_categories(self):
+        # 0007-v3：枚舉 data/sector_membership/ 全部板塊成員的 industry_category 後
+        # 資料驅動擴充納入的 7 類（見 ADR 0007 修正紀錄三、universe.py INDUSTRY_ALLOWED docstring）。
+        # 觸發股：其他(6803崑鼎/8390金益鼎/9955佳龍)、創新板股票(7610聯友金屬-創)、
+        # 綠能環保類(6894衛司特)——皆屬 Semiconductor_Materials_Recycling；
+        # 塑膠工業(1301/1303/1312/1326)、水泥工業(1101/1102/1103/1104/1108)、
+        # 油電燃氣業(6505台塑化)、化學工業(1714和桐)——皆屬 Traditional_Recovery。
+        self.assertTrue(universe.passes_industry("其他"))
+        self.assertTrue(universe.passes_industry("創新板股票"))
+        self.assertTrue(universe.passes_industry("綠能環保類"))
+        self.assertTrue(universe.passes_industry("塑膠工業"))
+        self.assertTrue(universe.passes_industry("水泥工業"))
+        self.assertTrue(universe.passes_industry("油電燃氣業"))
+        self.assertTrue(universe.passes_industry("化學工業"))
+
     def test_fail_none_category(self):
         self.assertFalse(universe.passes_industry(None))
 
-    def test_rules_version_is_v2(self):
-        # 「其他電子類」修正時同步升版，供快照追溯與重建政策判定
-        self.assertEqual(universe.RULES_VERSION, "0007-v2")
+    def test_rules_version_is_v3(self):
+        # 0007-v3：資料驅動擴充允許清單以涵蓋登記簿板塊成員，同步升版供快照追溯與重建政策判定
+        self.assertEqual(universe.RULES_VERSION, "0007-v3")
 
 
 class TestHelperDateMath(unittest.TestCase):
