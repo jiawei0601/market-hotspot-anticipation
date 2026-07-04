@@ -117,12 +117,21 @@ def load_sector_spec(sector: str) -> Dict[str, Any]:
 
     spec = specs.get(sector)
     if spec:
+        gens = (
+            spec.get("current_generation", "N/A"),
+            spec.get("next_generation", "N/A"),
+            spec.get("future_generation", "N/A"),
+        )
+        # 無世代框架板塊（如低軌衛星/邊緣 AI）：specs 有登記但世代欄位全為 N/A
+        # → 沿用「禁止套用/編造世代敘事」的防線（sector_spec_missing=True），
+        #   但 narrative_hint 照常帶入，讓報告有正確的板塊敘事錨點。
+        no_generation_framework = all(g == "N/A" for g in gens)
         return {
-            "current_generation": spec.get("current_generation", "N/A"),
-            "next_generation": spec.get("next_generation", "N/A"),
-            "future_generation": spec.get("future_generation", "N/A"),
+            "current_generation": gens[0],
+            "next_generation": gens[1],
+            "future_generation": gens[2],
             "narrative_hint": spec.get("narrative_hint", ""),
-            "sector_spec_missing": False,
+            "sector_spec_missing": no_generation_framework,
         }
 
     return {

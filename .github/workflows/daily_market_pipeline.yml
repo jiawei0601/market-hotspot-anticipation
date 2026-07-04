@@ -47,14 +47,20 @@ jobs:
           echo "Trigger Cron: $TRIGGER_CRON"
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "手動觸發：預設執行完整每週報告研判"
-            python main_agent.py --weekly-report
+            echo "手動觸發：三板塊完整每週報告研判"
+            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging; do
+              echo "=== 掃描板塊: $SECTOR ==="
+              python main_agent.py --weekly-report --sector "$SECTOR"
+            done
           elif [ "$TRIGGER_CRON" = "17 10 * * 1-5" ]; then
             echo "排程觸發：執行每日股價追蹤與觀察名單更新"
             python main_agent.py --daily-update
           else
-            echo "排程觸發：執行每週彙整報告產出"
-            python main_agent.py --weekly-report
+            echo "排程觸發：三板塊每週彙整報告產出"
+            for SECTOR in CPO_Optical_Transceiver Thermal_Cooling Advanced_Packaging; do
+              echo "=== 掃描板塊: $SECTOR ==="
+              python main_agent.py --weekly-report --sector "$SECTOR"
+            done
           fi
 
       - name: Generate Static HTML Pages for GitHub Pages
