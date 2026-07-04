@@ -62,7 +62,7 @@
 - **Universe v3**（使用者裁決選項 B）：INDUSTRY_ALLOWED 10→17 類（資料驅動枚舉：化學/塑膠/水泥/油電燃氣/綠能環保類/創新板/其他），138 快照全重建，2026-06 漏斗 2741→2412→939→**617**；傳產 ∩universe 0→9。ADR 0007 修正紀錄三。
 - **三層 LLM 備援鏈**：NIM GLM-5.2 → DeepSeek 官方（thinking 模式僅支援 json_mode，已做包裝層）→ Claude CLI（本機限定）；429 同層 2 輪×180s 後黏性降級；報告尾部誠實標示實際 provider。CI secrets 三把齊備。
 - CHINESE_MAPPING 121 筆（全數對 universe records 官方欄位校驗）；sector_specs 13 板塊（十分類敘事為使用者原話）；PIT 資料層 117 家公司。178 tests 綠。
-- 十分類首輪掃描交由 CI 週報（cron 週日）執行，或手動逐板塊跑。
+- 十分類首輪掃描已於 2026-07-05 凌晨手動完成 **10/10 全數 Critic PASS 發布**（六板塊史上首份）；備援鏈實戰驗證：石英全程 DeepSeek、先進封裝 NIM+DeepSeek 混合，報告尾誠實標示。CPO 曾因 critic 要求「單一設備商訂單」與系統設計矛盾三輪 FAIL → 要求已對齊（板塊層代理訊號＝規範）。
 
 ## 進行中
 - 無。（Memory 首掃已於 2026-07-04 21:4x 完成，Critic 一輪 PASS，七板塊報告 7/7 齊備；429 重試已改固定 180 秒×10 輪）
