@@ -10,3 +10,4 @@ venv/
 data/universe_cache/
 universe_backfill.log
 _watch_backfill_notify.py
+universe_rebuild_v2.log
