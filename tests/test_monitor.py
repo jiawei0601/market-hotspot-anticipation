@@ -1,10 +1,12 @@
 import unittest
 from unittest import mock
+import pit_store
 from market_monitor import (
     MarketInformationMonitor,
     CONSENSUS_MAX,
     MEMBERSHIP_SOURCE_REGISTRY,
     MEMBERSHIP_SOURCE_FALLBACK,
+    _PRIORS_PATH,
 )
 
 class TestMarketInformationMonitor(unittest.TestCase):
@@ -173,6 +175,93 @@ class TestResolveSectorMembers(unittest.TestCase):
         self.assertEqual(source, MEMBERSHIP_SOURCE_FALLBACK)
         self.assertEqual(sorted(members), sorted(expected))
         self.assertEqual(len(members), 12, "現行 Feynman 世代（最新 era）應為 12 檔手選名單")
+
+
+class TestSectorKeyedContentValuePriors(unittest.TestCase):
+    """content_value.json 先驗矩陣改為 sector-keyed 後的讀取行為驗證。
+
+    見任務交辦：pit_store.load_content_value_priors 加 sector 參數；
+    market_monitor.get_point_in_time_matrix 加 sector 參數，查無該板塊回傳空 dict/list。
+    """
+
+    def setUp(self):
+        self.monitor = MarketInformationMonitor()
+
+    def test_load_content_value_priors_sector_keyed_read(self):
+        """指定 sector='CPO_Optical_Transceiver' 應讀到含 generation_specs 與 eras 的 dict。"""
+        priors = pit_store.load_content_value_priors(_PRIORS_PATH, sector="CPO_Optical_Transceiver")
+        self.assertIn("generation_specs", priors)
+        self.assertIn("eras", priors)
+        self.assertIsInstance(priors["eras"], list)
+        self.assertGreater(len(priors["eras"]), 0)
+
+    def test_load_content_value_priors_no_sector_returns_sectors_dict(self):
+        """未帶 sector（None）時回傳整個 sectors dict，可列舉出 CPO_Optical_Transceiver。"""
+        sectors = pit_store.load_content_value_priors(_PRIORS_PATH, sector=None)
+        self.assertIn("CPO_Optical_Transceiver", sectors)
+        self.assertIn("eras", sectors["CPO_Optical_Transceiver"])
+
+    def test_load_content_value_priors_unknown_sector_returns_empty_dict(self):
+        """查無該板塊時回傳空 dict，而非 KeyError/例外。"""
+        priors = pit_store.load_content_value_priors(_PRIORS_PATH, sector="Nonexistent_Sector")
+        self.assertEqual(priors, {})
+
+    def test_get_point_in_time_matrix_unknown_sector_returns_empty_list(self):
+        """market_monitor.get_point_in_time_matrix 查無板塊時回傳空 list（非例外）。"""
+        result = self.monitor.get_point_in_time_matrix(sector="Nonexistent_Sector")
+        self.assertEqual(result, [])
+
+    def test_get_point_in_time_matrix_unknown_sector_with_as_of_date(self):
+        """帶 as_of_date 但板塊不存在時仍應回傳空 list（不因日期參數而拋例外）。"""
+        result = self.monitor.get_point_in_time_matrix("2024-06-30", sector="Nonexistent_Sector")
+        self.assertEqual(result, [])
+
+    def test_cpo_sector_behavior_unchanged_default(self):
+        """CPO_Optical_Transceiver 板塊行為回歸不變：不帶 sector（沿用 DEFAULT_SECTOR）
+        與明確帶入 sector='CPO_Optical_Transceiver' 結果應完全一致。"""
+        default_result = self.monitor.get_point_in_time_matrix("2024-06-30")
+        explicit_result = self.monitor.get_point_in_time_matrix(
+            "2024-06-30", sector="CPO_Optical_Transceiver"
+        )
+        self.assertEqual(default_result, explicit_result)
+        self.assertEqual(len(default_result), 10)  # 2024-12-31 以前 era（10 支）
+
+    def test_cpo_sector_all_eras_regression(self):
+        """CPO_Optical_Transceiver 四個世代的成員數與代表性數值與改版前完全一致。"""
+        cases = [
+            ("2018-01-01", 6),
+            ("2021-06-01", 9),
+            ("2024-06-30", 10),
+            (None, 12),
+        ]
+        for as_of, expected_count in cases:
+            result = self.monitor.get_point_in_time_matrix(as_of)
+            self.assertEqual(len(result), expected_count, f"as_of={as_of}")
+
+        # 抽樣代表值：3450.TW 在最新 era 的 Feynman content value 應為 14.0（不可變先驗）
+        latest = self.monitor.get_point_in_time_matrix(None)
+        foci = next(x for x in latest if x["company_id"] == "3450.TW")
+        self.assertEqual(foci["content_value_by_gen"]["Feynman"], 14.0)
+
+
+class TestRegistryPathIdNormalization(unittest.TestCase):
+    """防回歸：登記簿回傳純代號（'3450'）、content_value 矩陣為帶尾碼代號（'3450.TW'），
+    get_supply_chain_schedule 的矩陣查表必須經 _pure_id 正規化才能匹配。
+    （2026-07-04 雙路 review 抓到的 P0：未正規化時 registry 路徑 CV 分析全空。）"""
+
+    def test_registry_pure_ids_still_match_suffixed_matrix(self):
+        import market_monitor as mm
+        from unittest import mock
+        import sector_membership
+        monitor = mm.MarketInformationMonitor()
+        pure_ids = ["3450", "3324", "3131"]  # 登記簿格式：無尾碼
+        with mock.patch.object(sector_membership, "get_members_in_universe",
+                               return_value=pure_ids):
+            s = monitor.get_supply_chain_schedule(
+                "Vera_Rubin", "Feynman", sector="CPO_Optical_Transceiver")
+        self.assertEqual(s["membership_source"], "registry")
+        self.assertEqual(len(s["timeline_matrix"]), 3,
+                         "純代號成員必須匹配到帶尾碼的矩陣項目（_pure_id 正規化）")
 
 
 if __name__ == "__main__":

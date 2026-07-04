@@ -15,6 +15,14 @@ REVENUE_PROJECTION_NOTE = "機械外推情境（末值 × 固定加速係數）�
 BACKLOG_SIGNAL_NOTE = "板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料"
 
 # 板塊成員解析來源標記
+def _pure_id(cid: str) -> str:
+    """去除 yfinance 尾碼（'3131.TWO' → '3131'）。
+    登記簿/universe 用純代號、content_value 矩陣用帶尾碼代號，
+    所有跨來源的 id 比對一律先經此正規化（2026-07-04 review 抓到的 P0：
+    registry 路徑下矩陣查表永遠 miss 導致 CV 分析全空）。"""
+    return cid.split(".")[0] if isinstance(cid, str) else cid
+
+
 MEMBERSHIP_SOURCE_REGISTRY = "registry"
 MEMBERSHIP_SOURCE_FALLBACK = "prior_fallback_non_pit"
 MEMBERSHIP_FALLBACK_NOTE = (
@@ -47,9 +55,12 @@ class MarketInformationMonitor:
     DEFAULT_SECTOR = "CPO_Optical_Transceiver"
 
     def __init__(self):
-        _priors = pit_store.load_content_value_priors(_PRIORS_PATH)
-        self.generation_specs = _priors["generation_specs"]
-        self._eras = _priors["eras"]
+        # 建構時仍載入 DEFAULT_SECTOR 的 generation_specs（供未帶 sector 的舊呼叫點
+        # 與模組層級用法沿用；get_point_in_time_matrix 本身改為逐次依 sector 查詢，
+        # 不依賴這裡快取的 self._eras）。
+        _priors = pit_store.load_content_value_priors(_PRIORS_PATH, sector=self.DEFAULT_SECTOR)
+        self.generation_specs = _priors.get("generation_specs", {})
+        self._eras = _priors.get("eras", [])
         self.real_revenue_cache = None
 
     # ==================== 板塊成員解析（單一入口）====================
@@ -91,29 +102,41 @@ class MarketInformationMonitor:
         if members:
             return members, MEMBERSHIP_SOURCE_REGISTRY
 
-        fallback_ids = [it["company_id"] for it in self.get_point_in_time_matrix(as_of_date)]
+        fallback_ids = [it["company_id"] for it in self.get_point_in_time_matrix(as_of_date, sector)]
         return fallback_ids, MEMBERSHIP_SOURCE_FALLBACK
 
     # ==================== 供應鏈矩陣 ====================
 
-    def get_point_in_time_matrix(self, as_of_date: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_point_in_time_matrix(self, as_of_date: Optional[str] = None,
+                                 sector: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         依 as_of_date 回傳當時的供應鏈標的選股池（PIT，杜絕 look-ahead bias）。
         - 2015-2019：早期世代（6 支）
         - 2020-2022：Hopper 世代（9 支）
         - 2023-2024：Blackwell 世代（10 支）
         - 2025-2026：Feynman 世代（12 支）
+
+        sector 未帶入時預設 DEFAULT_SECTOR（CPO_Optical_Transceiver，向下相容舊呼叫點）。
+        content_value.json 先驗矩陣已改為 sector-keyed；查無該板塊（尚無先驗資料）時
+        回傳空 dict（下游呼叫點如 :172-173 已會靜默跳過，simulate_revenue_inflection
+        已有 name=cid / segment=None / consensus=50.0 安全預設）。
         """
+        sector = sector or self.DEFAULT_SECTOR
+        _priors = pit_store.load_content_value_priors(_PRIORS_PATH, sector=sector)
+        eras = _priors.get("eras", [])
+        if not eras:
+            return []
+
         if as_of_date:
             today = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
         else:
             today = datetime.date.today()
 
-        for era in self._eras:
+        for era in eras:
             until = era.get("until")
             if until is None or today <= datetime.datetime.strptime(until, "%Y-%m-%d").date():
                 return era["companies"]
-        return self._eras[-1]["companies"]
+        return eras[-1]["companies"]
 
     # ==================== 高頻報價（仍為合成模擬，非真實資料）====================
 
@@ -153,8 +176,12 @@ class MarketInformationMonitor:
 
     def get_supply_chain_schedule(self, current_gen: str, next_gen: str,
                                   as_of_date: Optional[str] = None,
-                                  sector: Optional[str] = None) -> Dict[str, Any]:
-        """推演世代更迭下的供應鏈洗牌，含 Feynman_Next 替代風險。
+                                  sector: Optional[str] = None,
+                                  future_gen: str = "Feynman_Next") -> Dict[str, Any]:
+        """推演世代更迭下的供應鏈洗牌，含下下世代（future_gen）替代風險。
+
+        future_gen 預設 "Feynman_Next" 維持 CPO 既有行為；其他板塊由呼叫端
+        依 sector_specs.json 傳入（未知板塊為 "N/A"，CV 查表落空時安全回 0.0）。
 
         迭代名單改由 resolve_sector_members(sector, as_of) 解析（板塊登記簿優先，
         無紀錄時 fallback 現行 content_value era 名單）；content_value_by_gen 等
@@ -165,15 +192,15 @@ class MarketInformationMonitor:
         bottlenecks = []
 
         member_ids, membership_source = self.resolve_sector_members(sector, as_of_date)
-        matrix_by_cid = {it["company_id"]: it for it in self.get_point_in_time_matrix(as_of_date)}
+        matrix_by_cid = {_pure_id(it["company_id"]): it for it in self.get_point_in_time_matrix(as_of_date, sector)}
 
         for cid in member_ids:
-            item = matrix_by_cid.get(cid)
+            item = matrix_by_cid.get(_pure_id(cid))
             if not item:
                 continue
             val_current = item["content_value_by_gen"].get(current_gen, 0.0)
             val_next    = item["content_value_by_gen"].get(next_gen, 0.0)
-            val_future  = item["content_value_by_gen"].get("Feynman_Next", 0.0)
+            val_future  = item["content_value_by_gen"].get(future_gen, 0.0)
 
             change_pct        = (val_next - val_current) / val_current * 100 if val_current > 0 else 999.0
             future_change_pct = (val_future - val_next)  / val_next    * 100 if val_next    > 0 else 999.0
@@ -210,7 +237,7 @@ class MarketInformationMonitor:
         return {
             "current_generation": current_gen,
             "next_generation": next_gen,
-            "future_generation": "Feynman_Next",
+            "future_generation": future_gen,
             "bottlenecks": bottlenecks,
             "timeline_matrix": analysis,
             "membership_source": membership_source,
@@ -314,13 +341,13 @@ class MarketInformationMonitor:
         except ImportError:
             registry_segments = {}
 
-        matrix_by_cid = {it["company_id"]: it for it in self.get_point_in_time_matrix(as_of_date)}
+        matrix_by_cid = {_pure_id(it["company_id"]): it for it in self.get_point_in_time_matrix(as_of_date, sector)}
 
         result: Dict[str, Optional[str]] = {}
         for cid in member_ids:
             seg = registry_segments.get(cid)
             if seg is None:
-                item = matrix_by_cid.get(cid)
+                item = matrix_by_cid.get(_pure_id(cid))
                 seg = item["segment"] if item else None
             result[cid] = seg
         return result
@@ -499,13 +526,13 @@ class MarketInformationMonitor:
         sector_backlog_yoy = self.get_backlog_lead(as_of_date, sector)
         equipment_lead_active_global = sector_backlog_yoy > BACKLOG_LEAD_MIN
 
-        matrix = self.get_point_in_time_matrix(as_of_date)
-        matrix_by_cid = {it["company_id"]: it for it in matrix}
+        matrix = self.get_point_in_time_matrix(as_of_date, sector)
+        matrix_by_cid = {_pure_id(it["company_id"]): it for it in matrix}
         _resolved_ids, membership_source = self.resolve_sector_members(sector, as_of_date)
         segments_by_cid = self._resolve_member_segments(sector, as_of_date, company_ids)
 
         for cid in company_ids:
-            item = matrix_by_cid.get(cid)
+            item = matrix_by_cid.get(_pure_id(cid))
             name = item["name"] if item else cid
             segment = segments_by_cid.get(cid)
 

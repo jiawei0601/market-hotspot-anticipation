@@ -20,9 +20,12 @@ import urllib.request
 import urllib.parse
 
 import pit_store
+import sector_membership
 
-# ==================== 全 universe 的 yfinance ticker 對照表 ====================
+# ==================== legacy 的 yfinance ticker 對照表 ====================
 # key = 純數字股票代碼（與 data/snapshots/ 一致），value = yfinance ticker
+# 保留供既有呼叫相容；新代碼優先透過 resolve_yfinance_ticker()，查無 legacy 對照時
+# 改用 sector_membership.get_universe_type_map 動態解析（登記簿驅動，見 ADR 0008）。
 YFINANCE_TICKERS: dict[str, str] = {
     "3131": "3131.TWO",
     "3680": "3680.TWO",
@@ -38,7 +41,62 @@ YFINANCE_TICKERS: dict[str, str] = {
     "8027": "8027.TWO",
 }
 
+_TYPE_TO_SUFFIX = {"twse": ".TW", "tpex": ".TWO"}
+
 FINMIND_URL = "https://api.finmindtrade.com/api/v4/data"
+
+
+def _finmind_token() -> str:
+    """FinMind API token：環境變數 FINMIND_TOKEN 優先，否則從專案 .env 讀取；皆無則回空字串（匿名層）。
+    邏輯與 universe.py 的 _finmind_token() 一致（本檔不得改 universe.py，故自建同邏輯函式）。"""
+    token = os.environ.get("FINMIND_TOKEN", "").strip()
+    if token:
+        return token
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    try:
+        with open(env_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("FINMIND_TOKEN="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+    except OSError:
+        pass
+    return ""
+
+
+def resolve_yfinance_ticker(company_id: str, as_of: str | None = None) -> str:
+    """把純數字股票代碼解析為 yfinance ticker，三層 fallback：
+
+    1. YFINANCE_TICKERS legacy 對照表（保留相容既有呼叫）。
+    2. 查無 legacy 對照 → 用 sector_membership.get_universe_type_map(as_of) 查
+       universe 快照的 type（twse -> '{id}.TW'，tpex -> '{id}.TWO'）。
+       as_of 未提供時預設今天所在月份。
+    3. 兩層皆查無 → raise ValueError 附明確訊息（不可靜默臆測）。
+    """
+    legacy = YFINANCE_TICKERS.get(company_id)
+    if legacy is not None:
+        return legacy
+
+    if as_of is None:
+        as_of = datetime.date.today().strftime("%Y-%m")
+
+    try:
+        type_map = sector_membership.get_universe_type_map(as_of)
+    except FileNotFoundError as e:
+        raise ValueError(
+            f"無 yfinance ticker 對照：{company_id}"
+            f"（legacy 表查無，universe 快照亦查無：{e}）"
+        ) from e
+
+    stock_type = type_map.get(company_id)
+    suffix = _TYPE_TO_SUFFIX.get(stock_type)
+    if suffix is None:
+        raise ValueError(
+            f"無 yfinance ticker 對照：{company_id}"
+            f"（legacy 表查無，universe type map 中 type={stock_type!r} 無法判斷 .TW/.TWO 尾碼；"
+            "請確認 universe 快照涵蓋此股或補充 YFINANCE_TICKERS）"
+        )
+    return f"{company_id}{suffix}"
 
 
 # ==================== FinMind 抓取與正規化 ====================
@@ -184,21 +242,21 @@ def _month_last_day(year_month: str) -> str:
     return (datetime.date(ny, nm, 1) - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
 
-def fetch_month_prices(company_id: str, start_date: str = "2015-01-01") -> list:
+def fetch_month_prices(company_id: str, start_date: str = "2015-01-01",
+                       as_of: str | None = None) -> list:
     """以 yfinance 抓取月 K 收盤價（interval='1mo'），回傳正規化列表：
     [{stock_id, year_month 'YYYY-MM', close float, close_date 'YYYY-MM-DD'}]
 
     close_date = 該月最後一個日曆日（作為 PIT 可見日截斷點）。
-    company_id 格式：純 4 位代碼（如 '3131'），透過 YFINANCE_TICKERS 對照。
+    company_id 格式：純 4 位代碼（如 '3131'），透過 resolve_yfinance_ticker() 對照
+    （legacy 表優先，查無則以 sector_membership 登記簿的 universe type map 動態解析）。
     """
     try:
         import yfinance as yf
     except ImportError as e:
         raise RuntimeError("需要安裝 yfinance：pip install yfinance") from e
 
-    ticker_sym = YFINANCE_TICKERS.get(company_id)
-    if ticker_sym is None:
-        raise ValueError(f"無 yfinance ticker 對照：{company_id}；請更新 YFINANCE_TICKERS")
+    ticker_sym = resolve_yfinance_ticker(company_id, as_of=as_of)
 
     end = (datetime.date.today() + datetime.timedelta(days=45)).strftime("%Y-%m-%d")
     hist = yf.Ticker(ticker_sym).history(start=start_date, end=end, interval="1mo")
@@ -267,8 +325,83 @@ def backfill_prices(
     return {"written": written, "skipped": skipped, "errors": errors}
 
 
-if __name__ == "__main__":
-    # 溫和樣本測試：2 檔 × 2 月，寫入 temp（不污染 data/），少量 FinMind 呼叫。
+# ==================== 登記簿驅動的板塊回填（sector_membership 全集） ====================
+
+def _month_range_inclusive(start: str, end: str) -> list:
+    """回傳 start ~ end（皆 'YYYY-MM'，含頭尾）逐月列表。"""
+    sy, sm_ = int(start[:4]), int(start[5:7])
+    ey, em = int(end[:4]), int(end[5:7])
+    total_start = sy * 12 + (sm_ - 1)
+    total_end = ey * 12 + (em - 1)
+    months = []
+    for total in range(total_start, total_end + 1):
+        yy, mm = divmod(total, 12)
+        months.append(f"{yy:04d}-{mm + 1:02d}")
+    return months
+
+
+def backfill_sector(sector: str, start_month: str = "2015-01",
+                     end_month: str | None = None,
+                     token: str | None = None) -> dict:
+    """以 sector_membership 登記簿驅動的板塊回填：成員清單不再寫死，改由登記簿決定。
+
+    成員解析：用 sector_membership.get_members(sector, <end_month 或今月>) 取得該板塊
+    「登記簿全集」（不與 universe 快照交集——資料層寧多勿少，交集判斷留給下游分析層）。
+
+    對每個成員逐檔跑：
+    - backfill()：營收 + 外資持股快照。
+    - backfill_prices()：股價快照（resolve_yfinance_ticker 三層 fallback 解析 ticker）。
+
+    已存在的快照月會被底層 pit_store.write_monthly_snapshot 的 append-only 鐵律擋下
+    （raise SnapshotExistsError），backfill()/backfill_prices() 內部已 catch 並歸入
+    'skipped'，故本函式沿用其回傳、不需額外處理。
+
+    進度：每處理 10 檔成員列印一次。
+
+    回傳：{'sector', 'as_of', 'members', 'revenue_holdings': {...}, 'prices': {...}}
+    """
+    as_of = end_month or datetime.date.today().strftime("%Y-%m")
+    members = sector_membership.get_members(sector, as_of)
+
+    if token is None:
+        token = _finmind_token()
+
+    months = _month_range_inclusive(start_month, as_of)
+
+    print(f"板塊 {sector} @ {as_of}：登記簿全集共 {len(members)} 檔成員，"
+          f"回填月份 {start_month} ~ {as_of}（共 {len(months)} 個月）", flush=True)
+
+    total = len(members)
+    rev_hold_results = {"written": [], "skipped": [], "errors": []}
+    price_results = {"written": [], "skipped": [], "errors": []}
+
+    for i, cid in enumerate(members, 1):
+        r1 = backfill([cid], months, start_date=f"{start_month}-01", token=token)
+        r2 = backfill_prices([cid], months, start_date=f"{start_month}-01")
+        for key in ("written", "skipped", "errors"):
+            rev_hold_results[key].extend(r1[key])
+            price_results[key].extend(r2[key])
+
+        if i % 10 == 0 or i == total:
+            print(f"[{i}/{total}] 已處理板塊 {sector} 成員（累計 revenue/holdings "
+                  f"written={len(rev_hold_results['written'])} "
+                  f"skipped={len(rev_hold_results['skipped'])} "
+                  f"errors={len(rev_hold_results['errors'])}；"
+                  f"prices written={len(price_results['written'])} "
+                  f"skipped={len(price_results['skipped'])} "
+                  f"errors={len(price_results['errors'])}）", flush=True)
+
+    return {
+        "sector": sector,
+        "as_of": as_of,
+        "members": members,
+        "revenue_holdings": rev_hold_results,
+        "prices": price_results,
+    }
+
+
+def _run_sample_test():
+    """溫和樣本測試：2 檔 × 2 月，寫入 temp（不污染 data/），少量 FinMind 呼叫。"""
     import tempfile
 
     companies = ["3131", "2330"]      # 弘塑、台積電（必有資料）
@@ -290,3 +423,24 @@ if __name__ == "__main__":
         print("revenue 3131 @2024-02:", rev["3131"])
         print("holding 3131 @2024-02:", {k: hold["3131"][k] for k in ("date", "foreign_ratio")})
     print("OK")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="PIT 資料 ingestion（登記簿驅動）")
+    parser.add_argument("--backfill-sector", metavar="SECTOR",
+                         help="以 sector_membership 登記簿全集回填某板塊（營收/持股/股價）")
+    parser.add_argument("--start", default="2015-01", metavar="YYYY-MM",
+                         help="回填起始月，預設 2015-01（配合 --backfill-sector）")
+    parser.add_argument("--end", default=None, metavar="YYYY-MM",
+                         help="回填結束月與成員解析 as_of，預設今月（配合 --backfill-sector）")
+    args = parser.parse_args()
+
+    if args.backfill_sector:
+        result = backfill_sector(args.backfill_sector, start_month=args.start, end_month=args.end)
+        print(f"完成：{result['sector']} 共 {len(result['members'])} 檔成員；"
+              f"revenue/holdings written={len(result['revenue_holdings']['written'])}；"
+              f"prices written={len(result['prices']['written'])}")
+    else:
+        _run_sample_test()

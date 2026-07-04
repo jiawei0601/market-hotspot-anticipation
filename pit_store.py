@@ -78,10 +78,33 @@ def read_snapshot(
         return json.load(f)
 
 
-def load_content_value_priors(path: str = PRIORS_PATH) -> dict:
-    """讀取並回傳 content_value.json（含 generation_specs 與 eras）。"""
+def load_content_value_priors(path: str = PRIORS_PATH, sector: str | None = None) -> dict:
+    """讀取 content_value.json（sector-keyed 先驗矩陣，見 ADR 板塊化改版）。
+
+    檔案頂層結構為 {"sectors": {<sector_name>: {"generation_specs": ..., "eras": ...}, ...}}。
+
+    - sector 指定時：回傳該板塊的 {"generation_specs":..., "eras":...} dict；
+      查無該板塊 → 回傳空 dict {}（不可變先驗矩陣沒有此板塊時的顯式空值，
+      供呼叫端如 market_monitor.get_point_in_time_matrix 靜默跳過）。
+    - sector 為 None（預設）：回傳整個 sectors dict（{sector_name: {...}, ...}），
+      供需要列舉全部板塊或做進一步查詢的呼叫端使用。
+
+    向下相容：舊呼叫點若沿用 pre-ADR 檔案格式（頂層直接是
+      {"generation_specs":..., "eras":...}，無 "sectors" 包裝）時，
+      sector 為 None 會直接回傳整份頂層 dict；sector 有指定時視為查無該板塊，
+      回傳空 dict {}。
+    """
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+
+    if "sectors" not in data:
+        # 舊格式（無 sectors 包裝）向下相容
+        return data if sector is None else {}
+
+    sectors = data["sectors"]
+    if sector is None:
+        return sectors
+    return sectors.get(sector, {})
 
 
 if __name__ == "__main__":

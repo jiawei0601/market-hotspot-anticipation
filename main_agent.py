@@ -44,10 +44,12 @@ from market_monitor import (
 # 1. 狀態定義 (TypedDict) - 升級以包含下下一代能見度、設備訂單與預期差共識分析
 class MarketHotspotState(TypedDict):
     target_sector: str                  # 目標行業/技術板塊 (例如: "CPO_Optical_Transceiver")
-    current_generation: str             # 當前主流架構 (例如: "Vera_Rubin")
-    next_generation: str                # 下一代架構 (例如: "Feynman")
-    future_generation: str              # 下下一代架構 (例如: "Feynman_Next")
-    
+    current_generation: str             # 當前主流架構 (例如: "Vera_Rubin")；查無板塊規格時為 "N/A"
+    next_generation: str                # 下一代架構 (例如: "Feynman")；查無板塊規格時為 "N/A"
+    future_generation: str              # 下下一代架構 (例如: "Feynman_Next")；查無板塊規格時為 "N/A"
+    narrative_hint: str                 # 板塊敘事框架提示句（來自 sector_specs.json，查無則為空字串）
+    sector_spec_missing: bool           # True 表示該板塊未登記世代規格，各 expert 禁止套用 GPU 世代敘事、禁止編造世代名
+
     # 專家產出資料
     supply_chain_analysis: Dict[str, Any]      # 包含下下世代替代風險分析
     pricing_revenue_analysis: Dict[str, Any]   # 包含設備 Backlog 領先指標分析
@@ -96,6 +98,41 @@ def _invoke_with_retry(llm, messages, retries: int = 3, backoff: float = 2.0):
                 time.sleep(backoff * (2 ** attempt))
     raise RuntimeError(f"LLM 呼叫在 {retries} 次重試後仍失敗：{last_err}")
 
+# 板塊世代規格先驗檔路徑（見 data/priors/sector_specs.json）
+_SECTOR_SPECS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "priors", "sector_specs.json")
+
+def load_sector_spec(sector: str) -> Dict[str, Any]:
+    """
+    查表取得板塊的世代規格（current/next/future generation）與敘事提示句。
+    查無該板塊 → 世代欄位一律回傳 "N/A"，並標記 sector_spec_missing=True，
+    表示此板塊尚未登記世代規格，禁止套用 GPU 世代敘事、禁止編造世代名。
+    """
+    specs: Dict[str, Any] = {}
+    try:
+        import json
+        with open(_SECTOR_SPECS_PATH, "r", encoding="utf-8") as f:
+            specs = json.load(f)
+    except (FileNotFoundError, ValueError):
+        specs = {}
+
+    spec = specs.get(sector)
+    if spec:
+        return {
+            "current_generation": spec.get("current_generation", "N/A"),
+            "next_generation": spec.get("next_generation", "N/A"),
+            "future_generation": spec.get("future_generation", "N/A"),
+            "narrative_hint": spec.get("narrative_hint", ""),
+            "sector_spec_missing": False,
+        }
+
+    return {
+        "current_generation": "N/A",
+        "next_generation": "N/A",
+        "future_generation": "N/A",
+        "narrative_hint": "",
+        "sector_spec_missing": True,
+    }
+
 # 初始化監控器
 monitor = MarketInformationMonitor()
 
@@ -107,10 +144,12 @@ def supply_chain_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     - 推演 18-24 個月能見度窗口下，物理規格變更對現有供應商的正面與反面影響。
     - 特別辨識哪些廠商雖然在當前代大賺，但已面臨下世代被替代、價值歸零的風險。
     """
-    current_gen = state.get("current_generation", "Vera_Rubin")
-    next_gen = state.get("next_generation", "Feynman")
-    future_gen = "Feynman_Next"
+    current_gen = state.get("current_generation", "N/A")
+    next_gen = state.get("next_generation", "N/A")
+    future_gen = state.get("future_generation", "N/A")
     sector = state.get("target_sector")
+    spec_missing = state.get("sector_spec_missing", False)
+    narrative_hint = state.get("narrative_hint", "")
 
     # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
     as_of_date = state.get("as_of_date")
@@ -118,18 +157,35 @@ def supply_chain_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         current_gen, next_gen,
         as_of_date=as_of_date if as_of_date else None,
         sector=sector,
+        future_gen=state.get("future_generation", "Feynman_Next"),
     )
 
     membership_warning = (
         f"\n\n【板塊名單來源警語】{MEMBERSHIP_FALLBACK_NOTE}"
         if raw_schedule.get("membership_source") == MEMBERSHIP_SOURCE_FALLBACK else ""
     )
+
+    if spec_missing:
+        generation_framing = (
+            f"【重要】本板塊（{sector}）尚未登記世代規格，data/priors/sector_specs.json 查無對應項目。"
+            f"世代欄位一律為 N/A。禁止套用 GPU 世代（如 Vera_Rubin/Feynman）敘事框架，"
+            f"禁止自行編造世代名稱或架構代號。請改以該板塊實際的技術迭代脈絡進行洗牌分析。"
+        )
+    else:
+        hint_line = f"\n板塊敘事框架：{narrative_hint}" if narrative_hint else ""
+        generation_framing = (
+            f"請針對當前世代 {current_gen}、下一代 {next_gen}，"
+            f"特別是超前 18-24 個月的下下一代架構 {future_gen} 的物理變革進行洗牌分析。{hint_line}"
+        )
+
     prompt = (
         f"你是一個資深半導體與科技硬體供應鏈專家。\n"
-        f"請針對當前世代 {current_gen}、下一代 {next_gen}，特別是超前 18-24 個月的下下一代架構 {future_gen} 的物理變革進行洗牌分析。\n"
+        f"{generation_framing}\n"
         f"實體監控數據如下：\n{raw_schedule}\n\n"
         f"你的分析必須專注於：\n"
-        f"1. **Content Value (CV) 的正反面演進**：哪些廠商在新架構下價值暴漲？哪些廠商（例如 FOCI、MCT）在下下一代 {future_gen} 因為技術被整合或替代而面臨 CV 暴跌/歸零風險？\n"
+        f"1. **Content Value (CV) 的正反面演進**：哪些廠商在新架構下價值暴漲？哪些廠商在下下一代"
+        f"{'（因本板塊無世代規格，此問題不適用，請略過世代替代風險分析，改以一般競爭替代風險描述）' if spec_missing else f' {future_gen}'}"
+        f"因為技術被整合或替代而面臨 CV 暴跌/歸零風險？\n"
         f"2. **Design Win 與試產放量時程**：指出設備端放量比元件端領先的關鍵時間點。"
         f"{membership_warning}"
     )
@@ -210,22 +266,61 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         }
     }
 
+def _pick_cv_extremes(raw_revenue: Dict[str, Any]) -> "tuple[str, str]":
+    """
+    從實際成員資料中，動態選出 CV（內容價值/成長）增幅最大與最小的代表股，
+    取代寫死的個股名稱。以 `real_yoy_pct`（真實 YoY，優先）或 `last_month_yoy`
+    （機械外推 YoY，次選）作為 CV 增幅代理指標。無資料時回傳空字串，呼叫端不得舉例。
+    """
+    scored = []
+    for cid, data in (raw_revenue or {}).items():
+        yoy = data.get("real_yoy_pct")
+        if yoy is None:
+            yoy = data.get("last_month_yoy")
+        if yoy is None:
+            continue
+        name = data.get("name", cid)
+        scored.append((yoy, name))
+
+    if not scored:
+        return "", ""
+
+    scored.sort(key=lambda x: x[0])
+    lowest_name = scored[0][1]
+    highest_name = scored[-1][1]
+    return highest_name, lowest_name
+
 def media_story_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
     新聞與情緒預判專家節點：
     - **核心優化**：解析「共識度 (Consensus Score)」，排除市場已經大幅反映的 Consensus 標的。
     - 專注於「低共識 + 高預期差」的標的，規劃超前於媒體報導的潛伏佈局操作。
     """
+    raw_revenue = state.get("pricing_revenue_analysis", {}).get("raw_revenue", {})
+    highest_cv_name, lowest_cv_name = _pick_cv_extremes(raw_revenue)
+    narrative_hint = state.get("narrative_hint", "")
+
+    consensus_example = (
+        f"（如 CV 增幅最大代表股 {highest_cv_name}）" if highest_cv_name else "（本次無足夠資料舉例，不得自行編造標的名稱）"
+    )
+    non_consensus_example = (
+        f"（如 CV 增幅最小代表股 {lowest_cv_name}）" if lowest_cv_name else "（本次無足夠資料舉例，不得自行編造標的名稱）"
+    )
+    storytelling_hint = narrative_hint if narrative_hint else "板塊潛在受益敘事（依實際供應鏈分析結論歸納，不得套用其他板塊敘事）"
+
     prompt = (
         f"你是一個行為金融學與財經媒體炒作週期專家。\n"
         f"請分析供應鏈與營收/設備指標的結論，並結合各廠商的『共識度得分 (Consensus Score)』進行預期差過濾。\n\n"
         f"請規劃操作策略：\n"
-        f"1. **排除 Consensus 標的**：對於媒體已經寫爆、市場高度共識 (Consensus > 80) 的股票（如 FOCI 聯鈞、MCT 晟銘電），提出『已充分反映』與『下世代替代風險』的警告。\n"
-        f"2. **規劃非共識 (Non-Consensus) 潛伏期**：針對低共識度 (Consensus < 60) 且設備訂單先行暴增的標的（如 GrandProcess 弘塑、Auras 雙鴻），模擬未來 2-3 個月新聞會如何包裝（從『無人關注的冷門設備』到『先進封裝與液冷直接受益者』的 Storytelling 傳導），並制定精確的潛伏與退場時間表。\n\n"
+        f"1. **排除 Consensus 標的**：對於媒體已經寫爆、市場高度共識 (Consensus > 80) 的股票"
+        f"{consensus_example}，提出『已充分反映』與『下世代替代風險』的警告。\n"
+        f"2. **規劃非共識 (Non-Consensus) 潛伏期**：針對低共識度 (Consensus < 60) 且設備訂單先行暴增的標的"
+        f"{non_consensus_example}，模擬未來 2-3 個月新聞會如何包裝（從『無人關注的冷門設備』到『{storytelling_hint}』的 Storytelling 傳導），並制定精確的潛伏與退場時間表。\n\n"
         f"【誠實化強制規則，違反視為分析不合格】：\n"
         f"- 只有前一節分析中明確標記 `is_golden_accumulation_target` 為 True 的公司，才可稱為『非共識黃金潛伏標的』；"
         f"其餘一律稱為『觀察名單（未過共識門檻）』，即使共識度數字看起來偏低也不可越級標記為黃金標的。\n"
-        f"- Consensus Score 是{CONSENSUS_GRANULARITY_NOTE}，呈現時不得暗示個位以下精度，並附註粗粒度警語。"
+        f"- Consensus Score 是{CONSENSUS_GRANULARITY_NOTE}，呈現時不得暗示個位以下精度，並附註粗粒度警語。\n"
+        f"- 舉例個股時只能使用上方提供的代表股名稱或前一節分析結論中出現的實際公司名稱，禁止自行編造或沿用其他板塊的個股名稱。"
     )
 
     if state.get("critic_feedback"):
@@ -252,16 +347,26 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
     報告撰寫節點：整合專家成果，撰寫繁體中文學術級 18-24 個月超前能見度可行性評估報告。
     """
+    future_gen = state.get("future_generation", "N/A")
+    spec_missing = state.get("sector_spec_missing", False)
+
+    if spec_missing:
+        generation_line = f"產品世代演進：本板塊尚未登記世代規格（N/A），不適用 GPU 世代替代框架，請改以該板塊實際技術迭代脈絡描述。\n"
+        section_one_title = "  一、 技術物理限制與超前 18-24 個月洗牌框架（本板塊無世代規格，禁止套用 GPU 世代敘事或編造世代名）\n"
+    else:
+        generation_line = f"產品世代演進：{state['current_generation']} --> {state['next_generation']} --> {future_gen} (超前 18-24 個月)\n"
+        section_one_title = f"  一、 技術物理限制與超前 18-24 個月 ({future_gen}) 洗牌框架\n"
+
     prompt = (
         f"請將以下三位專家的研判結果整合，撰寫一份架構極其嚴謹、具備學術研究報告深度的傳統中文（繁體中文）可行性評估報告。\n"
         f"目標技術板塊：{state['target_sector']}\n"
-        f"產品世代演進：{state['current_generation']} --> {state['next_generation']} --> Feynman_Next (超前 18-24 個月)\n\n"
+        f"{generation_line}\n"
         f"【供應鏈專家洗牌分析】：\n{state['supply_chain_analysis']['summary']}\n\n"
         f"【價格與設備訂單分析】：\n{state['pricing_revenue_analysis']['summary']}\n\n"
         f"【共識過濾與新聞情緒分析】：\n{state['media_story_anticipation']['summary']}\n\n"
         f"報告撰寫格式要求：\n"
         f"- 必須明確分為以下五大部分：\n"
-        f"  一、 技術物理限制與超前 18-24 個月 (Feynman_Next) 洗牌框架\n"
+        f"{section_one_title}"
         f"  二、 供應鏈內容價值 (Content Value) 正反面推演與下世代替代風險警告\n"
         f"  三、 領先 6-9 個月之設備 Backlog 訂單與營收基期定量預測\n"
         f"  四... 預期差與共識度 (Consensus Score) 過濾操作策略\n"
@@ -276,6 +381,7 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"其餘一律稱為『觀察名單（未過共識門檻）』。\n"
         f"4. 設備 Backlog YoY 數據，一律標示為『板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料』，"
         f"不得寫成該公司自身的訂單或拉貨數字。"
+        + ("\n5. 本板塊無世代規格登記，全篇禁止出現 Vera_Rubin/Feynman/Feynman_Next 等 GPU 世代名稱或任何自行編造的世代代號。" if spec_missing else "")
     )
     
     llm = get_llm_model()
@@ -298,11 +404,19 @@ def quality_critic_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
     report = state.get("feasibility_report_draft", "")
     iteration = state.get("iteration_count", 0) + 1
-    
+    future_gen = state.get("future_generation", "N/A")
+    spec_missing = state.get("sector_spec_missing", False)
+
+    generation_requirement = (
+        "1. 18-24個月下下世代洗牌與替代風險警告（本板塊無世代規格，不得要求報告出現 Feynman_Next 等其他板塊的世代名稱）；\n"
+        if spec_missing else
+        f"1. 18-24個月下下世代 ({future_gen}) 洗牌與替代風險警告；\n"
+    )
+
     prompt = (
         f"請審查以下可行性研究報告是否滿足超前指標完整性。\n"
         f"要求報告中必須清晰包含：\n"
-        f"1. 18-24個月下下世代 (Feynman_Next) 洗牌與替代風險警告；\n"
+        f"{generation_requirement}"
         f"2. 至少一家設備商的拉貨領先度 (Backlog YoY) 定量數據；\n"
         f"3. 供應鏈公司的共識度得分 (Consensus Score) 與預期差非共識判定。\n\n"
         f"【報告內容】：\n{report}\n"
@@ -394,11 +508,17 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
     print(f"當前時間: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"==================================================")
     
+    sector_spec = load_sector_spec(sector)
+    if sector_spec["sector_spec_missing"]:
+        print(f"[WARN] 板塊 {sector} 未登記世代規格（data/priors/sector_specs.json 查無此項目），世代欄位一律為 N/A。")
+
     initial_state: MarketHotspotState = {
         "target_sector": sector,
-        "current_generation": "Vera_Rubin",
-        "next_generation": "Feynman",
-        "future_generation": "Feynman_Next",
+        "current_generation": sector_spec["current_generation"],
+        "next_generation": sector_spec["next_generation"],
+        "future_generation": sector_spec["future_generation"],
+        "narrative_hint": sector_spec["narrative_hint"],
+        "sector_spec_missing": sector_spec["sector_spec_missing"],
         "supply_chain_analysis": {},
         "pricing_revenue_analysis": {},
         "media_story_anticipation": {},

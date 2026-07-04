@@ -1,0 +1,20 @@
+{
+  "CPO_Optical_Transceiver": {
+    "current_generation": "Vera_Rubin",
+    "next_generation": "Feynman",
+    "future_generation": "Feynman_Next",
+    "narrative_hint": "先進封裝與液冷直接受益者：CPO 供應鏈隨 GPU 世代交替出現內容價值（Content Value）大幅洗牌"
+  },
+  "Thermal_Cooling": {
+    "current_generation": "Vera_Rubin",
+    "next_generation": "Feynman",
+    "future_generation": "Feynman_Next",
+    "narrative_hint": "AI 資料中心液冷元年直接受益者：GPU 世代熱功耗持續攀升（Vera_Rubin→Feynman），氣冷轉液冷（CDU/水冷板/Sidecar/浸沒式）滲透率加速，供應鏈內容價值隨世代交替擴大"
+  },
+  "Advanced_Packaging": {
+    "current_generation": "Vera_Rubin",
+    "next_generation": "Feynman",
+    "future_generation": "Feynman_Next",
+    "narrative_hint": "GPU 世代交替下先進封裝（CoWoS/SoIC/FOPLP/玻璃基板）產能與良率瓶頸的直接受益供應鏈：設備／材料商（弘塑、辛耘、均華、志聖）→ 封測代工（日月光投控、力成）雙層結構"
+  }
+}

@@ -17,6 +17,9 @@ if os.path.exists(".env"):
 
 RUN_TRIGGER_TOKEN = os.environ.get("RUN_TRIGGER_TOKEN", "")
 
+# 預設板塊：維持既有 CPO 行為，未帶 sector 參數時的 fallback
+DEFAULT_SECTOR = "CPO_Optical_Transceiver"
+
 # 引入狀態機
 from main_agent import run_hotspot_scan
 
@@ -26,7 +29,7 @@ scheduler = BackgroundScheduler()
 def weekly_task():
     print(f"=== [排程觸發] 開始每週熱點掃描 ({datetime.datetime.now()}) ===")
     try:
-        run_hotspot_scan("CPO_Optical_Transceiver")
+        run_hotspot_scan(DEFAULT_SECTOR)
         print("=== [排程觸發] 執行完畢 ===")
     except Exception as e:
         print(f"[排程出錯] 原因: {e}")
@@ -444,18 +447,18 @@ def get_latest_performance_web_view():
 # =================================================================
 
 # 異步執行包裝
-def trigger_analysis():
+def trigger_analysis(sector: str = DEFAULT_SECTOR):
     try:
-        run_hotspot_scan("CPO_Optical_Transceiver")
+        run_hotspot_scan(sector)
     except Exception as e:
         print(f"手動觸發執行失敗: {e}")
 
 @app.post("/run")
-def trigger_now(background_tasks: BackgroundTasks, x_trigger_token: str = Header(default="")):
+def trigger_now(background_tasks: BackgroundTasks, sector: str = DEFAULT_SECTOR, x_trigger_token: str = Header(default="")):
     if not RUN_TRIGGER_TOKEN or x_trigger_token != RUN_TRIGGER_TOKEN:
         return JSONResponse(status_code=403, content={"status": "forbidden", "message": "需要有效的 X-Trigger-Token 標頭才能觸發分析。"})
-    background_tasks.add_task(trigger_analysis)
-    return JSONResponse(content={"status": "processing", "message": "熱點分析任務已在背景啟動，請稍候重新載入頁面。"})
+    background_tasks.add_task(trigger_analysis, sector)
+    return JSONResponse(content={"status": "processing", "message": f"熱點分析任務已在背景啟動（板塊：{sector}），請稍候重新載入頁面。"})
 
 if __name__ == "__main__":
     # 讀取 Railway 的 Port (預設為 8080)

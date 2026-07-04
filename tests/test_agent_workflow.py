@@ -1,7 +1,7 @@
 import inspect
 import unittest
 import main_agent
-from main_agent import app, route_based_on_critic
+from main_agent import app, route_based_on_critic, load_sector_spec, _pick_cv_extremes
 
 class TestAgentWorkflow(unittest.TestCase):
     def test_graph_structure(self):
@@ -52,6 +52,84 @@ class TestAgentWorkflow(unittest.TestCase):
         # 禁止再出現另立的寬鬆門檻（例如舊版 consensus < 70.0）
         self.assertNotIn("70.0", source)
         self.assertNotIn("_compute_consensus", source)
+
+    def test_run_hotspot_scan_no_longer_hardcodes_generations(self):
+        """LLM 研判層板塊參數化：run_hotspot_scan 的 initial_state 世代欄位必須來自
+        load_sector_spec() 查表結果，不得再寫死 Vera_Rubin/Feynman/Feynman_Next。"""
+        source = inspect.getsource(main_agent.run_hotspot_scan)
+        self.assertIn("load_sector_spec", source)
+        self.assertNotIn('"Vera_Rubin"', source)
+        self.assertNotIn('"Feynman"', source)
+        self.assertNotIn('"Feynman_Next"', source)
+
+
+class TestSectorSpecs(unittest.TestCase):
+    """板塊參數化：data/priors/sector_specs.json 查表行為。"""
+
+    def test_cpo_sector_spec_matches_existing_behavior(self):
+        """CPO_Optical_Transceiver 查表結果必須與舊版寫死值完全等價（回歸測試）。"""
+        spec = load_sector_spec("CPO_Optical_Transceiver")
+        self.assertEqual(spec["current_generation"], "Vera_Rubin")
+        self.assertEqual(spec["next_generation"], "Feynman")
+        self.assertEqual(spec["future_generation"], "Feynman_Next")
+        self.assertFalse(spec["sector_spec_missing"])
+        self.assertIsInstance(spec["narrative_hint"], str)
+        self.assertTrue(len(spec["narrative_hint"]) > 0)
+
+    def test_unknown_sector_returns_na_and_missing_flag(self):
+        """查無板塊規格時，世代欄位一律為 N/A，且 sector_spec_missing=True，
+        避免各 expert 誤套用其他板塊的 GPU 世代敘事或自行編造世代名。"""
+        spec = load_sector_spec("Some_Unregistered_Sector_XYZ")
+        self.assertEqual(spec["current_generation"], "N/A")
+        self.assertEqual(spec["next_generation"], "N/A")
+        self.assertEqual(spec["future_generation"], "N/A")
+        self.assertTrue(spec["sector_spec_missing"])
+        self.assertEqual(spec["narrative_hint"], "")
+
+    def test_supply_chain_expert_prompt_forbids_fabrication_when_spec_missing(self):
+        """世代規格缺失時，supply_chain_expert_node 的 prompt 組裝邏輯必須明示
+        「禁止套用 GPU 世代敘事、禁止編造世代名」，不得沉默地留白。"""
+        source = inspect.getsource(main_agent.supply_chain_expert_node)
+        self.assertIn("sector_spec_missing", source)
+        self.assertIn("禁止", source)
+
+
+class TestMediaStoryDynamicRepresentatives(unittest.TestCase):
+    """媒體/情緒專家節點的代表股改為動態選取，不得寫死 FOCI/MCT/弘塑/雙鴻。"""
+
+    def test_media_story_prompt_no_longer_hardcodes_tickers(self):
+        source = inspect.getsource(main_agent.media_story_expert_node)
+        for hardcoded_name in ("FOCI", "MCT", "弘塑", "雙鴻", "聯鈞", "晟銘電"):
+            self.assertNotIn(hardcoded_name, source)
+
+    def test_pick_cv_extremes_selects_max_and_min_by_yoy(self):
+        raw_revenue = {
+            "AAA.TW": {"name": "AAA公司", "real_yoy_pct": 12.0},
+            "BBB.TW": {"name": "BBB公司", "last_month_yoy": 80.0},
+            "CCC.TW": {"name": "CCC公司", "real_yoy_pct": -5.0},
+        }
+        highest, lowest = _pick_cv_extremes(raw_revenue)
+        self.assertEqual(highest, "BBB公司")
+        self.assertEqual(lowest, "CCC公司")
+
+    def test_pick_cv_extremes_prefers_real_yoy_over_mechanical_extrapolation(self):
+        raw_revenue = {
+            "AAA.TW": {"name": "AAA公司", "real_yoy_pct": 5.0, "last_month_yoy": 999.0},
+        }
+        highest, lowest = _pick_cv_extremes(raw_revenue)
+        self.assertEqual(highest, "AAA公司")
+        self.assertEqual(lowest, "AAA公司")
+
+    def test_pick_cv_extremes_returns_empty_when_no_data(self):
+        """無資料時必須回傳空字串，呼叫端據此禁止舉例（不得編造代表股）。"""
+        highest, lowest = _pick_cv_extremes({})
+        self.assertEqual(highest, "")
+        self.assertEqual(lowest, "")
+
+        highest2, lowest2 = _pick_cv_extremes(None)
+        self.assertEqual(highest2, "")
+        self.assertEqual(lowest2, "")
+
 
 if __name__ == "__main__":
     unittest.main()
