@@ -319,5 +319,137 @@ class TestBacklogNotApplicablePrompting(unittest.TestCase):
         self.assertNotIn("Backlog 板塊層訊號不適用（程式端已確認）", prompt_text)
 
 
+class TestLlmFailoverChain(unittest.TestCase):
+    """LLM 三層備援鏈（NIM → DeepSeek 官方 → Claude CLI）：不打真網路，全部 fake/monkeypatch。"""
+
+    def setUp(self):
+        main_agent._reset_llm_failover_state()
+
+    def tearDown(self):
+        main_agent._reset_llm_failover_state()
+
+    @staticmethod
+    def _ok_response(text="OK"):
+        resp = MagicMock()
+        resp.content = text
+        return resp
+
+    @patch.dict(os.environ, {"NVIDIA_NIM_API_KEY": "fake-nim", "DEEPSEEK_API_KEY": "fake-ds"})
+    def test_429_two_rounds_then_degrade_to_deepseek(self):
+        """429 同層最多重試 2 輪（各等 180 秒），仍 429 → 降級至 Tier 2（DeepSeek）。"""
+        tier1_llm = MagicMock()
+        tier1_llm.invoke.side_effect = Exception("Error code: 429 - rate limit exceeded")
+        tier2_llm = MagicMock()
+        tier2_llm.invoke.return_value = self._ok_response("DeepSeek 回應")
+
+        with patch.object(main_agent.time, "sleep") as fake_sleep, \
+             patch.object(main_agent, "get_llm_model", return_value=tier2_llm) as fake_get:
+            result = main_agent._invoke_with_retry(tier1_llm, [])
+
+        self.assertEqual(result.content, "DeepSeek 回應")
+        # 同層 429 等待恰為 2 輪、各 180 秒
+        sleeps_180 = [c for c in fake_sleep.call_args_list if c.args and c.args[0] == 180]
+        self.assertEqual(len(sleeps_180), 2)
+        # 同層共嘗試 3 次（原始 1 次 + 限流重試 2 輪）後才降級
+        self.assertEqual(tier1_llm.invoke.call_count, 3)
+        # 降級時以 tier 參數重建 LLM（含 structured schema 路徑）
+        fake_get.assert_called_once_with(None, tier=main_agent.TIER_DEEPSEEK)
+
+    @patch.dict(os.environ, {"NVIDIA_NIM_API_KEY": "fake-nim", "DEEPSEEK_API_KEY": "fake-ds"})
+    def test_degradation_is_sticky_per_process(self):
+        """降級後 _current_tier 黏性生效：後續 get_llm_model() 不再回到 NIM。"""
+        tier1_llm = MagicMock()
+        tier1_llm.invoke.side_effect = Exception("Error code: 429 - rate limit exceeded")
+        tier2_llm = MagicMock()
+        tier2_llm.invoke.return_value = self._ok_response()
+
+        with patch.object(main_agent.time, "sleep"), \
+             patch.object(main_agent, "get_llm_model", return_value=tier2_llm):
+            main_agent._invoke_with_retry(tier1_llm, [])
+
+        self.assertEqual(main_agent._current_tier, main_agent.TIER_DEEPSEEK)
+        # 黏性：不經 patch 的真 get_llm_model 也直接建出 DeepSeek 端點
+        llm = main_agent.get_llm_model()
+        self.assertIn("api.deepseek.com", str(llm.openai_api_base))
+
+    def test_start_tier_skips_to_deepseek_when_nim_key_missing(self):
+        """順序容錯：缺 NVIDIA_NIM_API_KEY 但有 DEEPSEEK_API_KEY → 直接從 Tier 2 起跳。"""
+        with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "fake-ds"}, clear=True):
+            llm = main_agent.get_llm_model()
+            self.assertIn("api.deepseek.com", str(llm.openai_api_base))
+
+    def test_raises_when_both_keys_missing(self):
+        """兩把金鑰皆缺 → raise（Claude CLI 不作起始層）。"""
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(ValueError) as ctx:
+                main_agent.get_llm_model()
+            self.assertIn("NVIDIA_NIM_API_KEY", str(ctx.exception))
+
+    def test_claude_cli_tier_raises_when_cli_missing(self):
+        """Tier 3 在找不到 claude CLI（如 CI 環境）時，建構即 raise 明確錯誤。"""
+        with patch.object(main_agent.shutil, "which", return_value=None):
+            with self.assertRaises(RuntimeError) as ctx:
+                main_agent.get_llm_model(tier=main_agent.TIER_CLAUDE_CLI)
+            self.assertIn("claude", str(ctx.exception).lower())
+
+    def test_degrade_to_claude_cli_raises_in_ci_like_env(self):
+        """缺 DEEPSEEK_API_KEY 時跳過 Tier 2；降到 Tier 3 但無 CLI → raise（CI 情境 fail loud）。"""
+        failing_llm = MagicMock()
+        failing_llm.invoke.side_effect = Exception("Error code: 429 - rate limit exceeded")
+
+        with patch.dict(os.environ, {"NVIDIA_NIM_API_KEY": "fake-nim"}, clear=True), \
+             patch.object(main_agent.time, "sleep"), \
+             patch.object(main_agent.shutil, "which", return_value=None):
+            with self.assertRaises(RuntimeError) as ctx:
+                main_agent._invoke_with_retry(failing_llm, [])
+            self.assertIn("claude", str(ctx.exception).lower())
+
+    @patch.dict(os.environ, {"NVIDIA_NIM_API_KEY": "fake-nim"})
+    def test_provider_usage_recorded_on_success(self):
+        """誠實標示：成功呼叫後 LLM_PROVIDERS_USED 記錄實際使用的 provider/model。"""
+        llm = MagicMock()
+        llm.invoke.return_value = self._ok_response()
+        main_agent._invoke_with_retry(llm, [])
+        self.assertEqual(len(main_agent.LLM_PROVIDERS_USED), 1)
+        self.assertIn("NVIDIA NIM", main_agent.LLM_PROVIDERS_USED[0])
+
+    def test_deepseek_structured_uses_json_mode_wrapper(self):
+        """Tier 2 結構化輸出必須走 DeepSeekStructuredLLM（json_mode + schema 指令），
+        因 deepseek-v4-pro thinking 模式不支援 json_schema response_format 與強制 tool_choice
+        （2026-07-04 實測皆 400）。"""
+        with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "fake-ds"}):
+            llm = main_agent.get_llm_model(main_agent.CriticDecision, tier=main_agent.TIER_DEEPSEEK)
+        self.assertIsInstance(llm, main_agent.DeepSeekStructuredLLM)
+        # 包裝會在訊息尾端追加含 json 字樣的 schema 指令（DeepSeek json_mode 硬性要求）
+        inner = MagicMock()
+        llm._structured = inner
+        llm.invoke([main_agent.HumanMessage(content="審查測試")])
+        sent_messages = inner.invoke.call_args.args[0]
+        self.assertIn("JSON Schema", sent_messages[-1].content)
+        self.assertIn("validation_status", sent_messages[-1].content)
+
+    def test_claude_cli_structured_output_parse_retry_then_success(self):
+        """Tier 3 結構化輸出：第一次回非 JSON → 重試 1 次成功解析 + Pydantic 驗證。"""
+        with patch.object(main_agent.shutil, "which", return_value="C:/fake/claude.cmd"):
+            cli_llm = main_agent.get_llm_model(main_agent.CriticDecision, tier=main_agent.TIER_CLAUDE_CLI)
+
+        with patch.object(cli_llm, "_run_cli",
+                          side_effect=["這不是 JSON",
+                                       '{"validation_status": "PASS", "critic_feedback": "合格"}']):
+            decision = cli_llm.invoke([main_agent.HumanMessage(content="審查測試")])
+
+        self.assertEqual(decision.validation_status, "PASS")
+        self.assertEqual(decision.critic_feedback, "合格")
+
+    def test_claude_cli_structured_output_raises_after_retry_exhausted(self):
+        """Tier 3 結構化輸出：重試 1 次後仍解析失敗 → raise（不捏造）。"""
+        with patch.object(main_agent.shutil, "which", return_value="C:/fake/claude.cmd"):
+            cli_llm = main_agent.get_llm_model(main_agent.CriticDecision, tier=main_agent.TIER_CLAUDE_CLI)
+
+        with patch.object(cli_llm, "_run_cli", side_effect=["垃圾輸出一", "垃圾輸出二"]):
+            with self.assertRaises(RuntimeError):
+                cli_llm.invoke([main_agent.HumanMessage(content="審查測試")])
+
+
 if __name__ == "__main__":
     unittest.main()

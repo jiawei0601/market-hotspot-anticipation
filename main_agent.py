@@ -1,8 +1,11 @@
 import os
 import sys
+import json
 import time
+import shutil
 import argparse
 import datetime
+import subprocess
 from typing import TypedDict, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 
@@ -18,7 +21,7 @@ if sys.platform.startswith('win'):
         pass
 
 # LangChain & LangGraph 相關依賴
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 
@@ -86,50 +89,243 @@ class CriticDecision(BaseModel):
         description="詳細的審查反饋意見。若 validation_status 為 FAIL，指出哪些超前定量數據或非共識分析缺失。"
     )
 
-# 初始化 LLM 模型（支援環境變數 NVIDIA_NIM_API_KEY）
-# 供應商：NVIDIA NIM（OpenAI 相容端點），模型：GLM-5.2（z-ai/glm-5.2）。
-# 若需回退其他供應商，改設對應 env（不在程式內保留雙路徑，維持單一供應商）。
-def get_llm_model(structured_model=None):
-    api_key = os.environ.get("NVIDIA_NIM_API_KEY")
-    if api_key:
+# ==================== LLM 三層備援鏈（NIM → DeepSeek 官方 → Claude CLI）====================
+# Tier 1：NVIDIA NIM（OpenAI 相容端點，預設 z-ai/glm-5.2），key=NVIDIA_NIM_API_KEY。
+# Tier 2：DeepSeek 官方（https://api.deepseek.com，預設 deepseek-v4-pro），key=DEEPSEEK_API_KEY。
+# Tier 3：本機 Claude CLI（`claude -p`，訂閱授權）——僅本機可用；CI 環境備援鏈到 Tier 2 為止。
+# 降級為 per-process 黏性：一旦降級，本次掃描剩餘呼叫直接使用降級後的層級，不再重撞上層。
+# 誠實標示：LLM_PROVIDERS_USED 記錄實際用過的 provider/model，報告尾部逐一列出。
+
+TIER_NIM = 0
+TIER_DEEPSEEK = 1
+TIER_CLAUDE_CLI = 2
+
+_current_tier = None                 # None = 尚未降級；每次呼叫依環境變數解析起始層
+LLM_PROVIDERS_USED: List[str] = []   # 實際使用過的 provider/model（有序去重）
+
+
+def _reset_llm_failover_state():
+    """測試/新流程用：重置黏性降級狀態與 provider 使用紀錄。"""
+    global _current_tier
+    _current_tier = None
+    LLM_PROVIDERS_USED.clear()
+
+
+def _tier_label(tier: int) -> str:
+    """回傳該層級的 provider/model 誠實標示字串。"""
+    if tier == TIER_NIM:
+        return f"NVIDIA NIM/{os.environ.get('NIM_MODEL', 'z-ai/glm-5.2')}"
+    if tier == TIER_DEEPSEEK:
+        return f"DeepSeek 官方/{os.environ.get('DEEPSEEK_MODEL', 'deepseek-v4-pro')}"
+    return "Claude CLI/本機訂閱（claude -p）"
+
+
+def _record_provider_used(tier: int) -> None:
+    label = _tier_label(tier)
+    if label not in LLM_PROVIDERS_USED:
+        LLM_PROVIDERS_USED.append(label)
+
+
+def _resolve_start_tier() -> int:
+    """依可用金鑰決定起始層（順序容錯）：缺 NIM 金鑰但有 DeepSeek 金鑰 → 直接從 Tier 2 起跳。"""
+    if os.environ.get("NVIDIA_NIM_API_KEY"):
+        return TIER_NIM
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        print("[備援] 缺 NVIDIA_NIM_API_KEY，起始層直接使用 DeepSeek 官方（Tier 2）", flush=True)
+        return TIER_DEEPSEEK
+    # 兩把金鑰皆缺 → fail loud，不以假數據混淆（Claude CLI 僅作為執行中降級的最後手段，不作起始層）
+    raise ValueError(
+        "缺少必要的 NVIDIA_NIM_API_KEY 環境變數（亦無 DEEPSEEK_API_KEY 可作備援起始層）。"
+        "請在專案設定或 GitHub Secrets 中配置它。"
+    )
+
+
+def _get_current_tier() -> int:
+    return _current_tier if _current_tier is not None else _resolve_start_tier()
+
+
+def _next_tier(tier: int):
+    """回傳下一個可嘗試的層級；缺 DEEPSEEK_API_KEY 時跳過 Tier 2。無下一層 → None。"""
+    candidate = tier + 1
+    if candidate == TIER_DEEPSEEK and not os.environ.get("DEEPSEEK_API_KEY"):
+        candidate = TIER_CLAUDE_CLI
+    if candidate > TIER_CLAUDE_CLI:
+        return None
+    return candidate
+
+
+class ClaudeCliLLM:
+    """Tier 3：以本機 Claude CLI（訂閱授權，無需 ANTHROPIC_API_KEY）作為最後彙整手段。
+
+    - 僅本機可用：找不到 claude CLI（如 CI 環境）時，建構即 raise 明確錯誤。
+    - 結構化輸出：prompt 強制「只輸出符合 schema 的 JSON、無其他文字」，回傳後
+      json.loads + Pydantic 驗證；解析失敗重試 1 次，仍失敗才 raise（fail loud，不捏造）。
+    """
+
+    def __init__(self, structured_model=None):
+        self._cli_path = shutil.which("claude")
+        if not self._cli_path:
+            raise RuntimeError(
+                "Tier 3（Claude CLI）不可用：找不到 claude CLI（shutil.which('claude') 為 None）。"
+                "此層僅限本機訂閱環境；CI 環境備援鏈到 DeepSeek 官方（Tier 2）為止。"
+            )
+        self._structured_model = structured_model
+
+    def _build_prompt(self, messages) -> str:
+        parts = []
+        for m in messages:
+            content = getattr(m, "content", None)
+            parts.append(str(content) if content is not None else str(m))
+        prompt = "\n\n".join(parts)
+        if self._structured_model is not None:
+            schema = json.dumps(self._structured_model.model_json_schema(), ensure_ascii=False)
+            prompt += (
+                "\n\n【輸出格式強制要求】只輸出一個符合以下 JSON Schema 的 JSON 物件，"
+                "不得輸出任何其他文字、說明、前後綴或 Markdown 圍欄：\n" + schema
+            )
+        return prompt
+
+    def _run_cli(self, prompt: str) -> str:
+        result = subprocess.run(
+            [self._cli_path, "-p", prompt, "--output-format", "text"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=900,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"claude CLI 執行失敗（exit={result.returncode}）：{(result.stderr or '').strip()[:500]}"
+            )
+        return (result.stdout or "").strip()
+
+    @staticmethod
+    def _extract_json(text: str) -> str:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            raise ValueError(f"回應中找不到 JSON 物件：{text[:200]}")
+        return text[start:end + 1]
+
+    def invoke(self, messages):
+        prompt = self._build_prompt(messages)
+        if self._structured_model is None:
+            return AIMessage(content=self._run_cli(prompt))
+        last_err = None
+        for _attempt in range(2):  # 解析失敗重試 1 次
+            raw = self._run_cli(prompt)
+            try:
+                data = json.loads(self._extract_json(raw))
+                return self._structured_model.model_validate(data)
+            except Exception as e:
+                last_err = e
+        raise RuntimeError(f"Claude CLI 結構化輸出解析在重試 1 次後仍失敗：{last_err}")
+
+
+class DeepSeekStructuredLLM:
+    """Tier 2 結構化輸出包裝。
+
+    DeepSeek 官方 deepseek-v4-pro（thinking 模式）實測（2026-07-04）：
+    - 預設 json_schema response_format → 400「This response_format type is unavailable now」
+    - method="function_calling"（強制 tool_choice）→ 400「Thinking mode does not support this tool_choice」
+    - method="json_mode" → 可用，但 DeepSeek 要求 prompt 內必須出現 json 字樣，
+      故本包裝在訊息尾端追加「只輸出符合 schema 的 JSON」指令後再呼叫。
+    """
+
+    def __init__(self, llm, structured_model):
+        self._structured = llm.with_structured_output(structured_model, method="json_mode")
+        schema = json.dumps(structured_model.model_json_schema(), ensure_ascii=False)
+        self._format_msg = HumanMessage(content=(
+            "【輸出格式強制要求】只輸出一個符合以下 JSON Schema 的 json 物件，"
+            "不得輸出任何其他文字、說明或 Markdown 圍欄：\n" + schema
+        ))
+
+    def invoke(self, messages):
+        return self._structured.invoke(list(messages) + [self._format_msg])
+
+
+def get_llm_model(structured_model=None, tier=None):
+    """依當前（或指定）備援層級建立 LLM。缺對應金鑰/CLI 時 fail loud，不以假數據混淆。"""
+    if tier is None:
+        tier = _get_current_tier()
+
+    if tier == TIER_NIM:
+        api_key = os.environ.get("NVIDIA_NIM_API_KEY")
+        if not api_key:
+            raise ValueError("缺少必要的 NVIDIA_NIM_API_KEY 環境變數。請在專案設定或 GitHub Secrets 中配置它。")
         llm = ChatOpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
             api_key=api_key,
             model=os.environ.get("NIM_MODEL", "z-ai/glm-5.2"),
             temperature=0,
         )
+    elif tier == TIER_DEEPSEEK:
+        api_key = os.environ.get("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise ValueError("缺少 DEEPSEEK_API_KEY 環境變數，Tier 2（DeepSeek 官方）不可用。")
+        llm = ChatOpenAI(
+            base_url="https://api.deepseek.com",
+            api_key=api_key,
+            model=os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro"),
+            temperature=0,
+        )
+        if structured_model:
+            return DeepSeekStructuredLLM(llm, structured_model)
+        return llm
+    elif tier == TIER_CLAUDE_CLI:
+        return ClaudeCliLLM(structured_model)
     else:
-        # 當處於 GitHub Actions 或是已設定嚴格模式時，無 API Key 直接報錯，不以假數據混淆
-        raise ValueError("缺少必要的 NVIDIA_NIM_API_KEY 環境變數。請在專案設定或 GitHub Secrets 中配置它。")
+        raise ValueError(f"未知的 LLM 備援層級：{tier}")
 
     if structured_model:
         return llm.with_structured_output(structured_model)
     return llm
 
-def _invoke_with_retry(llm, messages, retries: int = 3, backoff: float = 2.0):
-    """呼叫 LLM，對暫時性錯誤有限重試+指數退避；耗盡才 raise。不捏造假數據。
 
-    429（限流）另走固定間隔重試：NIM 免費層為 ~40 RPM 共享速率制（2026-07-04 查證），
-    固定每 180 秒重試一次、最多 10 輪（最長等 30 分鐘），限流重試不消耗一般重試額度。"""
-    last_err = None
+def _invoke_with_retry(llm, messages, retries: int = 3, backoff: float = 2.0, structured_model=None):
+    """呼叫 LLM，含三層備援降級。fail loud，不捏造假數據。
+
+    - 429（限流）：同層最多重試 2 輪、各等 180 秒，仍 429 → 降到下一層重建 LLM（含 structured schema）再試。
+    - 非 429 暫時性錯誤：同層最多 retries 次指數退避，耗盡後同樣降級。
+    - 降級為 per-process 黏性（_current_tier）：本次掃描剩餘呼叫直接用降級後的層級，不再重撞上層。
+    - 全部層級耗盡 → raise；降級至 Tier 3 但本機無 claude CLI（如 CI）→ 同樣 raise 明確錯誤。
+    """
+    global _current_tier
     RATE_LIMIT_INTERVAL = 180
-    RATE_LIMIT_MAX_ROUNDS = 10
-    rate_limit_attempts = 0
-    attempt = 0
-    while attempt < retries:
-        try:
-            return llm.invoke(messages)
-        except Exception as e:
-            last_err = e
-            if "429" in str(e) and rate_limit_attempts < RATE_LIMIT_MAX_ROUNDS:
-                rate_limit_attempts += 1
-                print(f"[限流 429] {RATE_LIMIT_INTERVAL} 秒後重試（第 {rate_limit_attempts}/{RATE_LIMIT_MAX_ROUNDS} 輪）", flush=True)
-                time.sleep(RATE_LIMIT_INTERVAL)
-                continue
-            attempt += 1
-            if attempt < retries:
-                time.sleep(backoff * (2 ** attempt))
-    raise RuntimeError(f"LLM 呼叫在重試耗盡後仍失敗：{last_err}")
+    RATE_LIMIT_MAX_ROUNDS = 2
+
+    tier = _get_current_tier()
+    last_err = None
+    while True:
+        rate_limit_rounds = 0
+        attempt = 0
+        while attempt < retries:
+            try:
+                result = llm.invoke(messages)
+                _record_provider_used(tier)
+                return result
+            except Exception as e:
+                last_err = e
+                if "429" in str(e):
+                    if rate_limit_rounds < RATE_LIMIT_MAX_ROUNDS:
+                        rate_limit_rounds += 1
+                        print(
+                            f"[限流 429] {_tier_label(tier)}：{RATE_LIMIT_INTERVAL} 秒後同層重試"
+                            f"（第 {rate_limit_rounds}/{RATE_LIMIT_MAX_ROUNDS} 輪）", flush=True)
+                        time.sleep(RATE_LIMIT_INTERVAL)
+                        continue
+                    break  # 同層 429 重試耗盡 → 降級
+                attempt += 1
+                if attempt < retries:
+                    time.sleep(backoff * (2 ** attempt))
+
+        next_tier = _next_tier(tier)
+        if next_tier is None:
+            raise RuntimeError(f"LLM 三層備援全部耗盡，最後錯誤：{last_err}")
+        print(
+            f"[備援降級] {_tier_label(tier)} 失敗（{str(last_err)[:200]}）"
+            f"→ 降級至 {_tier_label(next_tier)}（本次掃描剩餘呼叫黏性沿用）", flush=True)
+        tier = next_tier
+        _current_tier = tier                                # 黏性降級
+        llm = get_llm_model(structured_model, tier=tier)    # 含 structured schema 重建
 
 # 板塊世代規格先驗檔路徑（見 data/priors/sector_specs.json）
 _SECTOR_SPECS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "priors", "sector_specs.json")
@@ -536,7 +732,7 @@ def quality_critic_node(state: MarketHotspotState) -> Dict[str, Any]:
     decision = _invoke_with_retry(critic_llm, [
         SystemMessage(content=critic_system_message),
         HumanMessage(content=prompt)
-    ])
+    ], structured_model=CriticDecision)
     status = decision.validation_status
     feedback = decision.critic_feedback
 
@@ -623,6 +819,9 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
     if sector_spec["sector_spec_missing"]:
         print(f"[WARN] 板塊 {sector} 未登記世代規格（data/priors/sector_specs.json 查無此項目），世代欄位一律為 N/A。")
 
+    # 每次掃描重置 provider 使用紀錄（黏性降級層級保留：同 process 連掃多板塊時不重撞已失敗的上層）
+    LLM_PROVIDERS_USED.clear()
+
     initial_state: MarketHotspotState = {
         "target_sector": sector,
         "current_generation": sector_spec["current_generation"],
@@ -649,9 +848,13 @@ def run_hotspot_scan(sector: str, as_of_date: str = ""):
         today_str = datetime.date.today().strftime("%Y-%m-%d")
         report_filename = f"reports/{today_str}-{sector}-feasibility-report.md"
 
+        # 誠實標示：報告尾部逐一列出本次實際使用的 provider/model（降級混用多家時全部列出）
+        providers_line = "、".join(LLM_PROVIDERS_USED) if LLM_PROVIDERS_USED else "（未記錄到任何 LLM 供應商）"
         with open(report_filename, "w", encoding="utf-8") as f:
             f.write(final_output["feasibility_report_draft"])
+            f.write(f"\n\n---\n本報告由 {providers_line} 生成\n")
 
+        print(f"[LLM 供應商] 本次掃描實際使用：{providers_line}")
         print(f"\n[OK] 任務成功完成！報告已儲存至: {report_filename}")
         print(f"最終狀態: {final_output['validation_status']} | 迭代次數: {final_output['iteration_count']}")
     else:

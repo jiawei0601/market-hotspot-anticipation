@@ -39,6 +39,8 @@ jobs:
       - name: Determine Run Mode and Execute
         env:
           NVIDIA_NIM_API_KEY: ${{ secrets.NVIDIA_NIM_API_KEY }}
+          # Tier 2 備援：NIM 429/失效時降級 DeepSeek 官方（CI 無 claude CLI，備援鏈到此為止）
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           # 根據觸發事件類型與 cron 時間判斷執行模式
           # UTC 10:17 (18:17 Taipei) -> 每日追蹤

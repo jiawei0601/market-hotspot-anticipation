@@ -1,0 +1,86 @@
+[
+  {
+    "stock_id": "1785",
+    "sector": "Semiconductor_Materials_Recycling",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（2026-06-01）明確揭露密閉式逆地循環經濟商業模式：回收提純金銀鉑鈀銥銅鎵等貴金屬，重新製成半導體靶材（電子半導體靶材占VAS營收36%）；四大業務箭之一即「Circular Economy 綠色循環經濟」，明確以自身法說會文件描述靶材回收業務",
+    "evidence_url": "https://www.solartech.com.tw/investors/article-detail/investor_conference/（法說會，2026-06-01場次）",
+    "evidence_date": "2026-06-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "8390",
+    "sector": "Semiconductor_Materials_Recycling",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司官網與法說會（2025-12）明確揭露主業為半導體/PCB大廠貴金屬廢料回收精煉（金銀鈀鉑），並跨入永磁材料回收；營收結構工業用金屬57.2%、貴金屬材料29.2%，客戶逾260家、逾8成為上市櫃公司",
+    "evidence_url": "https://www.jyd.com.tw/en（公司官網）+ 2025-12法說會報導",
+    "evidence_date": "2025-12-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "9955",
+    "sector": "Semiconductor_Materials_Recycling",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司官網明確列出「半導體 薄膜 清洗 噴砂 金鹽 氫化金鉀」「靶材 金靶 銀靶 廢液處理」業務項目，處理廢IC、廢晶片、廢銀液等半導體製程廢棄物，精煉貴金屬純度達99.99%",
+    "evidence_url": "https://www.sdti.com.tw/business_recycle.html",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3663",
+    "sector": "Semiconductor_Materials_Recycling",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司官網明確列出半導體用靶材及蒸鍍材料、濺鍍設備零組件為主要產品線，並提供「貴金屬回收精煉」「靶材接合」服務，為國內專業靶材製造廠",
+    "evidence_url": "https://www.e-ttmc.com.tw/",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6803",
+    "sector": "Semiconductor_Materials_Recycling",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（2025年度成果發布）揭露廢異丙醇（W-IPA，半導體製程常用溶劑）回收再製工業級異丙醇，2024年度預估回收1.5萬噸、產能利用率滿載，明確以半導體高科技產業廢溶劑回收為業務內容之一",
+    "evidence_url": "https://poorstock.com/earningcall/6803（法說會資訊）",
+    "evidence_date": "2025-03-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "7610",
+    "sector": "Semiconductor_Materials_Recycling",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司自我定位為台灣首家以循環資源再利用方式生產鎢、鈷稀有金屬原料之專業製造商，2025-09-09於興櫃創新板掛牌，主打半導體/軍工/汽車用稀有金屬回收料",
+    "evidence_url": "https://www.twse.com.tw/market_insights/zh/detail/8a8216d697fc438f01992763eeec04c9（新上市公司介紹）",
+    "evidence_date": "2025-09-09",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6894",
+    "sector": "Semiconductor_Materials_Recycling",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "核心技術Recocell電解回收系統，專門從PCB與半導體廠排出的蝕刻液中分離銅、鎳、鈷等金屬，營收高度集中於再生金屬服務，公司業務定位明確以半導體/PCB製程廢液金屬回收為主",
+    "evidence_url": "https://wantrich.chinatimes.com/tw-market/listed/stock/6894",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "stock_id": "3042",
+    "sector": "Quartz_Crystal",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（2026 Q1/Q2系列）明確揭露AI相關產品營收占比今年可望達15%以上、明年上看20%，因應400G/800G/1.6T光模組升規需求擴產高階差分石英振盪器產能，網通/AI伺服器基建需求帶動2026年營收走高",
+    "evidence_url": "https://www.ctee.com.tw/news/20260616700671-430201（工商時報，晶技填息達陣AI業務成長可期）",
+    "evidence_date": "2026-06-16",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "2484",
+    "sector": "Quartz_Crystal",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司自身業務描述明確為石英晶體/石英晶體振盪器製造，掌握上游合成水晶原材料生產技術（日本長晶廠），5G/AI通訊應用市場帶動需求成長，重啟日本石英長晶業務",
+    "evidence_url": "https://news.cnyes.com/news/id/4429419（5G需求推升頻率元件產業谷底翻，希華重啟日本長晶廠）",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "8289",
+    "sector": "Quartz_Crystal",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司定位為國內少數具恆溫控制石英技術供應商，產品應用於網通、電信基地台、資料中心；產業報導明確提及其受惠AI伺服器、網通與資料中心需求升溫的中長線題材",
+    "evidence_url": "https://www.nstock.tw/%E6%B3%B0%E8%97%9D%E5%81%9A%E4%BB%80%E9%BA%BC.html",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "3221",
+    "sector": "Quartz_Crystal",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司自身業務為石英元件、SAW/BAW射頻濾波元件製造商，法說會揭露今年資本支出鎖定低軌衛星與時脈元件擴產、菲律賓新廠試產，AI伺服器/低軌衛星需求帶動報價調升",
+    "evidence_url": "https://readmo.cmoney.tw/article/252a1901-dfbe-4397-9c01-b10e8ab975f0（台嘉碩石英元件的修復型成長：AI需求）",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "8182",
+    "sector": "Quartz_Crystal",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "公司主要經營業務明確登記為石英振盪器、石英發振器、石英濾波器、陶瓷共振器產銷（CC01080電子零組件製造），營收以石英晶體占77%為主，為日本大真空轉投資公司",
+    "evidence_url": "https://www.stockfeel.com.tw/financial/?stock=8182",
+    "evidence_date": "2026-07-04",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  },
+  {
+    "stock_id": "6174",
+    "sector": "Quartz_Crystal",
+    "action": "add",
+    "segment": "component",
+    "evidence_grade": "E1",
+    "evidence_desc": "法說會（2026-06）揭露車用電子占比達54.44%、自有品牌逾九成，訂單能見度到9月底，未來成長鎖定車用/工控/AI伺服器/光模塊；公司官網自1990年以來即為石英晶體與振盪器製造商",
+    "evidence_url": "https://www.aker.com.tw/（公司官網）+ 2026-06法說會報導",
+    "evidence_date": "2026-06-01",
+    "effective_from": "2026-07-04",
+    "recorded_at": "2026-07-04"
+  }
+]

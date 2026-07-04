@@ -213,16 +213,27 @@ flowchart LR
    pip install -r requirements.txt
    ```
 2. **設定環境變數**：
-   系統撰寫報告與評審時預設使用 NVIDIA NIM 上的 GLM-5.2（`z-ai/glm-5.2`，OpenAI 相容端點）。請配置您的 API Key：
+   系統撰寫報告與評審時採用 **LLM 供應商三層備援鏈**，依序為：
+
+   | 層級 | 供應商 / 模型 | 必要條件 | 適用環境 |
+   |---|---|---|---|
+   | Tier 1（主力） | NVIDIA NIM／GLM-5.2（`NIM_MODEL` 可覆寫，預設 `z-ai/glm-5.2`） | `NVIDIA_NIM_API_KEY` | 本機 + CI |
+   | Tier 2（備援） | DeepSeek 官方（`DEEPSEEK_MODEL` 可覆寫，預設 `deepseek-v4-pro`） | `DEEPSEEK_API_KEY` | 本機 + CI |
+   | Tier 3（最後手段） | 本機 Claude CLI（`claude -p`，訂閱授權，無需 ANTHROPIC_API_KEY） | 本機安裝 claude CLI | **僅本機** |
+
    - **Windows (PowerShell)**：
      ```powershell
      $env:NVIDIA_NIM_API_KEY="your-api-key-here"
+     $env:DEEPSEEK_API_KEY="your-api-key-here"
      ```
    - **Linux / macOS**：
      ```bash
      export NVIDIA_NIM_API_KEY="your-api-key-here"
+     export DEEPSEEK_API_KEY="your-api-key-here"
      ```
-   > **備註**：必須設定 NVIDIA_NIM_API_KEY，否則主分析流程會在呼叫 LLM 時報錯。可選 `NIM_MODEL` 覆寫模型 ID（預設 `z-ai/glm-5.2`）。系統不整合 Ollama；惟各 Agent 節點在 LLM 呼叫失敗時，內建規則式模版作為降級產出，確保排程不中斷。
+   > **降級規則**：遇 429 限流時同層最多重試 2 輪（各等 180 秒），仍失敗才降到下一層；其他暫時性錯誤同層指數退避 3 次後降級。降級為 process 黏性——本次掃描剩餘呼叫直接用降級後的供應商，不再重撞上層。缺 `NVIDIA_NIM_API_KEY` 但有 `DEEPSEEK_API_KEY` 時直接從 Tier 2 起跳；兩者皆缺則直接報錯（fail loud，不以假數據混淆）。
+   >
+   > **誠實聲明**：Tier 3（Claude CLI）僅在本機安裝且登入訂閱的 claude CLI 時可用；**CI（GitHub Actions）環境無 claude CLI，備援鏈到 Tier 2（DeepSeek 官方）為止**，全部耗盡即 fail loud 中止，不使用模版充數。每份報告尾部附「本報告由 <provider/model 清單> 生成」，混用多家供應商時逐一列出，確保報告來源可追溯。
 
 ### 4.2 執行熱點分析
 執行 `main_agent.py` 並指定目標板塊（例如 `CPO_Optical_Transceiver`）：
