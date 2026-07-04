@@ -25,10 +25,11 @@
    成交金額」皆須達標。上市股取自 TWSE `MI_INDEX` 月底批次、上櫃股取自 FinMind 日價的月底列。
 3. **規則 3：產業分類** `industry_category ∈ INDUSTRY_ALLOWED`——半導體業、光電業、電子零組件業、
    電腦及週邊設備業、通信網路業、電子通路業、其他電子業、電機機械、電子工業（粗分類，
-   見下方修正紀錄），共 9 類。字串於 2026-07-04 實際打 FinMind `TaiwanStockInfo` API 核對
-   （回應共 57 個 `industry_category` 值，含 ETF/ETN/Index 等非個股類別），非憑記憶猜測拼寫。
+   見修正紀錄一）、其他電子類（上櫃「類」字尾變體，見修正紀錄二），共 10 類。
+   字串於 2026-07-04 實際打 FinMind `TaiwanStockInfo` API 核對（回應共 57 個
+   `industry_category` 值，含 ETF/ETN/Index 等非個股類別），非憑記憶猜測拼寫。
 
-### Pre-registration 修正紀錄（2026-07-04）
+### Pre-registration 修正紀錄一（2026-07-04）：粗分類「電子工業」
 
 首次 `--current` 實跑證明 `TaiwanStockInfo` 的分類字串**粒度不一致**：對部分上市電子股
 （3017 奇鋐、3013 晟銘電）掛的是粗分類「電子工業」而非細分類（半導體業／電子零組件業等），
@@ -39,8 +40,30 @@
   正確性修正，非依回測績效調整參數。
 - **時點**：修正發生於 2026-07-04，在任何回測使用本清單**之前**——當時尚無任何回測以
   universe 快照為母體執行過，不存在「看了回測結果才改規則」的可能。
-- 此修正已同步記錄於 `universe.py` 的 `INDUSTRY_ALLOWED` docstring，`rules_version` 標籤
-  維持 `0007-v1`（清單首次凍結即含此修正；首次實跑產出的快照為 provisional，本就允許重建）。
+- 此修正已同步記錄於 `universe.py` 的 `INDUSTRY_ALLOWED` docstring。
+
+### Pre-registration 修正紀錄二（2026-07-04）：上市／上櫃分類字尾不一致
+
+回填完成後驗證發現第二個粒度問題：**TPEx 上櫃側對「其他電子」產業空間用「類」字尾
+（「其他電子類」，60 檔），TWSE 上市側用「業」字尾（「其他電子業」）**——同一產業空間、
+兩套字尾。`INDUSTRY_ALLOWED` 原只收「業」字尾，導致弘塑 3131、萬潤 6187、雙鴻 3324 等
+上櫃電子股被誤剔除（其流動性與上市時長皆通過，僅因字尾差異卡在規則 3）。
+
+依快取（`data/universe_cache/finmind_stock_info.json`）枚舉 type=tpex 的全部 37 個
+`industry_category` 唯一值逐一核對：
+
+- **納入**：「其他電子類」——唯一與現有清單語意對應的「類」字尾變體。其餘電子供應鏈類別
+  （半導體業、光電業、電子零組件業、電腦及週邊設備業、通信網路業、電子通路業、電機機械）
+  上櫃側與上市側**字串完全相同**，無需變體。
+- **刻意不納入的電子相關字串**：資訊服務業（軟體/SI）、數位雲端類（雲服務）、
+  電子商務業（電商平台）——三者皆屬軟體與服務業，非電子供應鏈硬體製造；
+  電器電纜（傳統電工產品）——不在原始八類的語意範圍內。
+
+性質聲明同修正紀錄一：分類字串命名慣例不一致（上市/上櫃兩套字尾），屬資格判定正確性修正、
+非回測調參；修正時點在任何回測使用本清單之前。
+
+**版本升級**：`RULES_VERSION` 自 `0007-v1` 升為 `0007-v2`。既存的 v1 快照依下方重建政策
+（rules_version 過時）允許重建為 v2；重建為純本地計算（資料全在 `data/universe_cache/` 快取）。
 
 ### 資料來源架構（依 probe-0007 的「批次優先、混合為輔」建議）
 
@@ -97,23 +120,30 @@
 - `fetch_error_count` / `fetch_errors`（限流等原因抓取失敗的個股與原因）
 - `provisional`（暫定旗標，見下方重建政策）
 
-### 快照重建政策（provisional）
+### 快照重建政策（provisional ＋ rules_version）
 
-不可變鐵律的適用範圍依快照完整性區分：
+不可變鐵律的適用範圍依快照完整性**與規則版本**區分（判定函式
+`universe.snapshot_is_rebuildable()`）：
 
-- **完整快照**（`fetch_error_count == 0`）：維持 append-only 不可變鐵律，已存在即拒寫
-  （`pit_store.SnapshotExistsError`），永不覆蓋。
+- **完整且版本相同的快照**（`fetch_error_count == 0` 且 `rules_version == RULES_VERSION`）：
+  維持 append-only 不可變鐵律，已存在即拒寫（`pit_store.SnapshotExistsError`），永不覆蓋。
 - **暫定快照**（`fetch_error_count > 0`，標記 `"provisional": true`）：允許被重跑覆蓋——
   限流等原因造成缺值的快照，重跑補齊是預期操作（重跑會利用 `data/universe_cache/` 快取，
   只補失敗的檔），不算違反不可變鐵律。重建後若已無缺值，快照轉為完整、自此不可再覆寫。
+- **版本過時的快照**（`rules_version != RULES_VERSION`，即使完整）：允許重建——規則經
+  pre-registration 修訂（如 0007-v1 → 0007-v2 補產業分類字尾變體）後，舊版本快照重建為
+  新版本是預期操作；重建為純本地計算（資料全在快取）。版本相同且完整者不在此列。
 - 判定函式 `universe.snapshot_is_provisional()` 同時相容「顯式 provisional 旗標」與
   「早期未寫入該欄位、但 `fetch_error_count > 0`」的快照——2026-07-04 首次實跑產出的
   2026-06 快照（850 檔缺值）即屬後者，依本政策視為 provisional、允許重建。
-- `--backfill` 遇到既存的 provisional 快照會自動重跑補齊，遇到完整快照則略過。
+- `--backfill` 遇到既存的 provisional 或版本過時快照會自動重建，遇到完整且版本相同的
+  快照則略過。
 
-理由：不可變鐵律的目的在保護「已完成的 PIT 證據」不被事後竄改；一份因外部限流而大量缺值的
-快照並非完成的證據，把它鎖死反而讓缺值永久化。以 `fetch_error_count == 0` 作為「證據完成」
-的機械判準，兩種狀態的邊界客觀可驗，不依人工判斷。
+理由：不可變鐵律的目的在保護「已完成的 PIT 證據」不被事後竄改。一份因外部限流而大量缺值的
+快照並非完成的證據，把它鎖死反而讓缺值永久化；同理，規則已修訂而快照仍是舊版規則的產物時，
+「用新規則重算」不是竄改證據而是套用當前已凍結規則（修訂本身受 pre-registration 紀錄約束）。
+以 `fetch_error_count == 0 且 rules_version 相同` 作為「證據完成」的機械判準，
+邊界客觀可驗，不依人工判斷。
 
 ### pit_store 最小擴充
 
@@ -164,8 +194,9 @@
 ## 實作與驗證
 
 - 程式：`universe.py`（篩選邏輯、資料抓取、限流韌性、CLI）、`tests/test_universe.py`
-  （39 個純本地 fixture 測試：三規則通過/剔除案例＋快照不可變性＋provisional 重建政策＋
-  限流退避/paced 模式＋build_snapshot 全流程，無網路依賴）。
+  （45 個純本地 fixture 測試：三規則通過/剔除案例（含兩筆 pre-registration 修正的字串）＋
+  快照不可變性＋provisional/rules_version 重建政策＋限流退避/paced 模式＋
+  build_snapshot 全流程，無網路依賴）。
 - 實跑 `--current` 結果、12 檔既有 universe 核對結果：見 commit 訊息與 HANDOFF.md（此 ADR
   聚焦決策本身，實跑數字為一次性驗證證據，記錄於交接文件避免 ADR 隨資料變動而需要修訂）。
 - 2026-06 首次實跑快照因 FinMind 限流含 850 檔缺值，依 provisional 政策標記為暫定、

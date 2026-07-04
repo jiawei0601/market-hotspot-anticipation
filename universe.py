@@ -55,19 +55,31 @@ INDUSTRY_ALLOWED = frozenset({
     "其他電子業",
     "電機機械",
     "電子工業",
+    "其他電子類",
 })
 """規則 3：允許的產業分類（以 FinMind TaiwanStockInfo 實際字串為準，2026-07-04 打 API 核對）。
 探查報告記載 industry_category 共 57 類（含 ETF/ETN/Index 等非個股類別）；
 本清單為其中與電子供應鏈相關的類別，字串逐一與 API 回應核對過，非猜測拼寫。
 
-「電子工業」為 2026-07-04 首次實跑後的 pre-registration 修正（見 ADR 0007「修正紀錄」）：
-TaiwanStockInfo 對部分上市電子股（如 3017 奇鋐、3013 晟銘電）掛的是粗分類「電子工業」
-而非細分類（半導體業/電子零組件業等），屬分類字串粒度不一致問題；
-修正時點在任何回測使用本清單之前，性質為資格判定修正、非回測調參。
+兩筆 pre-registration 修正（皆 2026-07-04、皆在任何回測使用本清單之前，見 ADR 0007「修正紀錄」）：
+1. 「電子工業」：TaiwanStockInfo 對部分上市電子股（如 3017 奇鋐、3013 晟銘電）掛的是
+   粗分類「電子工業」而非細分類，屬分類字串粒度不一致。
+2. 「其他電子類」：TPEx 上櫃側對「其他電子」產業空間用「類」字尾（其他電子類，60 檔，
+   如 3131 弘塑、6187 萬潤、3324 雙鴻），TWSE 上市側用「業」字尾（其他電子業）——
+   同一產業空間、兩套字尾。已枚舉快取中 tpex 全部 37 個分類值核對：其餘電子供應鏈類別
+   （半導體業/光電業/電子零組件業/電腦及週邊設備業/通信網路業/電子通路業/電機機械）
+   上櫃側與上市側字串完全相同，「其他電子類」是唯一需補的「類」字尾變體。
+   刻意不加的電子相關字串：資訊服務業、數位雲端類（軟體與雲服務，非電子供應鏈硬體）、
+   電子商務業（電商平台，非電子製造）、電器電纜（傳統電工，不在原始八類語意範圍）。
+性質皆為資格判定修正、非回測調參。
 注意：此為「現行分類回溯套用到歷史月份」，見 ADR 0007 誠實聲明 (1)。"""
 
-RULES_VERSION = "0007-v1"
-"""快照內記錄的規則版本標籤，供未來規則變動時追溯是哪個版本產出的快照。"""
+RULES_VERSION = "0007-v2"
+"""快照內記錄的規則版本標籤，供未來規則變動時追溯是哪個版本產出的快照。
+版本沿革：0007-v1＝首版（8 類＋電子工業）；0007-v2＝補上櫃「其他電子類」字尾變體
+（2026-07-04 pre-registration 修正，見 ADR 0007 修正紀錄）。
+重建政策：現存快照 rules_version != 當前版本時允許重建（規則修訂屬 pre-registration 修正，
+舊版本快照重建為新版本是預期操作）；版本相同且完整（無 fetch_error）者維持不可變。"""
 
 FINMIND_SLEEP_SECONDS = 3.0
 TWSE_SLEEP_SECONDS = 2.0
@@ -611,15 +623,28 @@ def snapshot_is_provisional(payload: dict) -> bool:
     return (payload.get("fetch_error_count") or 0) > 0
 
 
+def snapshot_is_rebuildable(payload: dict) -> bool:
+    """判定既有快照是否允許被重建覆蓋（ADR 0007 重建政策）。
+
+    允許重建的兩種情況：
+    1. provisional（含 fetch_error 缺值）——重跑補齊是預期操作；
+    2. rules_version != 當前 RULES_VERSION——規則經 pre-registration 修訂後，
+       舊版本快照重建為新版本是預期操作（如 0007-v1 → 0007-v2 補產業分類字尾變體）。
+    版本相同且完整（無 fetch_error）的快照不可重建，維持不可變鐵律。"""
+    if snapshot_is_provisional(payload):
+        return True
+    return payload.get("rules_version") != RULES_VERSION
+
+
 def write_snapshot(year_month: str, snapshot: dict | None = None, root: str = SNAPSHOT_ROOT,
                     tpex_price_start: str | None = None) -> str:
     """組裝（若未提供）並寫入 universe 月快照。
 
     重建政策（ADR 0007）：
     - 目標檔不存在 → 直接寫入。
-    - 目標檔存在且為 provisional（見 snapshot_is_provisional）→ 允許覆蓋重建
-      （限流等原因造成缺值的暫定快照，重跑補齊是預期操作，不算違反不可變鐵律）。
-    - 目標檔存在且為完整快照（fetch_error_count == 0 且無 provisional 旗標）→
+    - 目標檔存在且可重建（見 snapshot_is_rebuildable：provisional 或 rules_version 過時）
+      → 允許覆蓋重建。
+    - 目標檔存在、版本相同且完整（fetch_error_count == 0）→
       沿用 pit_store append-only 鐵律，raise SnapshotExistsError。
     """
     if snapshot is None:
@@ -629,9 +654,9 @@ def write_snapshot(year_month: str, snapshot: dict | None = None, root: str = SN
     if os.path.exists(existing_path):
         with open(existing_path, "r", encoding="utf-8") as f:
             existing = json.load(f)
-        if snapshot_is_provisional(existing):
-            os.remove(existing_path)  # 暫定快照：允許重建
-        # 完整快照：不刪，落到 pit_store 觸發 SnapshotExistsError（單一鐵律出口）
+        if snapshot_is_rebuildable(existing):
+            os.remove(existing_path)  # 暫定或舊版本快照：允許重建
+        # 版本相同且完整：不刪，落到 pit_store 觸發 SnapshotExistsError（單一鐵律出口）
 
     return pit_store.write_monthly_snapshot("universe", snapshot, year_month=year_month, root=root)
 
@@ -691,7 +716,8 @@ def cmd_current():
         path = write_snapshot(ym, tpex_price_start=tpex_price_start)
         print(f"已寫入：{path}")
     except pit_store.SnapshotExistsError as e:
-        print(f"略過（已存在完整快照，不可覆寫；provisional 快照才允許重建）：{e}")
+        print(f"略過（已存在完整且版本相同的快照，不可覆寫；"
+              f"provisional 或版本過時的快照才允許重建）：{e}")
 
 
 def cmd_backfill(start: str, end: str):
@@ -702,11 +728,14 @@ def cmd_backfill(start: str, end: str):
         if os.path.exists(target):
             with open(target, "r", encoding="utf-8") as f:
                 existing = json.load(f)
-            if not snapshot_is_provisional(existing):
-                print(f"[{i}/{len(months)}] {ym} 已存在（完整快照），略過")
+            if not snapshot_is_rebuildable(existing):
+                print(f"[{i}/{len(months)}] {ym} 已存在（完整且版本相同），略過")
                 continue
-            print(f"[{i}/{len(months)}] {ym} 已存在但為 provisional"
-                  f"（fetch_error_count={existing.get('fetch_error_count')}），重跑補齊...")
+            reason = ("provisional"
+                      f"（fetch_error_count={existing.get('fetch_error_count')}）"
+                      if snapshot_is_provisional(existing)
+                      else f"版本過時（{existing.get('rules_version')} → {RULES_VERSION}）")
+            print(f"[{i}/{len(months)}] {ym} 已存在但{reason}，重建...")
         else:
             print(f"[{i}/{len(months)}] {ym} 產生中...")
         try:

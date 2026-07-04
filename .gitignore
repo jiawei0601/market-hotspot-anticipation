@@ -8,3 +8,5 @@ venv/
 .vscode/
 .claude/settings.local.json
 data/universe_cache/
+universe_backfill.log
+_watch_backfill_notify.py

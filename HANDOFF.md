@@ -26,11 +26,18 @@
 - **README**：新增「## 2. 決策推演流程」全章（資料層 PIT→三訊號→決策閘門→LangGraph 多專家→追蹤驗證→已知限制→端到端 mermaid 總覽）；修正過時的「TWSE 無歷史回溯、回測用模擬營收」敘述（Stage 2 已用 FinMind 真實回填）。
 - **品質關卡**：Gemini + GLM-5.2 雙路 code review（共同抓到缺資料雙重計算等 7 項，已全數修復）；fresh agent read-back 驗證 README 與程式碼一致（7 項 PASS）。
 
+### ✅ ADR 0007 Universe 客觀化全篩（2026-07-04 續，同日完成）
+- **`universe.py` 管線**：三層漏斗先驗規則（上市滿 12 月／月底成交值 ≥1500 萬／產業 10 類）＋TWSE 批次與 FinMind 逐檔混合架構＋限流退避（`--paced`）＋provisional/版本雙判準重建政策＋`FINMIND_TOKEN` 支援。
+- **138 個月 universe 快照全數建成**（`data/snapshots/YYYY-MM/universe.json`，2015-01..2026-06，rules_version=0007-v2，0 缺值）：2026-06 漏斗 2741→2412→939→**538 檔**；時間趨勢 237(2015)→538(2026) 平滑遞增。
+- 兩筆 pre-registration 修正（皆在任何回測使用前，記於 ADR 0007）：①上市粗分類「電子工業」補入；②上市／上櫃字尾不一致（其他電子**業** vs 其他電子**類**）補入——後者曾誤篩弘塑/萬潤/雙鴻。修正後舊 12 檔 universe 全數通過篩選（12/12）。
+- fresh 驗證：漏斗單調 138/138、PIT 上市時長抽查全過、華亞科(3474) 2017 後正確消失、45 個 universe 測試（全套 77 passed）。
+- 快取 `data/universe_cache/`（1428 檔 FinMind 價格＋TWSE 月批次）已 gitignore，重建純本地。
+
 ## 進行中
 - 無。
 
 ## 下一步（依優先序）
-1. **P0（產品決策）**：universe 客觀化——定義可重現納入規則（產業分類碼＋市值/流動性門檻，按時點成分），否則回測永遠只能標「非證據」。
+1. **接線**：把 `market_monitor`/回測的 12 檔手選名單換成讀 universe 快照（`final_pass`），三訊號在客觀 universe 上重算——這步完成後回測才真正升級為「弱證據」。板塊歸屬（供應鏈敘事層）需另定 ADR（快照只解決「可投資母體」，未解決「誰屬於 CPO 板塊」）。
 2. 觸發 daily pipeline 或手動 `python generate_static_pages.py` 刷新 reports/docs（本輪未重生產出物）。
 3. 用新口徑重跑 `python backtest_engine.py` 與 `python monte_carlo_analyzer.py --seed 42`（需網路）。
 4. 舊掃描報告（2026-06-19）是用舊寬鬆門檻產的，鈦昇「黃金潛伏」標示已不成立——下次掃描會自動以新判定產出，可考慮在舊報告加勘誤註記。

@@ -69,17 +69,29 @@ class TestPassesIndustry(unittest.TestCase):
         self.assertFalse(universe.passes_industry("金融保險"))
         self.assertFalse(universe.passes_industry("食品工業"))
 
-    def test_fail_similar_but_not_exact_string(self):
-        # 「其他電子類」與允許清單中的「其他電子業」字面不同，不應誤判通過
-        self.assertFalse(universe.passes_industry("其他電子類"))
-
     def test_pass_coarse_category_electronics(self):
         # 粗分類「電子工業」為 2026-07-04 pre-registration 修正後納入
         # （TaiwanStockInfo 對部分上市電子股掛粗分類而非細分類，見 ADR 0007 修正紀錄）
         self.assertTrue(universe.passes_industry("電子工業"))
 
+    def test_pass_tpex_lei_suffix_variant(self):
+        # TPEx 上櫃側「類」字尾變體：「其他電子類」對應上市側「其他電子業」，
+        # 為 2026-07-04 第二筆 pre-registration 修正（弘塑/萬潤/雙鴻誤剔除的根因）
+        self.assertTrue(universe.passes_industry("其他電子類"))
+
+    def test_fail_electronics_adjacent_but_excluded(self):
+        # 刻意不納入的電子相關字串（軟體/雲服務/電商/傳統電工，非電子供應鏈硬體）
+        self.assertFalse(universe.passes_industry("資訊服務業"))
+        self.assertFalse(universe.passes_industry("數位雲端類"))
+        self.assertFalse(universe.passes_industry("電子商務業"))
+        self.assertFalse(universe.passes_industry("電器電纜"))
+
     def test_fail_none_category(self):
         self.assertFalse(universe.passes_industry(None))
+
+    def test_rules_version_is_v2(self):
+        # 「其他電子類」修正時同步升版，供快照追溯與重建政策判定
+        self.assertEqual(universe.RULES_VERSION, "0007-v2")
 
 
 class TestHelperDateMath(unittest.TestCase):
@@ -336,6 +348,36 @@ class TestProvisionalPolicy(unittest.TestCase):
 
             with self.assertRaises(pit_store.SnapshotExistsError):
                 universe.write_snapshot("2026-06", snapshot=self._payload(), root=tmp_root)
+
+    # ---- rules_version 重建政策（0007-v1 → 0007-v2 等 pre-registration 規則修訂） ----
+
+    def test_rebuildable_when_rules_version_outdated(self):
+        outdated = self._payload(fetch_error_count=0, provisional=False)
+        outdated["rules_version"] = "0007-v1"
+        self.assertTrue(universe.snapshot_is_rebuildable(outdated))
+
+    def test_not_rebuildable_when_same_version_and_complete(self):
+        current = self._payload(fetch_error_count=0, provisional=False)
+        self.assertFalse(universe.snapshot_is_rebuildable(current))
+
+    def test_rebuildable_when_provisional_even_if_same_version(self):
+        prov = self._payload(fetch_error_count=5, provisional=True)
+        self.assertTrue(universe.snapshot_is_rebuildable(prov))
+
+    def test_write_snapshot_allows_rebuild_of_outdated_version(self):
+        """版本過時（如 0007-v1）且完整的快照，允許重建為當前版本。"""
+        with tempfile.TemporaryDirectory() as tmp_root:
+            old = self._payload(fetch_error_count=0, provisional=False)
+            old["rules_version"] = "0007-v1"
+            universe.write_snapshot("2026-06", snapshot=old, root=tmp_root)
+
+            new = self._payload(fetch_error_count=0, provisional=False)
+            path = universe.write_snapshot("2026-06", snapshot=new, root=tmp_root)
+
+            import json
+            with open(path, encoding="utf-8") as f:
+                on_disk = json.load(f)
+            self.assertEqual(on_disk["rules_version"], universe.RULES_VERSION)
 
 
 class TestRateLimitRetry(unittest.TestCase):
