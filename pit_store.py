@@ -18,7 +18,7 @@ def write_monthly_snapshot(
 ) -> str:
     """寫入不可變月快照。
 
-    kind∈{'revenue','holdings','prices'}；
+    kind 為任意快照種類字串（如 'revenue'、'holdings'、'prices'、'universe' 等）；
     year_month 預設當月 'YYYY-MM'。
     目標檔已存在 → raise SnapshotExistsError（永不覆寫）。
     回傳寫入路徑。
