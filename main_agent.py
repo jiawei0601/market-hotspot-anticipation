@@ -662,6 +662,8 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"{backlog_honesty_rule}"
         f"5. 若本次無任何公司通過黃金潛伏門檻，誠實陳述『無標的通過』即止；"
         f"嚴禁虛構『假設性標的』『模擬情境』或以任何不符合條件的公司示範進場策略——寧可報告短，不可捏造情境。"
+        f"無標的通過時，操作策略章節只允許寫『觀察名單與觸發條件』（列出最接近門檻的標的、各自距離哪條門檻多遠、"
+        f"觸發後的驗證步驟），不得出現任何進場價/退場時點/持倉建議。"
         + ("\n6. 本板塊無世代規格登記，全篇禁止出現 Vera_Rubin/Feynman/Feynman_Next 等 GPU 世代名稱或任何自行編造的世代代號。" if spec_missing else "")
     )
     
@@ -701,7 +703,11 @@ def quality_critic_node(state: MarketHotspotState) -> Dict[str, Any]:
         data.get("current_backlog_yoy_pct") is not None for data in raw_revenue.values()
     )
     backlog_requirement = (
-        "2. 至少一家設備商的拉貨領先度 (Backlog YoY) 定量數據；\n"
+        "2. 設備 Backlog 領先訊號的定量數據——本系統的 Backlog 訊號【依設計】即為板塊層代理訊號"
+        "（equipment 分類成員月營收 YoY 中位數），不存在單一公司訂單數據；"
+        "審查標準為：報告是否呈現此板塊層定量數據並誠實標示其代理性質。"
+        "誠實標示『板塊層代理訊號』是本系統的規範要求，不得視為蒙混或以此判 FAIL；"
+        "亦不得要求報告提供系統設計上不存在的『單一設備商訂單』數據。\n"
         if backlog_applicable else
         "2.【本板塊無 equipment 分類成員，Backlog 板塊層訊號不適用（程式端已確認）】"
         "此項審查標準改為：報告是否誠實標示『本板塊無 equipment 分類成員，Backlog 訊號不適用』。"

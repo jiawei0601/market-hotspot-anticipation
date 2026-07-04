@@ -315,7 +315,10 @@ class TestBacklogNotApplicablePrompting(unittest.TestCase):
             main_agent.quality_critic_node(state)
 
         prompt_text = captured["messages"][-1].content
-        self.assertIn("至少一家設備商的拉貨領先度 (Backlog YoY) 定量數據", prompt_text)
+        # 2026-07-05 修訂：要求 2 對齊系統設計——Backlog 本為板塊層代理訊號，
+        # critic 不得要求「單一設備商訂單」這種系統不產出的數據（CPO 重掃曾因此三輪 FAIL）。
+        self.assertIn("板塊層代理訊號", prompt_text)
+        self.assertIn("不得要求報告提供系統設計上不存在的『單一設備商訂單』數據", prompt_text)
         self.assertNotIn("Backlog 板塊層訊號不適用（程式端已確認）", prompt_text)
 
 
