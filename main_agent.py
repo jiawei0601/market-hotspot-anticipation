@@ -109,10 +109,11 @@ def get_llm_model(structured_model=None):
 def _invoke_with_retry(llm, messages, retries: int = 3, backoff: float = 2.0):
     """呼叫 LLM，對暫時性錯誤有限重試+指數退避；耗盡才 raise。不捏造假數據。
 
-    429（限流）另走長退避：NIM 免費層連續多板塊掃描實測會撞 429（2026-07-04），
-    2/4/8 秒扛不住限流窗口，改 30/60/120/240/300 秒最多 5 輪，限流重試不消耗一般重試額度。"""
+    429（限流）另走固定間隔重試：NIM 免費層為 ~40 RPM 共享速率制（2026-07-04 查證），
+    固定每 180 秒重試一次、最多 10 輪（最長等 30 分鐘），限流重試不消耗一般重試額度。"""
     last_err = None
-    rate_limit_sleeps = (30, 60, 120, 240, 300)
+    RATE_LIMIT_INTERVAL = 180
+    RATE_LIMIT_MAX_ROUNDS = 10
     rate_limit_attempts = 0
     attempt = 0
     while attempt < retries:
@@ -120,11 +121,10 @@ def _invoke_with_retry(llm, messages, retries: int = 3, backoff: float = 2.0):
             return llm.invoke(messages)
         except Exception as e:
             last_err = e
-            if "429" in str(e) and rate_limit_attempts < len(rate_limit_sleeps):
-                wait = rate_limit_sleeps[rate_limit_attempts]
+            if "429" in str(e) and rate_limit_attempts < RATE_LIMIT_MAX_ROUNDS:
                 rate_limit_attempts += 1
-                print(f"[限流 429] 退避 {wait} 秒後重試（第 {rate_limit_attempts}/{len(rate_limit_sleeps)} 輪）", flush=True)
-                time.sleep(wait)
+                print(f"[限流 429] {RATE_LIMIT_INTERVAL} 秒後重試（第 {rate_limit_attempts}/{RATE_LIMIT_MAX_ROUNDS} 輪）", flush=True)
+                time.sleep(RATE_LIMIT_INTERVAL)
                 continue
             attempt += 1
             if attempt < retries:
