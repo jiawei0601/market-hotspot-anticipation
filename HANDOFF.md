@@ -3,7 +3,7 @@
 > 兩個 agent 交接的唯一現況真相。離開前更新，接手前先讀。
 
 - 最後更新：Claude Code (Fable 5 指揮 + sonnet/haiku 分工) @ 2026-07-04
-- 目前任務 / 目標：全專案審查後整組修正（回測口徑、訊號誠實化、判定 bug、repo 衛生、README 決策流程文件化）。**已完成，32 tests 全綠。**
+- 目前任務 / 目標：全專案審查後整組修正（回測口徑、訊號誠實化、判定 bug、repo 衛生、README 決策流程文件化）。2026-07-04 一日完成「審查整改→universe 客觀化→板塊登記簿→七板塊擴容→LLM 切換 NIM GLM-5.2」全鏈。**167 tests 全綠，七板塊報告 7/7。**
 
 ## 已完成（2026-07-04 本輪）
 
@@ -61,13 +61,12 @@
 - 無。（Memory 首掃已於 2026-07-04 21:4x 完成，Critic 一輪 PASS，七板塊報告 7/7 齊備；429 重試已改固定 180 秒×10 輪）
 
 ## 下一步（依優先序）
-1. **watchlist 重置待使用者確認**：現役 3 檔（雙鴻/一詮/鈦昇）是舊寬鬆閘門產物（已知），重置流程＝歸檔→清空→重掃（CPO 與新板塊在修正後閘門下目前皆無黃金標的，重置後 watchlist 很可能為空——這是誠實結果）。
-2. 雍智 6683 pending evidence；E1 三檔（旺矽/晟銘電/雙鴻）evidence_date 佔位待補正。
-3. 新板塊上線 SOP：證據入簿 → `python ingest.py --backfill-sector <sector>` → `python main_agent.py --sector <sector>`（全程無需改程式碼）。
-4. CI 週報目前只掃 CPO（workflow 未帶新板塊）——若要三板塊都自動掃，改 `.github/workflows/daily_market_pipeline.yml` 加兩行。
-2. 觸發 daily pipeline 或手動 `python generate_static_pages.py` 刷新 reports/docs（本輪未重生產出物）。
+1. 雍智 6683 pending evidence；E1 三檔（旺矽/晟銘電/雙鴻）evidence_date 佔位待補正。
+2. 手動或等 CI 跑 `python generate_static_pages.py` 刷新 GitHub Pages（七板塊新報告尚未編入靜態頁）。
 3. 用新口徑重跑 `python backtest_engine.py` 與 `python monte_carlo_analyzer.py --seed 42`（需網路）。
-4. 舊掃描報告（2026-06-19）是用舊寬鬆門檻產的，鈦昇「黃金潛伏」標示已不成立——下次掃描會自動以新判定產出，可考慮在舊報告加勘誤註記。
+4. 開放產品決策：無 equipment 成員板塊（散熱/被動元件/記憶體等）的黃金閘門是否需要替代第三訊號（現況＝誠實地永不觸發）。
+5. NIM 免費層 ~40 RPM 共享速率制：CI 已有板塊間隔 90s＋429 固定 180s×10 輪重試；若常撞牆可把週報 cron 移到台北早晨或換 NIM_MODEL。
+（已完成不再列：watchlist 已歸檔重置=0、CI 已七板塊、新板塊 SOP 見 ADR 0008）
 
 ## 關鍵決策 + 為什麼
 - **黃金標的單一真相來源**：報告/watchlist 不得另設門檻——第二套門檻正是本次誤標事故的根因；已加靜態測試防回歸（test_agent_workflow）。
@@ -78,14 +77,14 @@
 ## 雷區 / 別碰
 - **`main_agent.py` 中文 f-string 對編碼極敏感**（歷史 mojibake 元兇）——只用 UTF-8 的 Edit 工具改，勿用 cp950 腳本覆寫。
 - **`BacktestEngine.__init__` 會清空 `backtest_watchlist.json`**（既有設計）——任何跑過 pytest / 實例化的動作都會把該檔弄髒成 `[]`，commit 前務必 `git checkout -- backtest_watchlist.json` 還原。
-- `.env` 內有真實 GEMINI_API_KEY（已 gitignore）——勿 commit。
+- `.env` 內有真實金鑰（GEMINI_API_KEY／FINMIND_TOKEN／NVIDIA_NIM_API_KEY，已 gitignore）——勿 commit。
 - 本機 clone 容易落後 origin/main（CI 每日 auto-commit）——接手前先 `git pull --rebase`，別誤判「資料沒更新」。
 - 既有 cosmetic SyntaxWarning 刻意不動。
 
 ## 怎麼跑 / 怎麼測
-- 跑測試：`C:\Users\chang\AppData\Local\Programs\Python\Python312\python.exe -m pytest tests/ -q`（現為 **32 passed**；跑完記得還原 backtest_watchlist.json，見雷區）
+- 跑測試：`C:\Users\chang\AppData\Local\Programs\Python\Python312\python.exe -m pytest tests/ -q`（現為 **167 passed**；跑完記得還原 backtest_watchlist.json，見雷區）
 - 每日價格更新：`python main_agent.py --daily-update`
-- 每週研判報告：`python main_agent.py --weekly-report`（需 `GEMINI_API_KEY`）
+- 每週研判報告：`python main_agent.py --weekly-report --sector <板塊>`（需 `NVIDIA_NIM_API_KEY`；`NIM_MODEL` 可覆寫，預設 z-ai/glm-5.2）
 - 產生靜態頁：`python generate_static_pages.py`
 - Web 服務：`python app.py`（`/run` 需 `RUN_TRIGGER_TOKEN`）
 
