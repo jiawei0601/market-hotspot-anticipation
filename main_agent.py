@@ -37,6 +37,8 @@ from market_monitor import (
     REVENUE_PROJECTION_NOTE,
     CONSENSUS_GRANULARITY_NOTE,
     BACKLOG_SIGNAL_NOTE,
+    MEMBERSHIP_SOURCE_FALLBACK,
+    MEMBERSHIP_FALLBACK_NOTE,
 )
 
 # 1. 狀態定義 (TypedDict) - 升級以包含下下一代能見度、設備訂單與預期差共識分析
@@ -108,11 +110,20 @@ def supply_chain_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     current_gen = state.get("current_generation", "Vera_Rubin")
     next_gen = state.get("next_generation", "Feynman")
     future_gen = "Feynman_Next"
-    
+    sector = state.get("target_sector")
+
     # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
     as_of_date = state.get("as_of_date")
-    raw_schedule = monitor.get_supply_chain_schedule(current_gen, next_gen, as_of_date=as_of_date if as_of_date else None)
-    
+    raw_schedule = monitor.get_supply_chain_schedule(
+        current_gen, next_gen,
+        as_of_date=as_of_date if as_of_date else None,
+        sector=sector,
+    )
+
+    membership_warning = (
+        f"\n\n【板塊名單來源警語】{MEMBERSHIP_FALLBACK_NOTE}"
+        if raw_schedule.get("membership_source") == MEMBERSHIP_SOURCE_FALLBACK else ""
+    )
     prompt = (
         f"你是一個資深半導體與科技硬體供應鏈專家。\n"
         f"請針對當前世代 {current_gen}、下一代 {next_gen}，特別是超前 18-24 個月的下下一代架構 {future_gen} 的物理變革進行洗牌分析。\n"
@@ -120,8 +131,9 @@ def supply_chain_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"你的分析必須專注於：\n"
         f"1. **Content Value (CV) 的正反面演進**：哪些廠商在新架構下價值暴漲？哪些廠商（例如 FOCI、MCT）在下下一代 {future_gen} 因為技術被整合或替代而面臨 CV 暴跌/歸零風險？\n"
         f"2. **Design Win 與試產放量時程**：指出設備端放量比元件端領先的關鍵時間點。"
+        f"{membership_warning}"
     )
-    
+
     if state.get("critic_feedback"):
         prompt += f"\n\n[注意] 前一輪 Critic 提出的修正意見為：{state['critic_feedback']}。請針對此建議修正分析。"
 
@@ -147,13 +159,20 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
     """
     sector = state["target_sector"]
     as_of_date = state.get("as_of_date")
-    current_matrix = monitor.get_point_in_time_matrix(as_of_date if as_of_date else None)
-    company_ids = [x["company_id"] for x in current_matrix]
-    
+    company_ids, membership_source = monitor.resolve_sector_members(sector, as_of_date if as_of_date else None)
+
     # 呼叫數據監控引擎，支援 point-in-time 歷史回測截斷
     pricing_data = monitor.get_high_frequency_pricing(sector, as_of_date=as_of_date if as_of_date else None)
-    revenue_data = monitor.simulate_revenue_inflection(company_ids, as_of_date=as_of_date if as_of_date else None)
-    
+    revenue_data = monitor.simulate_revenue_inflection(
+        company_ids,
+        as_of_date=as_of_date if as_of_date else None,
+        sector=sector,
+    )
+
+    membership_warning = (
+        f"\n\n【板塊名單來源警語】{MEMBERSHIP_FALLBACK_NOTE}"
+        if membership_source == MEMBERSHIP_SOURCE_FALLBACK else ""
+    )
     prompt = (
         f"你是一個量化金融與產業營收分析專家。\n"
         f"請針對高頻報價走勢與各供應鏈廠商的成品營收 YoY、設備 Backlog 訂單 YoY 數據進行定量解析。\n"
@@ -170,8 +189,9 @@ def pricing_revenue_expert_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"呈現時一律標註『共識度 XX（粗粒度，±8 分為雜訊）』，不得暗示個位以下精度。\n"
         f"- `current_backlog_yoy_pct` / `backlog_yoy_curve_3m` 是「{BACKLOG_SIGNAL_NOTE}」，"
         f"呈現時必須註明『板塊層代理訊號，非公司別訂單資料』，不得寫成該公司自己的訂單數據。"
+        f"{membership_warning}"
     )
-    
+
     if state.get("critic_feedback"):
         prompt += f"\n\n[注意] 前一輪 Critic 提出的修正意見為：{state['critic_feedback']}。請針對此建議修正分析。"
 

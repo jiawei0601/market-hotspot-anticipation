@@ -9,8 +9,33 @@ from typing import Dict, List, Any
 
 # 導入底層模組
 import performance_tracker
-from market_monitor import MarketInformationMonitor
+from market_monitor import (
+    MarketInformationMonitor,
+    _strip_suffix,
+    MEMBERSHIP_SOURCE_FALLBACK,
+    MEMBERSHIP_FALLBACK_NOTE,
+)
 from constants import CHINESE_MAPPING
+
+# stock_id 尾碼組裝（PIT：不同歷史時點名單可以不同，尾碼依 universe type map 決定）
+_TYPE_SUFFIX = {"twse": ".TW", "tpex": ".TWO"}
+
+
+def resolve_ticker(stock_id_or_company_id: str, type_map: Dict[str, str]) -> str:
+    """
+    將 resolve_sector_members 回傳的成員（可能是純 stock_id，也可能是既有
+    fallback 名單本已帶尾碼的 company_id）正規化為 yfinance ticker。
+
+    - 先 strip 既有尾碼取得純 stock_id。
+    - type_map 有該 stock_id 紀錄 → 依 twse/tpex 組對應尾碼（.TW / .TWO）。
+    - type_map 查無紀錄（例如 fallback 12 檔本不在 universe type map 內）→
+      原樣沿用輸入值（本已含正確尾碼，不做二次轉換），維持 fallback 行為等價。
+    """
+    sid = _strip_suffix(stock_id_or_company_id)
+    stock_type = type_map.get(sid)
+    if stock_type and stock_type in _TYPE_SUFFIX:
+        return f"{sid}{_TYPE_SUFFIX[stock_type]}"
+    return stock_id_or_company_id
 
 # 設定回測專用的數據儲存
 BACKTEST_WATCHLIST_FILE = "backtest_watchlist.json"
@@ -60,6 +85,13 @@ class BacktestEngine:
         # 缺資料標的清單（進場價或出場價無法取得），不計入任何勝率分母
         self.missing_data_entries: List[Dict[str, Any]] = []
 
+        # 每筆進場標的的板塊成員來源標記（ticker -> "registry" / "prior_fallback_non_pit"），
+        # 供 generate_backtest_report 標註 membership_source
+        self.entry_membership_sources: Dict[str, str] = {}
+
+        # universe type map 快取（依 as_of 月份快取，避免同一回測反覆重算）
+        self._type_map_cache: Dict[str, Dict[str, str]] = {}
+
         # 初始化乾淨的虛擬回測 Watchlist
         if os.path.exists(BACKTEST_WATCHLIST_FILE):
             os.remove(BACKTEST_WATCHLIST_FILE)
@@ -76,6 +108,27 @@ class BacktestEngine:
         """
         performance_tracker.WATCHLIST_FILE = self._orig_watchlist_file
 
+    def _get_universe_type_map(self, as_of: str) -> Dict[str, str]:
+        """
+        取得 as_of 時點的 universe type map（stock_id -> "twse"/"tpex"），供 ticker 尾碼組裝。
+        sector_membership 模組尚未就位（ImportError）或該時點無紀錄時回傳空 dict，
+        resolve_ticker 會 fallback 為原樣沿用輸入值（維持與現行行為等價）。
+        月份粒度快取，避免同一回測反覆重算。
+        """
+        cache_key = as_of[:7] if as_of else ""
+        if cache_key in self._type_map_cache:
+            return self._type_map_cache[cache_key]
+
+        type_map: Dict[str, str] = {}
+        try:
+            import sector_membership
+            type_map = sector_membership.get_universe_type_map(as_of) or {}
+        except ImportError:
+            type_map = {}
+
+        self._type_map_cache[cache_key] = type_map
+        return type_map
+
     def run(self):
         print(f"==================================================")
         print(f"[*] 啟動歷史無未來數據偏誤回測系統")
@@ -86,34 +139,36 @@ class BacktestEngine:
         
         current_sim_date = self.start_date
         week_count = 0
-        
+
         # 保存原始的 main_agent.py 中可能被觸發的自動 LLM
         # 為了避免在回測循環中對 LLM 進行數百次呼叫（這將消耗大量 Token 且面臨速率限制），
         # 我們在回測引擎中直接使用 Point-in-Time 的數據運算模擬決策，以還原當時狀態。
-        
+
         while current_sim_date <= self.end_date:
             date_str = current_sim_date.strftime("%Y-%m-%d")
             print(f"\n[Week {week_count}] 模擬時間點: {date_str}...")
-            
-            # 動態取得當時點的供應鏈標的選股池
-            current_matrix = self.monitor.get_point_in_time_matrix(date_str)
-            company_ids = [x["company_id"] for x in current_matrix]
-            
+
+            # 動態取得「進場時點」的供應鏈標的選股池（PIT：不同歷史時點名單可以不同）
+            company_ids, membership_source = self.monitor.resolve_sector_members(self.sector, date_str)
+            type_map = self._get_universe_type_map(date_str)
+
             # 1. 取得 Point-in-Time 數據 (嚴格限制在 date_str 之前，排除 look-ahead bias)
             rev_data = self.monitor.simulate_revenue_inflection(
                 company_ids,
-                as_of_date=date_str
+                as_of_date=date_str,
+                sector=self.sector,
             )
-            
+
             # 2. 決策判斷：若個股在當時點符合「非共識黃金潛伏標的」，則買入列入 watchlist
             for cid, data in rev_data.items():
                 if data.get("is_golden_accumulation_target", False):
-                    # 3. 進場價格為當時點的真實股價
-                    entry_price, missing = self.get_historical_price_at(cid, date_str)
+                    # 3. 進場價格為當時點的真實股價；ticker 尾碼依 universe type map 組裝
+                    ticker = resolve_ticker(cid, type_map)
+                    entry_price, missing = self.get_historical_price_at(ticker, date_str)
                     if missing:
                         # 缺資料顯式記錄，不得以 0.0 混入分母
                         self.missing_data_entries.append({
-                            "company_id": cid,
+                            "company_id": ticker,
                             "name": data.get("name", cid),
                             "attempted_entry_date": date_str,
                             "reason": "entry_price_unavailable"
@@ -121,12 +176,16 @@ class BacktestEngine:
                         continue
                     if entry_price > 0:
                         performance_tracker.add_to_watchlist(
-                            company_id=cid,
+                            company_id=ticker,
                             name=data.get("name", cid),
                             entry_price=entry_price,
                             sector=self.sector,
-                            entry_date=date_str
+                            entry_date=date_str,
                         )
+                        # membership_source 不透過 add_to_watchlist 傳遞
+                        # （performance_tracker.py 為不可修改模組，簽名不接受此欄位）；
+                        # 改由引擎自行記錄，供 generate_backtest_report 標註來源。
+                        self.entry_membership_sources[ticker] = membership_source
 
             # 遞增一週
             current_sim_date += datetime.timedelta(days=7)
@@ -323,6 +382,17 @@ class BacktestEngine:
         avg_gross_return = (sum(x["current_return_pct"] for x in closed_trades) / n_closed) if n_closed > 0 else 0.0
         avg_net_return = (sum(x["net_return_pct"] for x in closed_trades) / n_closed) if n_closed > 0 else 0.0
 
+        # 板塊成員來源標註（見 HANDOFF 板塊登記簿改版）：統計各進場標的的 membership_source 分布
+        n_registry_source = sum(1 for cid in self.entry_membership_sources
+                                 if self.entry_membership_sources[cid] == "registry")
+        n_fallback_source = sum(1 for cid in self.entry_membership_sources
+                                 if self.entry_membership_sources[cid] == MEMBERSHIP_SOURCE_FALLBACK)
+        membership_note_block = (
+            f"\n> **板塊成員來源**：{n_registry_source} 筆進場來自板塊登記簿（registry，PIT 定日）、"
+            f"{n_fallback_source} 筆進場來自 fallback 名單（{MEMBERSHIP_FALLBACK_NOTE}）。\n"
+            if (n_registry_source or n_fallback_source) else ""
+        )
+
         trade_rows = []
         for idx, item in enumerate(closed_trades):
             is_win = item.get("max_return_pct", 0.0) >= 15.0
@@ -363,7 +433,7 @@ class BacktestEngine:
 > ⚠️ **universe 為事後選定之供應鏈名單，回測勝率不構成策略證據，僅供機制驗證。**
 >
 > ⚠️ **口徑註記**：本報告個股勝率門檻為單一標的最大漲幅 ≥15%；`monte_carlo_analyzer.py` 的組合勝率門檻為等權重組合平均最大漲幅 ≥30%，兩者定義不同、不可直接比較或視為調參前後對照。
-
+{membership_note_block}
 本報告記錄了自 {self.start_date} 至 {self.end_date} 期間，系統以**週**為單位進行模擬回測的結果。
 All 買入決策與技術指標計算皆採用當時點之前的歷史截斷數據，杜絕任何 Look-ahead Bias。
 

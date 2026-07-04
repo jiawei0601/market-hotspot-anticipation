@@ -14,6 +14,13 @@ CONSENSUS_GRANULARITY_NOTE = "粗粒度：12 檔樣本橫斷面百分位，一�
 REVENUE_PROJECTION_NOTE = "機械外推情境（末值 × 固定加速係數），非模型預測"
 BACKLOG_SIGNAL_NOTE = "板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料"
 
+# 板塊成員解析來源標記
+MEMBERSHIP_SOURCE_REGISTRY = "registry"
+MEMBERSHIP_SOURCE_FALLBACK = "prior_fallback_non_pit"
+MEMBERSHIP_FALLBACK_NOTE = (
+    "板塊名單為敘事先驗、非 PIT 證據定日（登記簿尚無該時點紀錄，回退至事後選定之 content_value 名單）"
+)
+
 _PRIORS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "priors", "content_value.json")
 
 
@@ -35,11 +42,57 @@ class MarketInformationMonitor:
     - 個股 YoY 曲線 = 真實 PIT 月營收 yoy_pct，未來 3 個月為投影
     """
 
+    # 板塊成員解析 fallback 用預設板塊名稱（現行 content_value era 名單本無多板塊區分，
+    # 供未帶入 sector 參數的舊呼叫點沿用；不影響 fallback 名單內容本身）
+    DEFAULT_SECTOR = "CPO_Optical_Transceiver"
+
     def __init__(self):
         _priors = pit_store.load_content_value_priors(_PRIORS_PATH)
         self.generation_specs = _priors["generation_specs"]
         self._eras = _priors["eras"]
         self.real_revenue_cache = None
+
+    # ==================== 板塊成員解析（單一入口）====================
+
+    def resolve_sector_members(self, sector: Optional[str] = None,
+                               as_of: Optional[str] = None) -> "tuple[List[str], str]":
+        """
+        板塊成員解析單一入口（見 HANDOFF 板塊登記簿 ∩ universe 快照改版）。
+
+        優先呼叫 sector_membership.get_members_in_universe(sector, as_of)：
+        - 登記簿有紀錄（非空清單）→ 來源標記 MEMBERSHIP_SOURCE_REGISTRY。
+        - 登記簿無紀錄（回傳 []、模組尚未就位、或該時點無 universe 快照可查）
+          → fallback 現行 content_value era 名單（get_point_in_time_matrix），
+          來源標記 MEMBERSHIP_SOURCE_FALLBACK。
+
+        回傳 (company_ids, source)。
+        as_of 可為 'YYYY-MM' 或 'YYYY-MM-DD'；傳給 get_point_in_time_matrix 前一律
+        正規化為 'YYYY-MM-DD'（沿用既有 era cutoff 邏輯，day 補 28 號足以落在同月）。
+        get_members_in_universe 要求非空 as_of，未帶入時一律用今天日期查詢。
+        """
+        sector = sector or self.DEFAULT_SECTOR
+
+        as_of_date = None
+        if as_of:
+            as_of_date = as_of if len(as_of) > 7 else f"{as_of}-28"
+
+        as_of_for_registry = as_of or datetime.date.today().strftime("%Y-%m-%d")
+
+        members: List[str] = []
+        try:
+            import sector_membership
+            members = sector_membership.get_members_in_universe(sector, as_of_for_registry) or []
+        except ImportError:
+            members = []
+        except FileNotFoundError:
+            # 該時點（含往前回溯上限）皆無 universe 快照可查（如早期歷史時點）→ 視同無登記簿資料
+            members = []
+
+        if members:
+            return members, MEMBERSHIP_SOURCE_REGISTRY
+
+        fallback_ids = [it["company_id"] for it in self.get_point_in_time_matrix(as_of_date)]
+        return fallback_ids, MEMBERSHIP_SOURCE_FALLBACK
 
     # ==================== 供應鏈矩陣 ====================
 
@@ -99,13 +152,25 @@ class MarketInformationMonitor:
     # ==================== 供應鏈洗牌時程 ====================
 
     def get_supply_chain_schedule(self, current_gen: str, next_gen: str,
-                                  as_of_date: Optional[str] = None) -> Dict[str, Any]:
-        """推演世代更迭下的供應鏈洗牌，含 Feynman_Next 替代風險。"""
+                                  as_of_date: Optional[str] = None,
+                                  sector: Optional[str] = None) -> Dict[str, Any]:
+        """推演世代更迭下的供應鏈洗牌，含 Feynman_Next 替代風險。
+
+        迭代名單改由 resolve_sector_members(sector, as_of) 解析（板塊登記簿優先，
+        無紀錄時 fallback 現行 content_value era 名單）；content_value_by_gen 等
+        元資料仍查 content_value.json 之 matrix（registry 引入但 matrix 缺資料的
+        成員將被跳過，因其尚無 Content Value 定義）。
+        """
         analysis = []
         bottlenecks = []
 
-        matrix = self.get_point_in_time_matrix(as_of_date)
-        for item in matrix:
+        member_ids, membership_source = self.resolve_sector_members(sector, as_of_date)
+        matrix_by_cid = {it["company_id"]: it for it in self.get_point_in_time_matrix(as_of_date)}
+
+        for cid in member_ids:
+            item = matrix_by_cid.get(cid)
+            if not item:
+                continue
             val_current = item["content_value_by_gen"].get(current_gen, 0.0)
             val_next    = item["content_value_by_gen"].get(next_gen, 0.0)
             val_future  = item["content_value_by_gen"].get("Feynman_Next", 0.0)
@@ -148,6 +213,7 @@ class MarketInformationMonitor:
             "future_generation": "Feynman_Next",
             "bottlenecks": bottlenecks,
             "timeline_matrix": analysis,
+            "membership_source": membership_source,
         }
 
     # ==================== TWSE 最新月營收（保留供測試 / fallback）====================
@@ -231,14 +297,46 @@ class MarketInformationMonitor:
 
         return sorted(periods.values(), key=lambda r: r["period"])
 
-    def get_backlog_lead(self, as_of_date: Optional[str] = None) -> float:
+    def _resolve_member_segments(self, sector: Optional[str], as_of_date: Optional[str],
+                                 member_ids: List[str]) -> Dict[str, Optional[str]]:
+        """
+        每個成員的 segment 解析：優先呼叫 sector_membership.get_member_segments，
+        缺值（None、模組未就位、或該時點查詢失敗）時 fallback 至 content_value
+        matrix 的 segment 欄位。回傳 {company_id: segment_str_or_None}。
+        """
+        as_of_for_registry = as_of_date or datetime.date.today().strftime("%Y-%m-%d")
+        registry_segments: Dict[str, Optional[str]] = {}
+        try:
+            import sector_membership
+            registry_segments = sector_membership.get_member_segments(
+                sector or self.DEFAULT_SECTOR, as_of_for_registry
+            ) or {}
+        except ImportError:
+            registry_segments = {}
+
+        matrix_by_cid = {it["company_id"]: it for it in self.get_point_in_time_matrix(as_of_date)}
+
+        result: Dict[str, Optional[str]] = {}
+        for cid in member_ids:
+            seg = registry_segments.get(cid)
+            if seg is None:
+                item = matrix_by_cid.get(cid)
+                seg = item["segment"] if item else None
+            result[cid] = seg
+        return result
+
+    def get_backlog_lead(self, as_of_date: Optional[str] = None,
+                         sector: Optional[str] = None) -> float:
         """
         板塊 segment=equipment 公司真實月營收 YoY 中位數（日粒度 PIT 正確）。
         此為 ADR 0006 定義的 Equipment Backlog Lead 訊號（誠實限制：是「動能代理」而非真訂單）。
+        成員清單改由 resolve_sector_members(sector, as_of) 解析；segment 優先用
+        sector_membership.get_member_segments，缺值 fallback content_value 的 segment。
         資料不足時回傳 0.0。
         """
-        matrix = self.get_point_in_time_matrix(as_of_date)
-        equipment_cids = [it["company_id"] for it in matrix if it["segment"] == "equipment"]
+        member_ids, _source = self.resolve_sector_members(sector, as_of_date)
+        segments = self._resolve_member_segments(sector, as_of_date, member_ids)
+        equipment_cids = [cid for cid in member_ids if segments.get(cid) == "equipment"]
 
         yoy_values = []
         for cid in equipment_cids:
@@ -280,12 +378,14 @@ class MarketInformationMonitor:
         return sorted(result.items(), key=lambda x: x[0], reverse=True)
 
     def _compute_price_consensus(self, company_id: str,
-                                 as_of_date: Optional[str] = None) -> Optional[float]:
+                                 as_of_date: Optional[str] = None,
+                                 sector: Optional[str] = None) -> Optional[float]:
         """
         股價 Consensus 部分（0-100）：
         (a) 自身 12M 歷史百分位（當前收盤在近 12M 的位置；高=接近年高=擁擠）
         (b) 橫斷面同儕排名：各同儕計算各自 own 12M percentile，再對本公司排名
             （比較「相對年高位置」，避免跨股直接比較絕對股價無意義）
+        同儕集合改由 resolve_sector_members(sector, as_of) 解析。
         資料不足（< 6 個月）時回傳 None。
         """
         own_history = self._read_price_history(company_id, as_of_date, n_months=13)
@@ -297,8 +397,8 @@ class MarketInformationMonitor:
         own_pct = sum(1 for c in closes if c <= current_close) / len(closes) * 100
 
         peer_own_pcts = [own_pct]
-        for it in self.get_point_in_time_matrix(as_of_date):
-            p_cid = it["company_id"]
+        peer_ids, _source = self.resolve_sector_members(sector, as_of_date)
+        for p_cid in peer_ids:
             if _strip_suffix(p_cid) == _strip_suffix(company_id):
                 continue
             p_hist = self._read_price_history(p_cid, as_of_date, n_months=13)
@@ -313,10 +413,12 @@ class MarketInformationMonitor:
         return round((own_pct + peer_rank) / 2, 1)
 
     def _compute_consensus(self, company_id: str,
-                           as_of_date: Optional[str] = None) -> Optional[float]:
+                           as_of_date: Optional[str] = None,
+                           sector: Optional[str] = None) -> Optional[float]:
         """
         完整 Consensus Score（0-100）：持股% + 股價兩個子訊號等權混合。
         各子訊號 = (自身 12M 歷史百分位 + 橫斷面同儕排名) / 2（ADR 0006）。
+        同儕集合改由 resolve_sector_members(sector, as_of) 解析。
         若股價快照不可得，退化為僅持股%；若兩者皆不足，回傳 None（呼叫端 fallback 靜態先驗）。
         """
         sid = _strip_suffix(company_id)
@@ -347,8 +449,9 @@ class MarketInformationMonitor:
         latest_snap = pit_store.read_snapshot("holdings", f"{as_of_ym}-28")
         peer_ratios: list = []
         if latest_snap:
-            for it in self.get_point_in_time_matrix(as_of_date):
-                p_sid = _strip_suffix(it["company_id"])
+            peer_ids, _source = self.resolve_sector_members(sector, as_of_date)
+            for p_cid in peer_ids:
+                p_sid = _strip_suffix(p_cid)
                 rec = latest_snap.get(p_sid)
                 if rec and rec.get("foreign_ratio") is not None:
                     peer_ratios.append(rec["foreign_ratio"])
@@ -359,7 +462,7 @@ class MarketInformationMonitor:
         holdings_consensus = (own_hold_pct + hold_peer_rank) / 2
 
         # ---- 股價部分（有快照就加入；無則僅用持股%）----
-        price_consensus = self._compute_price_consensus(company_id, as_of_date)
+        price_consensus = self._compute_price_consensus(company_id, as_of_date, sector)
 
         # 四捨五入到整數：12 檔 universe 橫斷面百分位一階本就是 8.3 分，
         # 小數點呈現是假精度（見 CONTEXT.md 誠實化修正）。
@@ -370,7 +473,8 @@ class MarketInformationMonitor:
     # ==================== 核心訊號：真實 PIT 營收拐點 ====================
 
     def simulate_revenue_inflection(self, company_ids: List[str],
-                                    as_of_date: Optional[str] = None) -> Dict[str, Any]:
+                                    as_of_date: Optional[str] = None,
+                                    sector: Optional[str] = None) -> Dict[str, Any]:
         """
         個股月營收 YoY 拐點與設備 Backlog 領先訊號。
 
@@ -380,22 +484,30 @@ class MarketInformationMonitor:
         - Backlog Lead = 板塊 equipment 公司真實 YoY 中位數（非隨機合成）
         - Consensus = 外資持股% 歷史百分位 + 同儕排名（fallback 至靜態先驗）
         真實資料不足（< 3 筆）時 fallback 合成，並標記 has_real_data=False。
+
+        板塊登記簿改版：company_ids 通常來自呼叫端的 resolve_sector_members(sector, as_of)
+        結果，可能包含 content_value.json matrix 未收錄的成員（registry 新引入）；
+        此時 name 落回 cid 本身、segment 落回 _resolve_member_segments 解析、
+        consensus 靜態先驗落回中性值 50.0（無 pre-registered 分數可用時的顯式預設）。
+        每筆結果附帶 membership_source，供報告端標註「板塊名單為敘事先驗、非 PIT 證據定日」。
         """
         results = {}
         today = (datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
                  if as_of_date else datetime.date.today())
 
         # 板塊 equipment 真實 Backlog Lead（一次算好，所有個股共用）
-        sector_backlog_yoy = self.get_backlog_lead(as_of_date)
+        sector_backlog_yoy = self.get_backlog_lead(as_of_date, sector)
         equipment_lead_active_global = sector_backlog_yoy > BACKLOG_LEAD_MIN
 
         matrix = self.get_point_in_time_matrix(as_of_date)
+        matrix_by_cid = {it["company_id"]: it for it in matrix}
+        _resolved_ids, membership_source = self.resolve_sector_members(sector, as_of_date)
+        segments_by_cid = self._resolve_member_segments(sector, as_of_date, company_ids)
 
         for cid in company_ids:
-            item = next((x for x in matrix if x["company_id"] == cid), None)
-            if not item:
-                continue
-            name, segment = item["name"], item["segment"]
+            item = matrix_by_cid.get(cid)
+            name = item["name"] if item else cid
+            segment = segments_by_cid.get(cid)
 
             rev_hist = self._read_company_revenue_history(cid, as_of_date, n_snapshots=14)
             has_real = len(rev_hist) >= 3
@@ -452,9 +564,11 @@ class MarketInformationMonitor:
             peak_yoy_val = yoy_curve[max_yoy_idx]
             peak_month = (today + datetime.timedelta(days=30 * (max_yoy_idx - 8))).strftime("%Y-%m")
 
-            consensus = self._compute_consensus(cid, as_of_date)
+            consensus = self._compute_consensus(cid, as_of_date, sector)
             if consensus is None:
-                consensus = item["consensus_score"]
+                # item 存在時沿用 pre-registered 靜態先驗；registry 新引入、matrix 未收錄的
+                # 成員無先驗分數可用，落回中性值 50.0（顯式預設，非隱藏假設）
+                consensus = item["consensus_score"] if item else 50.0
 
             results[cid] = {
                 "name": name,
@@ -482,6 +596,10 @@ class MarketInformationMonitor:
                 ),
                 "historical_base": historical_base,
                 "current_projected": all_current_year,
+                "membership_source": membership_source,
+                "membership_fallback_note": (MEMBERSHIP_FALLBACK_NOTE
+                                              if membership_source == MEMBERSHIP_SOURCE_FALLBACK
+                                              else None),
             }
 
         return results

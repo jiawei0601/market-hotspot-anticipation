@@ -1,5 +1,11 @@
 import unittest
-from market_monitor import MarketInformationMonitor, CONSENSUS_MAX
+from unittest import mock
+from market_monitor import (
+    MarketInformationMonitor,
+    CONSENSUS_MAX,
+    MEMBERSHIP_SOURCE_REGISTRY,
+    MEMBERSHIP_SOURCE_FALLBACK,
+)
 
 class TestMarketInformationMonitor(unittest.TestCase):
     def setUp(self):
@@ -90,6 +96,65 @@ class TestMarketInformationMonitor(unittest.TestCase):
             # 共識度超過門檻者絕不可被標記為黃金標的
             if data["consensus_score"] >= CONSENSUS_MAX:
                 self.assertFalse(data["is_golden_accumulation_target"])
+
+class TestResolveSectorMembers(unittest.TestCase):
+    """
+    板塊成員解析單一入口的來源切換測試（見 HANDOFF 板塊登記簿 ∩ universe 快照改版）。
+    sector_membership 模組以 monkeypatch 模擬（模組雖已存在但登記簿尚未 seed 任何板塊，
+    真實呼叫一律回傳 []，故用 mock 明確驗證兩條路徑的分岔行為）。
+    """
+
+    def setUp(self):
+        self.monitor = MarketInformationMonitor()
+
+    def test_registry_path_when_members_found(self):
+        """登記簿有紀錄（非空清單）時，來源應標記 registry，且直接採用登記簿清單。"""
+        import sector_membership
+        with mock.patch.object(sector_membership, "get_members_in_universe",
+                               return_value=["1101", "2330", "3131"]):
+            members, source = self.monitor.resolve_sector_members("CPO_Optical_Transceiver", "2026-06-30")
+
+        self.assertEqual(source, MEMBERSHIP_SOURCE_REGISTRY)
+        self.assertEqual(sorted(members), ["1101", "2330", "3131"])
+
+    def test_fallback_path_when_registry_empty(self):
+        """登記簿無紀錄（回傳 []）時，應 fallback 至現行 content_value era 名單，
+        且名單須與 get_point_in_time_matrix 完全一致（驗收關鍵：fallback = 現狀等價）。"""
+        import sector_membership
+        with mock.patch.object(sector_membership, "get_members_in_universe", return_value=[]):
+            members, source = self.monitor.resolve_sector_members("CPO_Optical_Transceiver", "2024-06-30")
+
+        expected = [it["company_id"] for it in self.monitor.get_point_in_time_matrix("2024-06-30")]
+        self.assertEqual(source, MEMBERSHIP_SOURCE_FALLBACK)
+        self.assertEqual(sorted(members), sorted(expected))
+
+    def test_fallback_path_when_registry_module_missing(self):
+        """sector_membership 模組不可 import（ImportError）時同樣視為無登記簿資料，走 fallback。"""
+        import builtins
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name == "sector_membership":
+                raise ImportError("simulated: sector_membership not yet available")
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch.object(builtins, "__import__", side_effect=fake_import):
+            members, source = self.monitor.resolve_sector_members("CPO_Optical_Transceiver", None)
+
+        expected = [it["company_id"] for it in self.monitor.get_point_in_time_matrix(None)]
+        self.assertEqual(source, MEMBERSHIP_SOURCE_FALLBACK)
+        self.assertEqual(sorted(members), sorted(expected))
+
+    def test_current_fallback_produces_legacy_12_stock_list(self):
+        """驗收關鍵：登記簿尚未 seed（現況）時，resolve_sector_members 的實際輸出
+        （不 mock，走真實 import）名單應與改版前的 get_point_in_time_matrix 結果一致。"""
+        members, source = self.monitor.resolve_sector_members("CPO_Optical_Transceiver", None)
+        expected = [it["company_id"] for it in self.monitor.get_point_in_time_matrix(None)]
+
+        self.assertEqual(source, MEMBERSHIP_SOURCE_FALLBACK)
+        self.assertEqual(sorted(members), sorted(expected))
+        self.assertEqual(len(members), 12, "現行 Feynman 世代（最新 era）應為 12 檔手選名單")
+
 
 if __name__ == "__main__":
     unittest.main()

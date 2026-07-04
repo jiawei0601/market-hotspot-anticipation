@@ -4,10 +4,10 @@ import json
 import os
 import pandas as pd
 from unittest import mock
-from market_monitor import MarketInformationMonitor
+from market_monitor import MarketInformationMonitor, MEMBERSHIP_SOURCE_FALLBACK
 import backtest_engine
 import monte_carlo_analyzer
-from backtest_engine import BacktestEngine
+from backtest_engine import BacktestEngine, resolve_ticker
 from monte_carlo_analyzer import MonteCarloSimulator
 
 class TestPointInTimeBacktest(unittest.TestCase):
@@ -413,6 +413,76 @@ class TestMissingDataExplicit(unittest.TestCase):
             # 還原為乾淨的空陣列，勿刪除此 git 追蹤的執行期檔案（避免破壞其他 agent 的工作區）
             with open(monte_carlo_analyzer.MONTE_CARLO_WATCHLIST, "w", encoding="utf-8") as f:
                 json.dump([], f)
+
+
+class TestTickerSuffixAssembly(unittest.TestCase):
+    """
+    回測 ticker 尾碼組裝測試（見 HANDOFF 板塊登記簿 ∩ universe 快照改版）：
+    yfinance ticker 由 stock_id ＋ universe type map 組尾碼（twse -> .TW、tpex -> .TWO），
+    不再依賴 hardcoded ticker list；type_map 查無資料時原樣沿用輸入值（fallback 等價）。
+    """
+
+    def test_twse_stock_id_gets_tw_suffix(self):
+        self.assertEqual(resolve_ticker("2330", {"2330": "twse"}), "2330.TW")
+
+    def test_tpex_stock_id_gets_two_suffix(self):
+        self.assertEqual(resolve_ticker("3131", {"3131": "tpex"}), "3131.TWO")
+
+    def test_missing_type_map_entry_preserves_original_value(self):
+        """type_map 查無該 stock_id（如 fallback 12 檔本不在 universe type map 內）
+        時，應原樣沿用輸入值，維持 fallback 行為與現況等價。"""
+        self.assertEqual(resolve_ticker("3131.TWO", {}), "3131.TWO")
+        self.assertEqual(resolve_ticker("3017.TW", {}), "3017.TW")
+
+    def test_already_suffixed_input_still_reassembled_correctly(self):
+        """輸入本已帶尾碼但 type_map 有該 stock_id 紀錄時，仍應以 type_map 為準
+        重新組裝（strip 後再組），而非把舊尾碼原樣保留。"""
+        self.assertEqual(resolve_ticker("3131.TWO", {"3131": "tpex"}), "3131.TWO")
+        self.assertEqual(resolve_ticker("2330.TW", {"2330": "twse"}), "2330.TW")
+
+    def test_get_universe_type_map_helper_returns_empty_dict_on_import_error(self):
+        """sector_membership 模組不可 import 時，_get_universe_type_map 應回傳空 dict
+        （而非拋例外），讓 resolve_ticker 全面 fallback 為原樣沿用。"""
+        engine = BacktestEngine("2020-01-01", "2020-02-01", "TestSector")
+        try:
+            import builtins
+            real_import = builtins.__import__
+
+            def fake_import(name, *args, **kwargs):
+                if name == "sector_membership":
+                    raise ImportError("simulated: sector_membership not yet available")
+                return real_import(name, *args, **kwargs)
+
+            with mock.patch.object(builtins, "__import__", side_effect=fake_import):
+                type_map = engine._get_universe_type_map("2024-06-30")
+
+            self.assertEqual(type_map, {})
+        finally:
+            engine.restore_environment()
+            with open(backtest_engine.BACKTEST_WATCHLIST_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f)
+
+
+class TestBacktestMembershipResolution(unittest.TestCase):
+    """驗證 backtest_engine 的進場候選名單改為 resolve_sector_members(sector, as_of)。"""
+
+    def setUp(self):
+        self.engine = BacktestEngine("2024-01-01", "2024-01-08", "CPO_Optical_Transceiver")
+
+    def tearDown(self):
+        self.engine.restore_environment()
+        with open(backtest_engine.BACKTEST_WATCHLIST_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+
+    def test_fallback_candidate_list_matches_legacy_12_stock_universe(self):
+        """登記簿尚未 seed（現況）時，進場候選名單應與改版前的 get_point_in_time_matrix
+        結果一致（驗收關鍵：fallback 行為 = 現狀等價）。"""
+        as_of = "2024-01-01"
+        members, source = self.engine.monitor.resolve_sector_members(self.engine.sector, as_of)
+        expected = [it["company_id"] for it in self.engine.monitor.get_point_in_time_matrix(as_of)]
+
+        self.assertEqual(source, MEMBERSHIP_SOURCE_FALLBACK)
+        self.assertEqual(sorted(members), sorted(expected))
 
 
 if __name__ == "__main__":
