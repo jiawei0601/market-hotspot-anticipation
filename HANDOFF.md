@@ -33,11 +33,20 @@
 - fresh 驗證：漏斗單調 138/138、PIT 上市時長抽查全過、華亞科(3474) 2017 後正確消失、45 個 universe 測試（全套 77 passed）。
 - 快取 `data/universe_cache/`（1428 檔 FinMind 價格＋TWSE 月批次）已 gitignore，重建純本地。
 
+### ✅ ADR 0008 板塊歸屬登記簿 + 接線 + forward 凍結（2026-07-04 續，同日完成）
+- **`sector_membership.py`**：append-only 證據定日事件簿（E1 公司自揭/E2 官方指數/E3 第三方當時存檔；`effective_from>=evidence_date` 硬驗證；PIT 讀取；`get_members_in_universe` 與 universe 快照取交集）。31 tests。
+- **接線**：`market_monitor.resolve_sector_members` 單一入口——登記簿非空走 registry（PIT），空則 fallback content_value 先驗＋`membership_source` 標記一路帶到報告與回測（fallback 時 LLM 報告強制非 PIT 警語）。訊號公式/門檻不動，fallback 行為與現狀等價（回歸測試固化）。回測 ticker 改由 stock_id＋universe type map 組尾碼。
+- **核心決策 forward-only**（probe-0008 實測 Wayback 快照過稀、無 CPO 主題指數、題材過新）：放棄歷史回填，登記簿起點 2026-07-04；此前時點永遠 fallback＋非 PIT 標示。
+- **Seed 完成**：CPO 板塊 11 檔入簿（E1×5：聯鈞/雙鴻/奇鋐/旺矽/晟銘電；E3×6：弘塑/一詮/鈦昇/辛耘/萬潤/家登，共用 CMoney 概念股頁 Wayback 存檔）。**雍智 6683 找無 CPO 歸屬證據→不入簿（ADR 記 pending evidence）**，registry 路徑下已退出板塊名單——鐵律正確結果，補到證據即可 `add_event` 歸隊。
+- 驗證：今日 resolve → registry 11 檔；2021 時點 → fallback 9 檔（era 正確）。118 tests 綠。
+
 ## 進行中
 - 無。
 
 ## 下一步（依優先序）
-1. **接線**：把 `market_monitor`/回測的 12 檔手選名單換成讀 universe 快照（`final_pass`），三訊號在客觀 universe 上重算——這步完成後回測才真正升級為「弱證據」。板塊歸屬（供應鏈敘事層）需另定 ADR（快照只解決「可投資母體」，未解決「誰屬於 CPO 板塊」）。
+1. 下次掃描（`--sector CPO_Optical_Transceiver`）將首次以 registry 名單執行——關注雍智退出後報告變化；若有人找到雍智的 E1/E3 證據，用 `sector_membership.add_event` 歸隊。
+2. E1 三檔（旺矽/晟銘電/雙鴻）的 evidence_date 為佔位（二手轉述缺精確日期，ADR 已揭露），待核對原始法說會文件補正。
+3. 新板塊上線流程：先 seed 登記簿（附證據）→ 才跑掃描；無證據不入簿。
 2. 觸發 daily pipeline 或手動 `python generate_static_pages.py` 刷新 reports/docs（本輪未重生產出物）。
 3. 用新口徑重跑 `python backtest_engine.py` 與 `python monte_carlo_analyzer.py --seed 42`（需網路）。
 4. 舊掃描報告（2026-06-19）是用舊寬鬆門檻產的，鈦昇「黃金潛伏」標示已不成立——下次掃描會自動以新判定產出，可考慮在舊報告加勘誤註記。
