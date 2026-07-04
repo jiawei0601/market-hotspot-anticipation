@@ -203,8 +203,12 @@ def build_holding_snapshot(records_by_sid: dict, year_month: str) -> dict:
 def backfill(company_ids: list, months: list, root: str = pit_store.SNAPSHOT_ROOT,
              start_date: str = "2015-01-01", token: str | None = None,
              sleep: float = 0.6) -> dict:
-    """抓取 company_ids 的營收＋外資持股，為 months 各組裝並寫入不可變月快照。
-    回傳 {'written': [...paths], 'skipped': [...已存在月份]}。對 FinMind 溫和（每檔間 sleep）。
+    """抓取 company_ids 的營收＋外資持股，為 months 各組裝並以「(月, 公司) 級」
+    不可變粒度追加進月快照（見 pit_store.append_companies_to_snapshot）。
+
+    回傳 {'added': [...'YYYY-MM/kind:company_id'...], 'skipped_existing': [...同格式...],
+    'errors': [...]}。對 FinMind 溫和（每檔間 sleep）。同一 (月, 公司) 重跑必為
+    skipped_existing，故整體冪等。
     """
     rev_by_sid, hold_by_sid = {}, {}
     errors = []
@@ -220,17 +224,16 @@ def backfill(company_ids: list, months: list, root: str = pit_store.SNAPSHOT_ROO
             errors.append(f"holdings {cid}: {e}")
         time.sleep(sleep)
 
-    written, skipped = [], []
+    added, skipped_existing = [], []
     for ym in months:
         for kind, snap in (("revenue", build_revenue_snapshot(rev_by_sid, ym)),
                            ("holdings", build_holding_snapshot(hold_by_sid, ym))):
             if not snap:
                 continue
-            try:
-                written.append(pit_store.write_monthly_snapshot(kind, snap, year_month=ym, root=root))
-            except pit_store.SnapshotExistsError:
-                skipped.append(f"{ym}/{kind}")
-    return {"written": written, "skipped": skipped, "errors": errors}
+            result = pit_store.append_companies_to_snapshot(ym, kind, snap, root=root)
+            added.extend(f"{ym}/{kind}:{cid}" for cid in result["added"])
+            skipped_existing.extend(f"{ym}/{kind}:{cid}" for cid in result["skipped_existing"])
+    return {"added": added, "skipped_existing": skipped_existing, "errors": errors}
 
 
 # ==================== 股價（yfinance）抓取與快照 ====================
@@ -297,9 +300,12 @@ def backfill_prices(
     start_date: str = "2015-01-01",
     sleep: float = 0.3,
 ) -> dict:
-    """抓取 company_ids（純數字代碼）的月 K，為 months 各組裝並寫入不可變月快照。
-    回傳 {'written': [...paths], 'skipped': [...已存在月份], 'errors': [...失敗]}.
-    yfinance 呼叫量小（每檔一次），不需強限流；sleep 為防禦性間隔。
+    """抓取 company_ids（純數字代碼）的月 K，為 months 各組裝並以「(月, 公司) 級」
+    不可變粒度追加進月快照（見 pit_store.append_companies_to_snapshot）。
+
+    回傳 {'added': [...'YYYY-MM/prices:company_id'...], 'skipped_existing': [...同格式...],
+    'errors': [...失敗]}。yfinance 呼叫量小（每檔一次），不需強限流；sleep 為防禦性間隔。
+    同一 (月, 公司) 重跑必為 skipped_existing，故整體冪等。
     """
     price_by_sid: dict = {}
     errors: list = []
@@ -310,19 +316,16 @@ def backfill_prices(
             errors.append(f"prices {cid}: {e}")
         time.sleep(sleep)
 
-    written, skipped = [], []
+    added, skipped_existing = [], []
     for ym in months:
         snap = build_price_snapshot(price_by_sid, ym)
         if not snap:
             continue
-        try:
-            written.append(
-                pit_store.write_monthly_snapshot("prices", snap, year_month=ym, root=root)
-            )
-        except pit_store.SnapshotExistsError:
-            skipped.append(f"{ym}/prices")
+        result = pit_store.append_companies_to_snapshot(ym, "prices", snap, root=root)
+        added.extend(f"{ym}/prices:{cid}" for cid in result["added"])
+        skipped_existing.extend(f"{ym}/prices:{cid}" for cid in result["skipped_existing"])
 
-    return {"written": written, "skipped": skipped, "errors": errors}
+    return {"added": added, "skipped_existing": skipped_existing, "errors": errors}
 
 
 # ==================== 登記簿驅動的板塊回填（sector_membership 全集） ====================
@@ -352,9 +355,10 @@ def backfill_sector(sector: str, start_month: str = "2015-01",
     - backfill()：營收 + 外資持股快照。
     - backfill_prices()：股價快照（resolve_yfinance_ticker 三層 fallback 解析 ticker）。
 
-    已存在的快照月會被底層 pit_store.write_monthly_snapshot 的 append-only 鐵律擋下
-    （raise SnapshotExistsError），backfill()/backfill_prices() 內部已 catch 並歸入
-    'skipped'，故本函式沿用其回傳、不需額外處理。
+    不可變粒度為「(月, 公司) 級」（見 pit_store.append_companies_to_snapshot）：
+    已存在的 (月, 公司) 條目由底層擋下並歸入 'skipped_existing'；不存在的公司條目
+    （即使該月檔案已存在）允許追加為 'added'。backfill()/backfill_prices() 內部
+    已組好此語意，故本函式沿用其回傳、不需額外處理。
 
     進度：每處理 10 檔成員列印一次。
 
@@ -372,23 +376,23 @@ def backfill_sector(sector: str, start_month: str = "2015-01",
           f"回填月份 {start_month} ~ {as_of}（共 {len(months)} 個月）", flush=True)
 
     total = len(members)
-    rev_hold_results = {"written": [], "skipped": [], "errors": []}
-    price_results = {"written": [], "skipped": [], "errors": []}
+    rev_hold_results = {"added": [], "skipped_existing": [], "errors": []}
+    price_results = {"added": [], "skipped_existing": [], "errors": []}
 
     for i, cid in enumerate(members, 1):
         r1 = backfill([cid], months, start_date=f"{start_month}-01", token=token)
         r2 = backfill_prices([cid], months, start_date=f"{start_month}-01")
-        for key in ("written", "skipped", "errors"):
+        for key in ("added", "skipped_existing", "errors"):
             rev_hold_results[key].extend(r1[key])
             price_results[key].extend(r2[key])
 
         if i % 10 == 0 or i == total:
             print(f"[{i}/{total}] 已處理板塊 {sector} 成員（累計 revenue/holdings "
-                  f"written={len(rev_hold_results['written'])} "
-                  f"skipped={len(rev_hold_results['skipped'])} "
+                  f"added={len(rev_hold_results['added'])} "
+                  f"skipped_existing={len(rev_hold_results['skipped_existing'])} "
                   f"errors={len(rev_hold_results['errors'])}；"
-                  f"prices written={len(price_results['written'])} "
-                  f"skipped={len(price_results['skipped'])} "
+                  f"prices added={len(price_results['added'])} "
+                  f"skipped_existing={len(price_results['skipped_existing'])} "
                   f"errors={len(price_results['errors'])}）", flush=True)
 
     return {
@@ -408,12 +412,12 @@ def _run_sample_test():
     months = ["2024-01", "2024-02"]
     with tempfile.TemporaryDirectory() as tmp:
         res = backfill(companies, months, root=tmp, start_date="2022-06-01")
-        print("written:", len(res["written"]), "skipped:", res["skipped"])
+        print("added:", len(res["added"]), "skipped_existing:", res["skipped_existing"])
 
-        # 不可變性：重跑同月應全部 skipped
+        # 不可變性：重跑同月同公司應全部 skipped_existing
         res2 = backfill(companies, months, root=tmp, start_date="2022-06-01")
-        assert res2["written"] == [], f"重寫應全 skipped，但 written={res2['written']}"
-        print("immutability OK (re-run skipped:", len(res2["skipped"]), ")")
+        assert res2["added"] == [], f"重寫應全 skipped_existing，但 added={res2['added']}"
+        print("immutability OK (re-run skipped_existing:", len(res2["skipped_existing"]), ")")
 
         # PIT 讀回
         rev = pit_store.read_snapshot("revenue", "2024-02-28", root=tmp)
@@ -440,7 +444,7 @@ if __name__ == "__main__":
     if args.backfill_sector:
         result = backfill_sector(args.backfill_sector, start_month=args.start, end_month=args.end)
         print(f"完成：{result['sector']} 共 {len(result['members'])} 檔成員；"
-              f"revenue/holdings written={len(result['revenue_holdings']['written'])}；"
-              f"prices written={len(result['prices']['written'])}")
+              f"revenue/holdings added={len(result['revenue_holdings']['added'])}；"
+              f"prices added={len(result['prices']['added'])}")
     else:
         _run_sample_test()

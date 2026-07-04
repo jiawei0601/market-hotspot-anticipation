@@ -40,13 +40,24 @@
 - **Seed 完成**：CPO 板塊 11 檔入簿（E1×5：聯鈞/雙鴻/奇鋐/旺矽/晟銘電；E3×6：弘塑/一詮/鈦昇/辛耘/萬潤/家登，共用 CMoney 概念股頁 Wayback 存檔）。**雍智 6683 找無 CPO 歸屬證據→不入簿（ADR 記 pending evidence）**，registry 路徑下已退出板塊名單——鐵律正確結果，補到證據即可 `add_event` 歸隊。
 - 驗證：今日 resolve → registry 11 檔；2021 時點 → fallback 9 檔（era 正確）。118 tests 綠。
 
+### ✅ 板塊擴容工程（2026-07-04 續，同日完成）
+- **管線泛化**：content_value.json 改 sector-keyed（CPO 數值零變動）；`sector_specs.json` 世代規格表；main_agent prompt 泛化（動態代表股、未知板塊禁編造世代敘事、`future_gen` 參數化）；app.py 支援 `?sector=`；ingest.py 登記簿驅動（`--backfill-sector`、ticker 三層解析）。
+- **兩個新板塊上線**：`Thermal_Cooling` 14 檔（E1×12）、`Advanced_Packaging` 12 檔（E1×7），全數附證據＋Wayback 存檔；pending 清單見 `docs/drafts/sector-expansion-評估.md`。
+- **兩個 P0 修復（雙路 review + 實跑抓到）**：
+  ①登記簿純代號 vs CV 矩陣帶尾碼代號查表 miss → registry 路徑 CV 分析全空 → `_pure_id` 正規化＋防回歸測試；
+  ②pit_store 不可變粒度為整月檔 → 新板塊成員無法補歷史資料 → 鐵律精確化為「(月,公司) 級」＋`append_companies_to_snapshot`（既有條目 byte 不變、追加冪等）。
+- **PIT 資料已擴容**：散熱 +2535 筆營收/持股 +1360 筆價格、先進封裝 +1447/+776，PIT 抽查正確（台達電 2016 有、均華上櫃前正確缺席）。
+- **散熱首份報告產出**（`reports/2026-07-04-Thermal_Cooling-feasibility-report.md`，Critic PASS）：正確使用登記簿 11 檔、誠實回報「無標的通過黃金潛伏門檻」。首版曾出現 LLM 虛構「假設性標的情境」→ 已加誠實化規則第 5 條（嚴禁虛構假設性標的）＋ Critic 捏造禁令檢查，重產後 0 虛構。
+- 156 tests 綠。
+
 ## 進行中
 - 無。
 
 ## 下一步（依優先序）
-1. 下次掃描（`--sector CPO_Optical_Transceiver`）將首次以 registry 名單執行——關注雍智退出後報告變化；若有人找到雍智的 E1/E3 證據，用 `sector_membership.add_event` 歸隊。
-2. E1 三檔（旺矽/晟銘電/雙鴻）的 evidence_date 為佔位（二手轉述缺精確日期，ADR 已揭露），待核對原始法說會文件補正。
-3. 新板塊上線流程：先 seed 登記簿（附證據）→ 才跑掃描；無證據不入簿。
+1. **watchlist 重置待使用者確認**：現役 3 檔（雙鴻/一詮/鈦昇）是舊寬鬆閘門產物（已知），重置流程＝歸檔→清空→重掃（CPO 與新板塊在修正後閘門下目前皆無黃金標的，重置後 watchlist 很可能為空——這是誠實結果）。
+2. 雍智 6683 pending evidence；E1 三檔（旺矽/晟銘電/雙鴻）evidence_date 佔位待補正。
+3. 新板塊上線 SOP：證據入簿 → `python ingest.py --backfill-sector <sector>` → `python main_agent.py --sector <sector>`（全程無需改程式碼）。
+4. CI 週報目前只掃 CPO（workflow 未帶新板塊）——若要三板塊都自動掃，改 `.github/workflows/daily_market_pipeline.yml` 加兩行。
 2. 觸發 daily pipeline 或手動 `python generate_static_pages.py` 刷新 reports/docs（本輪未重生產出物）。
 3. 用新口徑重跑 `python backtest_engine.py` 與 `python monte_carlo_analyzer.py --seed 42`（需網路）。
 4. 舊掃描報告（2026-06-19）是用舊寬鬆門檻產的，鈦昇「黃金潛伏」標示已不成立——下次掃描會自動以新判定產出，可考慮在舊報告加勘誤註記。

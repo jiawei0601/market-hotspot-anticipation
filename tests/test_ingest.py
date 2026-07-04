@@ -89,8 +89,8 @@ class TestBackfillSectorMemberResolution(unittest.TestCase):
              patch.object(ingest, "backfill_prices") as m_prices, \
              patch.object(ingest, "_finmind_token", return_value=""):
             m_members.return_value = ["1101", "2330"]
-            m_backfill.return_value = {"written": [], "skipped": [], "errors": []}
-            m_prices.return_value = {"written": [], "skipped": [], "errors": []}
+            m_backfill.return_value = {"added": [], "skipped_existing": [], "errors": []}
+            m_prices.return_value = {"added": [], "skipped_existing": [], "errors": []}
 
             result = ingest.backfill_sector("CPO", start_month="2024-01", end_month="2024-02")
 
@@ -108,8 +108,8 @@ class TestBackfillSectorMemberResolution(unittest.TestCase):
              patch.object(ingest, "backfill_prices") as m_prices, \
              patch.object(ingest, "_finmind_token", return_value=""):
             m_members.return_value = []
-            m_backfill.return_value = {"written": [], "skipped": [], "errors": []}
-            m_prices.return_value = {"written": [], "skipped": [], "errors": []}
+            m_backfill.return_value = {"added": [], "skipped_existing": [], "errors": []}
+            m_prices.return_value = {"added": [], "skipped_existing": [], "errors": []}
 
             result = ingest.backfill_sector("CPO", start_month="2015-01")
 
@@ -122,8 +122,8 @@ class TestBackfillSectorMemberResolution(unittest.TestCase):
              patch.object(ingest, "backfill_prices") as m_prices, \
              patch.object(ingest, "_finmind_token", return_value="tok123"):
             m_members.return_value = ["1101", "2330"]
-            m_backfill.return_value = {"written": ["w1"], "skipped": [], "errors": []}
-            m_prices.return_value = {"written": ["p1"], "skipped": [], "errors": []}
+            m_backfill.return_value = {"added": ["w1"], "skipped_existing": [], "errors": []}
+            m_prices.return_value = {"added": ["p1"], "skipped_existing": [], "errors": []}
 
             result = ingest.backfill_sector("CPO", start_month="2024-01", end_month="2024-02")
 
@@ -135,17 +135,17 @@ class TestBackfillSectorMemberResolution(unittest.TestCase):
             # token 應傳入 backfill()
             for call in m_backfill.call_args_list:
                 self.assertEqual(call.kwargs.get("token"), "tok123")
-            self.assertEqual(result["revenue_holdings"]["written"], ["w1", "w1"])
-            self.assertEqual(result["prices"]["written"], ["p1", "p1"])
+            self.assertEqual(result["revenue_holdings"]["added"], ["w1", "w1"])
+            self.assertEqual(result["prices"]["added"], ["p1", "p1"])
 
 
 class TestBackfillSectorSkipSemantics(unittest.TestCase):
-    def test_snapshot_exists_error_is_absorbed_as_skipped_by_lower_layer(self):
-        """驗證現有行為：backfill()/backfill_prices() 內部已 catch
-        pit_store.SnapshotExistsError 並歸入 'skipped'，不會向上 raise。
-        backfill_sector 因此不需要自己再包一層 try/except。"""
+    def test_existing_company_entry_is_absorbed_as_skipped_existing_by_lower_layer(self):
+        """驗證現有行為：backfill()/backfill_prices() 底層改走
+        pit_store.append_companies_to_snapshot()，既有 (月, 公司) 條目歸入
+        'skipped_existing'、不會向上 raise。backfill_sector 因此不需要自己再包
+        一層 try/except。"""
         import tempfile
-        import pit_store
 
         with tempfile.TemporaryDirectory() as tmp:
             # 第一次寫入 revenue/holdings 快照（announce_date/date 皆 <= 2024-01-31 cutoff，
@@ -157,10 +157,10 @@ class TestBackfillSectorSkipSemantics(unittest.TestCase):
                 {"stock_id": "1101", "date": "2024-01-15", "foreign_ratio": 10.0},
             ]), patch("time.sleep", return_value=None):
                 res1 = ingest.backfill(["1101"], ["2024-01"], root=tmp)
-            self.assertEqual(len(res1["written"]), 2)  # revenue + holdings
-            self.assertEqual(res1["skipped"], [])
+            self.assertEqual(len(res1["added"]), 2)  # revenue + holdings
+            self.assertEqual(res1["skipped_existing"], [])
 
-            # 第二次針對同月重跑：應全部 skipped，不 raise
+            # 第二次針對同月同公司重跑：應全部 skipped_existing，不 raise
             with patch.object(ingest, "fetch_month_revenue", return_value=[
                 {"stock_id": "1101", "period": "2023-12",
                  "revenue_billion": 1.0, "yoy_pct": None, "announce_date": "2024-01-10"},
@@ -168,22 +168,68 @@ class TestBackfillSectorSkipSemantics(unittest.TestCase):
                 {"stock_id": "1101", "date": "2024-01-15", "foreign_ratio": 10.0},
             ]), patch("time.sleep", return_value=None):
                 res2 = ingest.backfill(["1101"], ["2024-01"], root=tmp)
-            self.assertEqual(res2["written"], [])
-            self.assertEqual(sorted(res2["skipped"]), ["2024-01/holdings", "2024-01/revenue"])
+            self.assertEqual(res2["added"], [])
+            self.assertEqual(
+                sorted(res2["skipped_existing"]),
+                ["2024-01/holdings:1101", "2024-01/revenue:1101"],
+            )
 
-    def test_backfill_sector_surfaces_skipped_from_members(self):
+    def test_backfill_sector_surfaces_skipped_existing_from_members(self):
         with patch.object(sector_membership, "get_members") as m_members, \
              patch.object(ingest, "backfill") as m_backfill, \
              patch.object(ingest, "backfill_prices") as m_prices, \
              patch.object(ingest, "_finmind_token", return_value=""):
             m_members.return_value = ["1101"]
-            m_backfill.return_value = {"written": [], "skipped": ["2024-01/revenue"], "errors": []}
-            m_prices.return_value = {"written": [], "skipped": ["2024-01/prices"], "errors": []}
+            m_backfill.return_value = {
+                "added": [], "skipped_existing": ["2024-01/revenue:1101"], "errors": [],
+            }
+            m_prices.return_value = {
+                "added": [], "skipped_existing": ["2024-01/prices:1101"], "errors": [],
+            }
 
             result = ingest.backfill_sector("CPO", start_month="2024-01", end_month="2024-01")
 
-            self.assertEqual(result["revenue_holdings"]["skipped"], ["2024-01/revenue"])
-            self.assertEqual(result["prices"]["skipped"], ["2024-01/prices"])
+            self.assertEqual(
+                result["revenue_holdings"]["skipped_existing"], ["2024-01/revenue:1101"]
+            )
+            self.assertEqual(result["prices"]["skipped_existing"], ["2024-01/prices:1101"])
+
+    def test_new_company_backfilled_into_existing_month_does_not_touch_existing_entry(self):
+        """核心場景：既有月檔已有公司 A 的資料，backfill 加入公司 B（新板塊成員）
+        時應成功追加，且公司 A 的既有條目完全不變（byte-for-byte）。"""
+        import tempfile
+        import pit_store
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(ingest, "fetch_month_revenue", return_value=[
+                {"stock_id": "1101", "period": "2023-12",
+                 "revenue_billion": 1.0, "yoy_pct": None, "announce_date": "2024-01-10"},
+            ]), patch.object(ingest, "fetch_foreign_holding", return_value=[
+                {"stock_id": "1101", "date": "2024-01-15", "foreign_ratio": 10.0},
+            ]), patch("time.sleep", return_value=None):
+                ingest.backfill(["1101"], ["2024-01"], root=tmp)
+
+            existing_before = pit_store.read_snapshot("revenue", "2024-01-31", root=tmp)["1101"]
+
+            # 新板塊成員 2308（台達電）補進同一個已存在的月份
+            with patch.object(ingest, "fetch_month_revenue", return_value=[
+                {"stock_id": "2308", "period": "2023-12",
+                 "revenue_billion": 5.0, "yoy_pct": None, "announce_date": "2024-01-10"},
+            ]), patch.object(ingest, "fetch_foreign_holding", return_value=[
+                {"stock_id": "2308", "date": "2024-01-15", "foreign_ratio": 50.0},
+            ]), patch("time.sleep", return_value=None):
+                res = ingest.backfill(["2308"], ["2024-01"], root=tmp)
+
+            self.assertEqual(
+                sorted(res["added"]), ["2024-01/holdings:2308", "2024-01/revenue:2308"]
+            )
+            self.assertEqual(res["skipped_existing"], [])
+
+            rev_after = pit_store.read_snapshot("revenue", "2024-01-31", root=tmp)
+            hold_after = pit_store.read_snapshot("holdings", "2024-01-31", root=tmp)
+            self.assertEqual(rev_after["1101"], existing_before)  # 既有條目 byte 不變
+            self.assertIn("2308", rev_after)
+            self.assertIn("2308", hold_after)
 
 
 class TestMonthRangeInclusive(unittest.TestCase):
@@ -195,6 +241,87 @@ class TestMonthRangeInclusive(unittest.TestCase):
             ingest._month_range_inclusive("2023-11", "2024-02"),
             ["2023-11", "2023-12", "2024-01", "2024-02"],
         )
+
+
+class TestAppendCompaniesToSnapshot(unittest.TestCase):
+    """pit_store.append_companies_to_snapshot：「(月, 公司) 級」不可變粒度鐵律。"""
+
+    def test_month_file_absent_creates_full_file(self):
+        import tempfile
+        import pit_store
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"1101": {"revenue_billion": 1.0}}, root=tmp
+            )
+            self.assertEqual(result, {"added": ["1101"], "skipped_existing": []})
+            snap = pit_store.read_snapshot("revenue", "2024-01-31", root=tmp)
+            self.assertEqual(snap, {"1101": {"revenue_billion": 1.0}})
+
+    def test_append_new_company_to_existing_month_leaves_existing_entry_untouched(self):
+        import tempfile
+        import pit_store
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"1101": {"revenue_billion": 1.0}}, root=tmp
+            )
+            result = pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"2308": {"revenue_billion": 5.0}}, root=tmp
+            )
+            self.assertEqual(result, {"added": ["2308"], "skipped_existing": []})
+            snap = pit_store.read_snapshot("revenue", "2024-01-31", root=tmp)
+            self.assertEqual(snap["1101"], {"revenue_billion": 1.0})  # 既有條目 byte 不變
+            self.assertEqual(snap["2308"], {"revenue_billion": 5.0})
+
+    def test_rerun_is_idempotent(self):
+        import tempfile
+        import pit_store
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"1101": {"revenue_billion": 1.0}}, root=tmp
+            )
+            result = pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"1101": {"revenue_billion": 1.0}}, root=tmp
+            )
+            self.assertEqual(result, {"added": [], "skipped_existing": ["1101"]})
+            snap = pit_store.read_snapshot("revenue", "2024-01-31", root=tmp)
+            self.assertEqual(snap, {"1101": {"revenue_billion": 1.0}})  # 未改變
+
+    def test_attempt_to_overwrite_existing_key_is_rejected(self):
+        """企圖用不同內容覆蓋既有 key：拒絕覆寫，列入 skipped_existing，既有值不變。"""
+        import tempfile
+        import pit_store
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"1101": {"revenue_billion": 1.0}}, root=tmp
+            )
+            result = pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"1101": {"revenue_billion": 999.0}}, root=tmp
+            )
+            self.assertEqual(result, {"added": [], "skipped_existing": ["1101"]})
+            snap = pit_store.read_snapshot("revenue", "2024-01-31", root=tmp)
+            self.assertEqual(snap["1101"], {"revenue_billion": 1.0})  # 原值不被覆蓋
+
+    def test_mixed_added_and_skipped_existing_in_one_call(self):
+        import tempfile
+        import pit_store
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue", {"1101": {"revenue_billion": 1.0}}, root=tmp
+            )
+            result = pit_store.append_companies_to_snapshot(
+                "2024-01", "revenue",
+                {"1101": {"revenue_billion": 999.0}, "2308": {"revenue_billion": 5.0}},
+                root=tmp,
+            )
+            self.assertEqual(result, {"added": ["2308"], "skipped_existing": ["1101"]})
+            snap = pit_store.read_snapshot("revenue", "2024-01-31", root=tmp)
+            self.assertEqual(snap["1101"], {"revenue_billion": 1.0})
+            self.assertEqual(snap["2308"], {"revenue_billion": 5.0})
 
 
 if __name__ == "__main__":

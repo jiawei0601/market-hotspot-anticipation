@@ -82,5 +82,110 @@
     "revenue_billion": 2.1378,
     "announce_date": "2018-07-10",
     "yoy_pct": 73.92
+  },
+  "2308": {
+    "stock_id": "2308",
+    "period": "2018-06",
+    "revenue_billion": 198.2032,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 6.02
+  },
+  "2354": {
+    "stock_id": "2354",
+    "period": "2018-06",
+    "revenue_billion": 119.7449,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 18.1
+  },
+  "2421": {
+    "stock_id": "2421",
+    "period": "2018-06",
+    "revenue_billion": 10.4278,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 0.63
+  },
+  "3338": {
+    "stock_id": "3338",
+    "period": "2018-06",
+    "revenue_billion": 2.5315,
+    "announce_date": "2018-07-10",
+    "yoy_pct": -2.91
+  },
+  "3483": {
+    "stock_id": "3483",
+    "period": "2018-06",
+    "revenue_billion": 3.71,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 6.26
+  },
+  "3653": {
+    "stock_id": "3653",
+    "period": "2018-06",
+    "revenue_billion": 4.0505,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 34.6
+  },
+  "6230": {
+    "stock_id": "6230",
+    "period": "2018-06",
+    "revenue_billion": 6.388,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 7.38
+  },
+  "6591": {
+    "stock_id": "6591",
+    "period": "2018-06",
+    "revenue_billion": 0.6283,
+    "announce_date": "2018-07-10",
+    "yoy_pct": -40.87
+  },
+  "8996": {
+    "stock_id": "8996",
+    "period": "2018-06",
+    "revenue_billion": 1.7428,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 13.57
+  },
+  "2467": {
+    "stock_id": "2467",
+    "period": "2018-06",
+    "revenue_billion": 5.9153,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 15.96
+  },
+  "3374": {
+    "stock_id": "3374",
+    "period": "2018-06",
+    "revenue_billion": 2.4056,
+    "announce_date": "2018-07-10",
+    "yoy_pct": -8.42
+  },
+  "3711": {
+    "stock_id": "3711",
+    "period": "2018-06",
+    "revenue_billion": 310.3383,
+    "announce_date": "2018-07-10",
+    "yoy_pct": null
+  },
+  "6239": {
+    "stock_id": "6239",
+    "period": "2018-06",
+    "revenue_billion": 57.8734,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 13.37
+  },
+  "6640": {
+    "stock_id": "6640",
+    "period": "2018-06",
+    "revenue_billion": 0.861,
+    "announce_date": "2018-07-10",
+    "yoy_pct": 14.95
+  },
+  "6664": {
+    "stock_id": "6664",
+    "period": "2018-06",
+    "revenue_billion": 1.4825,
+    "announce_date": "2018-07-10",
+    "yoy_pct": null
   }
 }

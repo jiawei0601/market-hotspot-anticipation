@@ -82,5 +82,110 @@
     "revenue_billion": 1.2732,
     "announce_date": "2020-02-10",
     "yoy_pct": 24.13
+  },
+  "2308": {
+    "stock_id": "2308",
+    "period": "2020-01",
+    "revenue_billion": 193.3059,
+    "announce_date": "2020-02-10",
+    "yoy_pct": 2.92
+  },
+  "2354": {
+    "stock_id": "2354",
+    "period": "2020-01",
+    "revenue_billion": 48.4939,
+    "announce_date": "2020-02-10",
+    "yoy_pct": 7.63
+  },
+  "2421": {
+    "stock_id": "2421",
+    "period": "2020-01",
+    "revenue_billion": 8.2212,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -20.24
+  },
+  "3338": {
+    "stock_id": "3338",
+    "period": "2020-01",
+    "revenue_billion": 3.0341,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -12.7
+  },
+  "3483": {
+    "stock_id": "3483",
+    "period": "2020-01",
+    "revenue_billion": 3.0578,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -23.51
+  },
+  "3653": {
+    "stock_id": "3653",
+    "period": "2020-01",
+    "revenue_billion": 5.5222,
+    "announce_date": "2020-02-10",
+    "yoy_pct": 9.31
+  },
+  "6230": {
+    "stock_id": "6230",
+    "period": "2020-01",
+    "revenue_billion": 5.9889,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -18.7
+  },
+  "6591": {
+    "stock_id": "6591",
+    "period": "2020-01",
+    "revenue_billion": 0.8029,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -12.34
+  },
+  "8996": {
+    "stock_id": "8996",
+    "period": "2020-01",
+    "revenue_billion": 1.3362,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -33.22
+  },
+  "2467": {
+    "stock_id": "2467",
+    "period": "2020-01",
+    "revenue_billion": 2.2462,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -40.11
+  },
+  "3374": {
+    "stock_id": "3374",
+    "period": "2020-01",
+    "revenue_billion": 4.7308,
+    "announce_date": "2020-02-10",
+    "yoy_pct": 116.75
+  },
+  "3711": {
+    "stock_id": "3711",
+    "period": "2020-01",
+    "revenue_billion": 313.3745,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -5.2
+  },
+  "6239": {
+    "stock_id": "6239",
+    "period": "2020-01",
+    "revenue_billion": 63.4059,
+    "announce_date": "2020-02-10",
+    "yoy_pct": 22.58
+  },
+  "6640": {
+    "stock_id": "6640",
+    "period": "2020-01",
+    "revenue_billion": 0.3882,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -36.54
+  },
+  "6664": {
+    "stock_id": "6664",
+    "period": "2020-01",
+    "revenue_billion": 1.2541,
+    "announce_date": "2020-02-10",
+    "yoy_pct": -13.14
   }
 }

@@ -58,5 +58,80 @@
     "stock_id": "8027",
     "date": "2021-08-31",
     "foreign_ratio": 5.85
+  },
+  "2308": {
+    "stock_id": "2308",
+    "date": "2021-08-31",
+    "foreign_ratio": 68.49
+  },
+  "2354": {
+    "stock_id": "2354",
+    "date": "2021-08-31",
+    "foreign_ratio": 21.19
+  },
+  "2421": {
+    "stock_id": "2421",
+    "date": "2021-08-31",
+    "foreign_ratio": 19.45
+  },
+  "3338": {
+    "stock_id": "3338",
+    "date": "2021-08-31",
+    "foreign_ratio": 1.13
+  },
+  "3483": {
+    "stock_id": "3483",
+    "date": "2021-08-31",
+    "foreign_ratio": 3.1
+  },
+  "3653": {
+    "stock_id": "3653",
+    "date": "2021-08-31",
+    "foreign_ratio": 6.4
+  },
+  "6230": {
+    "stock_id": "6230",
+    "date": "2021-08-31",
+    "foreign_ratio": 88.56
+  },
+  "6591": {
+    "stock_id": "6591",
+    "date": "2021-08-31",
+    "foreign_ratio": 23.26
+  },
+  "8996": {
+    "stock_id": "8996",
+    "date": "2021-08-31",
+    "foreign_ratio": 3.29
+  },
+  "2467": {
+    "stock_id": "2467",
+    "date": "2021-08-31",
+    "foreign_ratio": 12.23
+  },
+  "3374": {
+    "stock_id": "3374",
+    "date": "2021-08-31",
+    "foreign_ratio": 5.94
+  },
+  "3711": {
+    "stock_id": "3711",
+    "date": "2021-08-31",
+    "foreign_ratio": 79.55
+  },
+  "6239": {
+    "stock_id": "6239",
+    "date": "2021-08-31",
+    "foreign_ratio": 61.83
+  },
+  "6640": {
+    "stock_id": "6640",
+    "date": "2021-08-31",
+    "foreign_ratio": 2.7
+  },
+  "6664": {
+    "stock_id": "6664",
+    "date": "2021-08-31",
+    "foreign_ratio": 1.22
   }
 }

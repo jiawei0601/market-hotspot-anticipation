@@ -82,5 +82,110 @@
     "revenue_billion": 4.4288,
     "announce_date": "2022-04-10",
     "yoy_pct": 77.35
+  },
+  "2308": {
+    "stock_id": "2308",
+    "period": "2022-03",
+    "revenue_billion": 306.4814,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 13.4
+  },
+  "2354": {
+    "stock_id": "2354",
+    "period": "2022-03",
+    "revenue_billion": 87.7158,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 42.76
+  },
+  "2421": {
+    "stock_id": "2421",
+    "period": "2022-03",
+    "revenue_billion": 10.8398,
+    "announce_date": "2022-04-10",
+    "yoy_pct": -10.59
+  },
+  "3338": {
+    "stock_id": "3338",
+    "period": "2022-03",
+    "revenue_billion": 4.8878,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 6.4
+  },
+  "3483": {
+    "stock_id": "3483",
+    "period": "2022-03",
+    "revenue_billion": 8.0197,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 35.68
+  },
+  "3653": {
+    "stock_id": "3653",
+    "period": "2022-03",
+    "revenue_billion": 9.4012,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 40.11
+  },
+  "6230": {
+    "stock_id": "6230",
+    "period": "2022-03",
+    "revenue_billion": 8.204,
+    "announce_date": "2022-04-10",
+    "yoy_pct": -14.91
+  },
+  "6591": {
+    "stock_id": "6591",
+    "period": "2022-03",
+    "revenue_billion": 2.8125,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 32.62
+  },
+  "8996": {
+    "stock_id": "8996",
+    "period": "2022-03",
+    "revenue_billion": 2.2318,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 18.98
+  },
+  "2467": {
+    "stock_id": "2467",
+    "period": "2022-03",
+    "revenue_billion": 4.3836,
+    "announce_date": "2022-04-10",
+    "yoy_pct": -23.41
+  },
+  "3374": {
+    "stock_id": "3374",
+    "period": "2022-03",
+    "revenue_billion": 6.6496,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 6.12
+  },
+  "3711": {
+    "stock_id": "3711",
+    "period": "2022-03",
+    "revenue_billion": 519.8633,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 23.77
+  },
+  "6239": {
+    "stock_id": "6239",
+    "period": "2022-03",
+    "revenue_billion": 71.0613,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 9.17
+  },
+  "6640": {
+    "stock_id": "6640",
+    "period": "2022-03",
+    "revenue_billion": 1.8899,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 41.17
+  },
+  "6664": {
+    "stock_id": "6664",
+    "period": "2022-03",
+    "revenue_billion": 2.0023,
+    "announce_date": "2022-04-10",
+    "yoy_pct": 28.12
   }
 }

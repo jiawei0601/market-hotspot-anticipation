@@ -42,6 +42,58 @@ def write_monthly_snapshot(
     return path
 
 
+def append_companies_to_snapshot(
+    month: str,
+    kind: str,
+    new_entries: dict,
+    root: str = SNAPSHOT_ROOT,
+) -> dict:
+    """以「(月, 公司) 級」不可變粒度追加公司條目到既有月快照。
+
+    背景（2026-07-04 新板塊擴容時發現的結構衝突）：append-only 鐵律原本以
+    「整個月檔」為不可變單位（write_monthly_snapshot 只要目標檔存在就整檔拒寫），
+    導致新板塊成員（如台達電 2308）的歷史資料無法補進已存在的月份——
+    ingest.py --backfill-sector 對舊月份全部被 SnapshotExistsError 跳過。
+
+    鐵律精確化為：**既有 (月, 公司) 條目一律不可變；不存在的公司條目允許追加**。
+    追加動作不觸碰既有 key 的任何 byte，PIT 安全性不受影響（過去已發布的資料
+    永遠不變，只是同一月檔裡可以再長出「當時就存在、只是我們現在才抓到」的
+    其他公司條目）。
+
+    行為：
+    - 月檔（root/month/{kind}.json）不存在 → 等同 write_monthly_snapshot，整檔新建。
+    - 月檔存在 → 僅加入檔中尚無該公司 key 的條目；已存在的 key 完全不動
+      （即使 new_entries 內容不同也不覆蓋，該 key 列入回傳的 skipped_existing）。
+      只有真的有新增時才寫回檔案。
+
+    回傳 {"added": [...新增的公司 key...], "skipped_existing": [...已存在而跳過的公司 key...]}。
+    """
+    dir_path = os.path.join(root, month)
+    path = os.path.join(dir_path, f"{kind}.json")
+
+    if not os.path.exists(path):
+        write_monthly_snapshot(kind, dict(new_entries), year_month=month, root=root)
+        return {"added": sorted(new_entries.keys()), "skipped_existing": []}
+
+    with open(path, "r", encoding="utf-8") as f:
+        existing = json.load(f)
+
+    added = []
+    skipped_existing = []
+    for company_id, entry in new_entries.items():
+        if company_id in existing:
+            skipped_existing.append(company_id)
+        else:
+            existing[company_id] = entry
+            added.append(company_id)
+
+    if added:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(existing, f, ensure_ascii=False, indent=2)
+
+    return {"added": sorted(added), "skipped_existing": sorted(skipped_existing)}
+
+
 def read_snapshot(
     kind: str,
     as_of_date: str,

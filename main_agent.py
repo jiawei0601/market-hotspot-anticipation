@@ -380,8 +380,10 @@ def report_writer_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"3. 只有前段分析中明確標記 `is_golden_accumulation_target` 為 True 的公司，才可在結論中稱為『非共識黃金潛伏標的』；"
         f"其餘一律稱為『觀察名單（未過共識門檻）』。\n"
         f"4. 設備 Backlog YoY 數據，一律標示為『板塊層代理訊號（equipment 分類公司月營收 YoY 中位數），非公司別訂單資料』，"
-        f"不得寫成該公司自身的訂單或拉貨數字。"
-        + ("\n5. 本板塊無世代規格登記，全篇禁止出現 Vera_Rubin/Feynman/Feynman_Next 等 GPU 世代名稱或任何自行編造的世代代號。" if spec_missing else "")
+        f"不得寫成該公司自身的訂單或拉貨數字。\n"
+        f"5. 若本次無任何公司通過黃金潛伏門檻，誠實陳述『無標的通過』即止；"
+        f"嚴禁虛構『假設性標的』『模擬情境』或以任何不符合條件的公司示範進場策略——寧可報告短，不可捏造情境。"
+        + ("\n6. 本板塊無世代規格登記，全篇禁止出現 Vera_Rubin/Feynman/Feynman_Next 等 GPU 世代名稱或任何自行編造的世代代號。" if spec_missing else "")
     )
     
     llm = get_llm_model()
@@ -419,6 +421,8 @@ def quality_critic_node(state: MarketHotspotState) -> Dict[str, Any]:
         f"{generation_requirement}"
         f"2. 至少一家設備商的拉貨領先度 (Backlog YoY) 定量數據；\n"
         f"3. 供應鏈公司的共識度得分 (Consensus Score) 與預期差非共識判定。\n\n"
+        f"另須檢查【捏造禁令】：若報告在「無標的通過黃金潛伏門檻」的情況下，"
+        f"出現『假設性標的』『模擬情境』或以不符合條件的公司示範進場/退場策略，一律判 FAIL 並要求刪除該段。\n\n"
         f"【報告內容】：\n{report}\n"
     )
     
