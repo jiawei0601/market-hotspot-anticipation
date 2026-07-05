@@ -3,6 +3,7 @@ import datetime
 from typing import Dict, List, Any, Optional
 import numpy as np
 import pit_store
+import constants
 
 # 非共識黃金建倉標的的 pre-registered 先驗門檻（見 CONTEXT.md / ADR 0003）——禁止用回測 tune
 CONSENSUS_MAX = 60.0       # 共識度上限：< 此值才算「逆勢/未擁擠」
@@ -38,6 +39,72 @@ def _strip_suffix(company_id: str) -> str:
     for sfx in (".TWO", ".TW"):
         if company_id.endswith(sfx):
             return company_id[: -len(sfx)]
+    return company_id
+
+
+# display_name() 的 universe 快照 fallback 快取（模組層級，跨呼叫只讀取一次最新月快照）。
+# key 為快照根目錄路徑（測試可能 monkeypatch 不同 root），value 為 {stock_id: name} dict。
+_UNIVERSE_NAME_CACHE: Dict[str, Dict[str, str]] = {}
+
+
+def _load_latest_universe_names(root: str = pit_store.SNAPSHOT_ROOT) -> Dict[str, str]:
+    """讀取最新一份 universe 月快照的 records，回傳 {stock_id: name} dict（快取一次）。
+
+    找不到任何 universe.json（尚未跑過 universe.py，或 root 不存在）時回傳空 dict，
+    供 display_name 靜默 fallback 至 cid 原樣。"""
+    if root in _UNIVERSE_NAME_CACHE:
+        return _UNIVERSE_NAME_CACHE[root]
+
+    names: Dict[str, str] = {}
+    if os.path.isdir(root):
+        month_dirs = sorted(
+            entry for entry in os.listdir(root)
+            if os.path.isdir(os.path.join(root, entry))
+            and os.path.exists(os.path.join(root, entry, "universe.json"))
+        )
+        if month_dirs:
+            latest = month_dirs[-1]
+            with open(os.path.join(root, latest, "universe.json"), "r", encoding="utf-8") as f:
+                snapshot = __import__("json").load(f)
+            for sid, rec in (snapshot.get("records") or {}).items():
+                if rec.get("name"):
+                    names[sid] = rec["name"]
+
+    _UNIVERSE_NAME_CACHE[root] = names
+    return names
+
+
+def display_name(company_id: str) -> str:
+    """公司顯示名稱單一入口：一律回傳「代號 中文名」（如 "3324 雙鴻"）。
+
+    解析順序（三層 fallback）：
+    1. constants.CHINESE_MAPPING 命中 company_id 原樣（含尾碼，如 "3324.TWO"）
+       → 取 mapping 值（格式 "代號.中文名"），把「.」分隔改為空格呈現。
+    2. mapping 未命中原樣時，去尾碼後分別嘗試補 ".TW" 與 ".TWO" 兩種尾碼查表
+       （來源可能只給純代號，或尾碼與 mapping 記錄的不同）。
+    3. 仍未命中 → fallback 至最新一份 universe 月快照的 records[stock_id]["name"]
+       （模組層級快取一次）。
+    4. 仍查無 → 回傳 company_id 原樣（無法判斷代號或中文名時的顯式安全預設）。
+    """
+    mapped = constants.CHINESE_MAPPING.get(company_id)
+
+    if mapped is None:
+        pure = _strip_suffix(company_id)
+        for sfx in (".TW", ".TWO"):
+            mapped = constants.CHINESE_MAPPING.get(f"{pure}{sfx}")
+            if mapped is not None:
+                break
+
+    if mapped is not None:
+        code, _, cn_name = mapped.partition(".")
+        return f"{code} {cn_name}" if cn_name else mapped
+
+    pure = _strip_suffix(company_id)
+    universe_names = _load_latest_universe_names()
+    cn_name = universe_names.get(pure)
+    if cn_name:
+        return f"{pure} {cn_name}"
+
     return company_id
 
 
@@ -217,9 +284,11 @@ class MarketInformationMonitor:
             if consensus is None:
                 consensus = item["consensus_score"]
 
+            resolved_name = display_name(item["company_id"])
+
             analysis.append({
                 "company_id": item["company_id"],
-                "name": item["name"],
+                "name": resolved_name,
                 "segment": item["segment"],
                 "content_value_current": val_current,
                 "content_value_next": val_next,
@@ -233,7 +302,7 @@ class MarketInformationMonitor:
             })
 
             if item["segment"] in ["equipment", "package"]:
-                bottlenecks.append(f"{item['name']} ({item['segment']})")
+                bottlenecks.append(f"{resolved_name} ({item['segment']})")
 
         return {
             "current_generation": current_gen,
@@ -549,7 +618,7 @@ class MarketInformationMonitor:
 
         for cid in company_ids:
             item = matrix_by_cid.get(_pure_id(cid))
-            name = item["name"] if item else cid
+            name = display_name(cid)
             segment = segments_by_cid.get(cid)
 
             rev_hist = self._read_company_revenue_history(cid, as_of_date, n_snapshots=14)

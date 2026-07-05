@@ -322,6 +322,104 @@ class TestBacklogNotApplicablePrompting(unittest.TestCase):
         self.assertNotIn("Backlog 板塊層訊號不適用（程式端已確認）", prompt_text)
 
 
+class TestTickerDisplayFormatRules(unittest.TestCase):
+    """報告提及任何標的一律「代號＋中文名」並列（見交辦：3324 雙鴻範例）。
+    report_writer 的誠實化規則須新增此條，quality_critic 的審查清單須新增對應檢查項。"""
+
+    NOT_APPLICABLE_RAW_REVENUE = TestBacklogNotApplicablePrompting.NOT_APPLICABLE_RAW_REVENUE
+    APPLICABLE_RAW_REVENUE = TestBacklogNotApplicablePrompting.APPLICABLE_RAW_REVENUE
+
+    def _make_fake_llm(self, captured: dict):
+        fake_llm = MagicMock()
+
+        def _invoke(messages):
+            captured["messages"] = messages
+            response = MagicMock()
+            response.content = "測試報告內容"
+            return response
+
+        fake_llm.invoke.side_effect = _invoke
+        return fake_llm
+
+    def test_report_writer_prompt_requires_ticker_and_chinese_name_pair(self):
+        """report_writer 的誠實化規則須明文要求「代號 中文名」並列格式，
+        並禁止只寫代號、只寫名稱或使用英文代稱。"""
+        captured = {}
+        state = {
+            "target_sector": "CPO_Optical_Transceiver",
+            "current_generation": "Vera_Rubin",
+            "next_generation": "Feynman",
+            "future_generation": "Feynman_Next",
+            "sector_spec_missing": False,
+            "supply_chain_analysis": {"summary": "供應鏈摘要"},
+            "pricing_revenue_analysis": {
+                "summary": "價格摘要",
+                "raw_revenue": self.APPLICABLE_RAW_REVENUE,
+            },
+            "media_story_anticipation": {"summary": "媒體摘要"},
+        }
+
+        with patch.object(main_agent, "get_llm_model", return_value=self._make_fake_llm(captured)):
+            main_agent.report_writer_node(state)
+
+        prompt_text = captured["messages"][-1].content
+        self.assertIn("代號 中文名", prompt_text)
+        self.assertIn("3324 雙鴻", prompt_text)
+        self.assertIn("禁止只寫代號、只寫名稱或使用英文代稱", prompt_text)
+
+    def test_report_writer_prompt_ticker_rule_present_when_spec_missing_too(self):
+        """世代規格缺失（無 GPU 世代框架）板塊，新規則同樣須存在，不受 spec_missing 分支影響。"""
+        captured = {}
+        state = {
+            "target_sector": "Thermal_Component_Only_Sector",
+            "current_generation": "N/A",
+            "next_generation": "N/A",
+            "future_generation": "N/A",
+            "sector_spec_missing": True,
+            "supply_chain_analysis": {"summary": "供應鏈摘要"},
+            "pricing_revenue_analysis": {
+                "summary": "價格摘要",
+                "raw_revenue": self.NOT_APPLICABLE_RAW_REVENUE,
+            },
+            "media_story_anticipation": {"summary": "媒體摘要"},
+        }
+
+        with patch.object(main_agent, "get_llm_model", return_value=self._make_fake_llm(captured)):
+            main_agent.report_writer_node(state)
+
+        prompt_text = captured["messages"][-1].content
+        self.assertIn("代號 中文名", prompt_text)
+        self.assertIn("禁止只寫代號、只寫名稱或使用英文代稱", prompt_text)
+
+    def test_quality_critic_prompt_includes_ticker_format_check(self):
+        """quality_critic 的審查清單須新增個股呈現格式檢查項：通篇只有代號無中文名、
+        或只有名稱無代號時應判 FAIL 並具體指出。"""
+        captured = {}
+        state = {
+            "feasibility_report_draft": "報告內容含 3324 雙鴻 與 Backlog YoY 62.5%",
+            "iteration_count": 0,
+            "future_generation": "Feynman_Next",
+            "sector_spec_missing": False,
+            "pricing_revenue_analysis": {"raw_revenue": self.APPLICABLE_RAW_REVENUE},
+        }
+
+        fake_structured_llm = MagicMock()
+
+        def _invoke(messages):
+            captured["messages"] = messages
+            return main_agent.CriticDecision(validation_status="PASS", critic_feedback="")
+
+        fake_structured_llm.invoke.side_effect = _invoke
+
+        with patch.object(main_agent, "get_llm_model", return_value=fake_structured_llm):
+            main_agent.quality_critic_node(state)
+
+        prompt_text = captured["messages"][-1].content
+        self.assertIn("個股呈現格式", prompt_text)
+        self.assertIn("代號 中文名", prompt_text)
+        self.assertIn("一律判 FAIL", prompt_text)
+
+
 class TestLlmFailoverChain(unittest.TestCase):
     """LLM 三層備援鏈（NIM → DeepSeek 官方 → Claude CLI）：不打真網路，全部 fake/monkeypatch。"""
 

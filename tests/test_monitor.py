@@ -1,6 +1,8 @@
+import os
 import unittest
 from unittest import mock
 import pit_store
+import market_monitor
 from market_monitor import (
     MarketInformationMonitor,
     CONSENSUS_MAX,
@@ -8,6 +10,7 @@ from market_monitor import (
     MEMBERSHIP_SOURCE_FALLBACK,
     BACKLOG_NOT_APPLICABLE_NOTE,
     _PRIORS_PATH,
+    display_name,
 )
 
 class TestMarketInformationMonitor(unittest.TestCase):
@@ -333,6 +336,97 @@ class TestBacklogLeadNoEquipmentMembers(unittest.TestCase):
             data = result[cid]
             self.assertIsNone(data["backlog_not_applicable_note"])
             self.assertIsInstance(data["current_backlog_yoy_pct"], float)
+
+
+class TestDisplayName(unittest.TestCase):
+    """display_name() 三層 fallback 解析順序測試（見交辦：報告標的一律「代號＋中文名」並列）。"""
+
+    def setUp(self):
+        # 每個測試前清空模組層級 universe 名稱快取，避免測試間互相汙染
+        market_monitor._UNIVERSE_NAME_CACHE.clear()
+
+    def tearDown(self):
+        market_monitor._UNIVERSE_NAME_CACHE.clear()
+
+    def test_mapping_hit_with_suffix_as_is(self):
+        """CHINESE_MAPPING 命中 company_id 原樣（含尾碼）時，回傳「代號 中文名」，
+        「.」分隔改為空格呈現。"""
+        self.assertEqual(display_name("3324.TWO"), "3324 雙鴻")
+        self.assertEqual(display_name("3450.TW"), "3450 聯鈞")
+
+    def test_mapping_hit_without_suffix_tries_both_tw_and_two(self):
+        """company_id 未帶尾碼（如登記簿純代號）時，去尾碼後應分別嘗試補
+        .TW 與 .TWO 兩種尾碼查表，命中任一即回傳「代號 中文名」。"""
+        # 3450 在 mapping 中只有 "3450.TW" 這個 key（無尾碼原樣查不到）
+        self.assertEqual(display_name("3450"), "3450 聯鈞")
+        # 3324 在 mapping 中只有 "3324.TWO" 這個 key
+        self.assertEqual(display_name("3324"), "3324 雙鴻")
+
+    def test_universe_fallback_when_mapping_miss(self):
+        """mapping 查無此代號時，fallback 至最新一份 universe 月快照 records 的 name。"""
+        with mock.patch.object(
+            market_monitor, "_load_latest_universe_names",
+            return_value={"9999": "測試假股"},
+        ):
+            self.assertEqual(display_name("9999"), "9999 測試假股")
+            self.assertEqual(display_name("9999.TW"), "9999 測試假股")
+
+    def test_cid_as_is_when_all_fallbacks_miss(self):
+        """mapping 與 universe 快照都查無此代號時，安全回退為 company_id 原樣。"""
+        with mock.patch.object(
+            market_monitor, "_load_latest_universe_names", return_value={}
+        ):
+            self.assertEqual(display_name("0000.TW"), "0000.TW")
+            self.assertEqual(display_name("0000"), "0000")
+
+    def test_load_latest_universe_names_reads_latest_month_records(self):
+        """_load_latest_universe_names 應讀取真實 data/snapshots 下最新一份
+        universe.json，且能查到已知樣本（3324 -> 雙鴻）。"""
+        names = market_monitor._load_latest_universe_names()
+        if names:  # 若測試環境的 data/snapshots 尚無 universe.json，允許空結果
+            self.assertIn("3324", names)
+            self.assertEqual(names["3324"], "雙鴻")
+
+    def test_load_latest_universe_names_missing_root_returns_empty(self):
+        """universe 快照根目錄不存在時，回傳空 dict，不拋例外。"""
+        result = market_monitor._load_latest_universe_names(root="nonexistent_root_dir_xyz")
+        self.assertEqual(result, {})
+
+    def test_simulate_revenue_inflection_name_field_uses_display_name_format(self):
+        """simulate_revenue_inflection 的 name 欄位一律為「代號 中文名」格式，
+        不得再退化為純代號（registry 成員若不在 content_value 矩陣時的舊行為）。"""
+        monitor = MarketInformationMonitor()
+        company_ids = ["3450.TW", "3324.TWO"]
+        result = monitor.simulate_revenue_inflection(company_ids)
+        self.assertEqual(result["3450.TW"]["name"], "3450 聯鈞")
+        self.assertEqual(result["3324.TWO"]["name"], "3324 雙鴻")
+
+    def test_simulate_revenue_inflection_name_field_for_registry_only_member(self):
+        """registry 引入但 content_value 矩陣未收錄的成員：name 欄位仍須透過
+        display_name 解析（而非落回純代號），確保 LLM 拿到的一律有中文名可用。"""
+        monitor = MarketInformationMonitor()
+        with mock.patch.object(
+            market_monitor, "_load_latest_universe_names",
+            return_value={"9999": "測試假股"},
+        ):
+            result = monitor.simulate_revenue_inflection(["9999"])
+        self.assertEqual(result["9999"]["name"], "9999 測試假股")
+
+    def test_get_supply_chain_schedule_name_and_bottleneck_use_display_name(self):
+        """get_supply_chain_schedule 的 timeline_matrix name 欄位與 bottlenecks
+        字串一律使用 display_name 解析結果（含尾碼分隔改空格呈現）。"""
+        monitor = MarketInformationMonitor()
+        with mock.patch.object(
+            __import__("sector_membership"), "get_members_in_universe", return_value=[]
+        ):
+            result = monitor.get_supply_chain_schedule("Vera_Rubin", "Feynman")
+        foci_data = next(x for x in result["timeline_matrix"] if x["company_id"] == "3450.TW")
+        self.assertEqual(foci_data["name"], "3450 聯鈞")
+        # 3450 為 transmission segment，不進 bottlenecks；改查一個 equipment/package 成員
+        equip_data = next(x for x in result["timeline_matrix"] if x["company_id"] == "3131.TWO")
+        self.assertEqual(equip_data["name"], "3131 弘塑")
+        matching_bottlenecks = [b for b in result["bottlenecks"] if b.startswith("3131 弘塑")]
+        self.assertEqual(len(matching_bottlenecks), 1)
 
 
 if __name__ == "__main__":
